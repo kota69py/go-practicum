@@ -1,0 +1,29 @@
+package main
+
+import (
+	"time"
+)
+
+// Config はアプリケーションの設定を保持します。
+type Config struct {
+	Port    int           // サーバーポート (デフォルト: 8080)
+	Debug   bool          // デバッグモード (デフォルト: false)
+	Timeout time.Duration // タイムアウト (デフォルト: 30s)
+	DBPath  string        // データベースパス (デフォルト: "data/app.db")
+}
+
+// TODO: LoadConfig を実装してください。
+//   優先順位: フラグ > 環境変数 > デフォルト値
+//
+//   環境変数:
+//     - APP_PORT (int)
+//     - APP_DEBUG (bool: "true"/"false")
+//     - APP_TIMEOUT (duration string)
+//     - APP_DB_PATH (string)
+//
+//   デフォルト値:
+//     Port: 8080, Debug: false, Timeout: 30s, DBPath: "data/app.db"
+func LoadConfig() Config {
+	// TODO
+	return Config{}
+}

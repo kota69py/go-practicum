@@ -2,6 +2,19 @@ package main
 
 import "fmt"
 
+type PaymentGateway interface {
+	Charge(amount int) (string, error)
+	Refund(transactionID string) error
+}
+
+type PurchaseService struct {
+	gateway PaymentGateway
+}
+
+func NewPurchaseService(g PaymentGateway) *PurchaseService {
+	return &PurchaseService{gateway: g}
+}
+
 func (s *PurchaseService) Purchase(amount int) (string, error) {
 	txID, err := s.gateway.Charge(amount)
 	if err != nil {

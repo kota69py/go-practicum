@@ -1,0 +1,16 @@
+{
+  "name": "19-fan-in-fan-out",
+  "title": "Fan-In / Fan-Out — 並行処理の応用パターン",
+  "category": "concurrency",
+  "difficulty": 4,
+  "description": "Go の並行処理応用パターンを実践します。Fan-Out（タスクをワーカーに分散）と Fan-In（複数チャネルの結果をマージ）のパターンを実装し、パイプラインによる一連のデータ処理フローを構築します。",
+  "hints": [
+    "Fan-Out: 1つの入力チャネルから複数のワーカー goroutine が読み取る",
+    "Fan-In: 複数の出力チャネルを1つにマージする（マージチャネルパターン）",
+    "マージ関数は各チャネルから select または goroutine で受信",
+    "sync.WaitGroup ですべてのワーカーの完了を待つ",
+    "パイプラインは「gen → fan-out → fan-in → result」の流れ",
+    "各段階でチャネルを close して終了を通知する"
+  ],
+  "files": ["pipeline.go.txt"]
+}

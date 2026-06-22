@@ -1,0 +1,36 @@
+package main
+
+import "net/http"
+
+// Middleware は http.Handler をラップする関数型デコレータです。
+type Middleware func(next http.Handler) http.Handler
+
+// TODO: Chain を実装してください。
+//   複数の Middleware を順番に重ねて適用します。
+//   適用順: 最初の Middleware → 最後の Middleware → Handler
+func Chain(handler http.Handler, mws ...Middleware) http.Handler {
+	// TODO
+	return nil
+}
+
+// TODO: Logger ミドルウェアを実装してください。
+//   リクエストメソッド・パス・リモートアドレスをログ出力します。
+func Logger() Middleware {
+	// TODO
+	return nil
+}
+
+// TODO: Recovery ミドルウェアを実装してください。
+//   パニックを recover し、500 Internal Server Error を返します。
+func Recovery() Middleware {
+	// TODO
+	return nil
+}
+
+// TODO: Auth ミドルウェアを実装してください。
+//   Authorization ヘッダーが "Bearer valid-token" の場合のみ通過、
+//   それ以外は 401 Unauthorized を返します。
+func Auth() Middleware {
+	// TODO
+	return nil
+}

@@ -1,0 +1,32 @@
+package main
+
+import "context"
+
+type Pipeline struct {
+	// TODO
+}
+
+func NewPipeline(ctx context.Context, gen func(ctx context.Context) <-chan int) *Pipeline {
+	// TODO
+	return nil
+}
+
+// TODO: FanOut を実装してください。
+//   入力チャネルからデータを読み取り、n 個のワーカーで並行処理します。
+//   各ワーカーは worker 関数を呼び出し、結果を個別の出力チャネルに送信します。
+func (p *Pipeline) FanOut(n int, ctx context.Context, worker func(ctx context.Context, val int) int) []<-chan int {
+	// TODO
+	return nil
+}
+
+// TODO: FanIn を実装してください。
+//   複数の入力チャネルからデータを読み取り、1つの出力チャネルにマージします。
+func FanIn(ctx context.Context, chs ...<-chan int) <-chan int {
+	// TODO
+	return nil
+}
+
+func (p *Pipeline) Run(ctx context.Context) []int {
+	// TODO
+	return nil
+}

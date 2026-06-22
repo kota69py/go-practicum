@@ -1,0 +1,44 @@
+package main
+
+import (
+	"testing"
+)
+
+// TestHelper はテスト補助関数をまとめた構造体です。
+type TestHelper struct {
+	tb testing.TB
+}
+
+// TODO: NewTestHelper を実装してください。
+//   tb の説明は省略（構造体に保存するだけ）
+func NewTestHelper(tb testing.TB) *TestHelper {
+	// TODO
+	return nil
+}
+
+// TODO: Must を実装してください。
+//   t.Helper() を呼び出した上で err が nil でなければ t.Fatal します。
+func (h *TestHelper) Must(err error) {
+	// TODO
+}
+
+// TODO: Eq を実装してください。
+//   t.Helper() を呼び出した上で got != want なら t.Fatalf で報告します。
+func (h *TestHelper) Eq(got, want any) {
+	// TODO
+}
+
+// TODO: WithTempDir を実装してください。
+//   一時ディレクトリを作成し、t.Cleanup で削除を登録してパスを返します。
+func (h *TestHelper) WithTempDir() string {
+	// TODO
+	return ""
+}
+
+// TODO: Golden を実装してください。
+//   testdata/<name>.golden を読み込んで文字列として返します。
+//   ファイルが存在しない場合は空文字を返します（エラーは無視）。
+func Golden(name string) string {
+	// TODO
+	return ""
+}

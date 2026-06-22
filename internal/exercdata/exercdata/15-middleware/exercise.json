@@ -1,0 +1,16 @@
+{
+  "name": "15-middleware",
+  "title": "HTTP Middleware — 関数型デコレータパターン",
+  "category": "net",
+  "difficulty": 3,
+  "description": "HTTP ハンドラを関数型デコレータでラップする Middleware パターンを実践します。ロギング・リカバリー・認証チェックの3つのミドルウェアを実装してください。",
+  "hints": [
+    "ミドルウェアの型は func(next http.Handler) http.Handler が基本",
+    "内側のハンドラで next.ServeHTTP(w, r) を呼ぶとチェインできる",
+    "ロギング: r.Method, r.URL.Path, r.RemoteAddr を記録",
+    "リカバリー: defer func() { if r := recover(); r != nil { ... } }()",
+    "認証: r.Header.Get(\"Authorization\") でトークンを取得",
+    "複数ミドルウェアは重ねるだけ: middleware1(middleware2(handler))"
+  ],
+  "files": ["middleware.go.txt"]
+}

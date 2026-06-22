@@ -1,0 +1,16 @@
+{
+  "name": "14-graceful-shutdown",
+  "title": "Graceful Shutdown — シグナル処理と安全な終了",
+  "category": "concurrency",
+  "difficulty": 4,
+  "description": "OS シグナル（SIGINT/SIGTERM）をハンドリングし、サーバーを安全に停止する Graceful Shutdown を実装します。signal.Notify、context.WithTimeout、http.Server.Shutdown のパターンを学びます。",
+  "hints": [
+    "signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM) でシグナルを受信",
+    "シグナル受信後は context.WithTimeout で猶予時間を設定",
+    "http.Server.Shutdown(ctx) で既存の接続を graceful に終了",
+    "Shutdown は新しい接続を拒否し、既存のリクエストが完了するのを待つ",
+    "タイムアウトを超えた場合は Shutdown が context のエラーを返す",
+    "2度目の SIGINT は即座に os.Exit(1) する force kill パターンも実装しておく"
+  ],
+  "files": ["server.go.txt"]
+}

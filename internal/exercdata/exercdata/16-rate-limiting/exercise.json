@@ -1,0 +1,16 @@
+{
+  "name": "16-rate-limiting",
+  "title": "Rate Limiting — チャネルと Ticker による流量制御",
+  "category": "concurrency",
+  "difficulty": 3,
+  "description": "チャネルと time.Ticker を使ったレート制限を実装します。バースト対応のトークンバケット方式と、一定間隔での制限方式を学びます。",
+  "hints": [
+    "time.Ticker は指定間隔でチャネルに値を送信します",
+    "バースト許容はバッファ付きチャネルで実現する",
+    "rateLimiter := make(chan struct{}, burst) でトークンバケット",
+    "ticker の C チャネルから受信するたびにバケットにトークンを追加",
+    "関数実行時にバケットからトークンを1つ消費する（なければ待つ）",
+    "select で ticker と ctx.Done() を同時に待つと安全"
+  ],
+  "files": ["limiter.go.txt"]
+}

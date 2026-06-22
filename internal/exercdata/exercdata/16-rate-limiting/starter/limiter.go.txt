@@ -1,0 +1,24 @@
+package main
+
+import (
+	"context"
+	"time"
+)
+
+// TODO: トークンバケット方式のレートリミッターを実装してください。
+//
+// NewLimiter は 1秒あたり rate 回の実行を許し、最大 burst 回までのバーストを許容します。
+// Wait は ctx がキャンセルされるか、トークンが取得できるまでブロックします。
+type Limiter struct {
+	// TODO
+}
+
+func NewLimiter(rate int, burst int) *Limiter {
+	// TODO
+	return nil
+}
+
+func (l *Limiter) Wait(ctx context.Context) error {
+	// TODO
+	return nil
+}

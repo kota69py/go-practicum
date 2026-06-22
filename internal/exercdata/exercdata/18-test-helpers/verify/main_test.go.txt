@@ -1,0 +1,54 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestMust(t *testing.T) {
+	h := NewTestHelper(t)
+	h.Must(nil) // Should not fail
+}
+
+func TestEq(t *testing.T) {
+	h := NewTestHelper(t)
+	h.Eq(42, 42)
+	h.Eq("hello", "hello")
+}
+
+func TestWithTempDir(t *testing.T) {
+	h := NewTestHelper(t)
+	dir := h.WithTempDir()
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		t.Fatal("temp dir does not exist")
+	}
+
+	// Write a file to verify it's writable
+	f := filepath.Join(dir, "test.txt")
+	os.WriteFile(f, []byte("data"), 0644)
+
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		t.Error("file was not created in temp dir")
+	}
+}
+
+func TestGolden(t *testing.T) {
+	// Create a golden file
+	os.MkdirAll("testdata", 0755)
+	os.WriteFile("testdata/hello.golden", []byte("world"), 0644)
+	defer os.RemoveAll("testdata")
+
+	got := Golden("hello")
+	if got != "world" {
+		t.Errorf("Golden = %q, want %q", got, "world")
+	}
+}
+
+func TestGoldenMissing(t *testing.T) {
+	got := Golden("nonexistent")
+	if got != "" {
+		t.Errorf("Golden = %q, want empty string for missing file", got)
+	}
+}

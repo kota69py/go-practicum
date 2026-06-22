@@ -1,0 +1,16 @@
+{
+  "name": "17-config",
+  "title": "設定管理 — 環境変数・フラグ・設定ファイル",
+  "category": "configuration",
+  "difficulty": 2,
+  "description": "アプリケーション設定の読み込みパターンを実践します。環境変数・コマンドラインフラグ・デフォルト値の優先順位を適切に処理する Config 構造体のローダーを実装してください。",
+  "hints": [
+    "os.Getenv(key) で環境変数を取得（空文字は未設定）",
+    "lookup, ok := os.LookupEnv(key) で存在確認ができる",
+    "strconv.Atoi / strconv.ParseBool で型変換",
+    "優先順位: フラグ > 環境変数 > 設定ファイル > デフォルト値",
+    "Config 構造体に全ての設定値をまとめると取り回しやすい",
+    "time.Duration のパースには time.ParseDuration を使う"
+  ],
+  "files": ["config.go.txt"]
+}

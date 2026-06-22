@@ -1,0 +1,3 @@
+module go-practicum-fan-in-fan-out
+
+go 1.23

@@ -1,0 +1,44 @@
+package main
+
+import (
+	"os"
+	"testing"
+)
+
+type TestHelper struct {
+	tb testing.TB
+}
+
+func NewTestHelper(tb testing.TB) *TestHelper {
+	return &TestHelper{tb: tb}
+}
+
+func (h *TestHelper) Must(err error) {
+	h.tb.Helper()
+	if err != nil {
+		h.tb.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func (h *TestHelper) Eq(got, want any) {
+	h.tb.Helper()
+	if got != want {
+		h.tb.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+func (h *TestHelper) WithTempDir() string {
+	h.tb.Helper()
+	dir, err := os.MkdirTemp("", "test-*")
+	h.Must(err)
+	h.tb.Cleanup(func() { os.RemoveAll(dir) })
+	return dir
+}
+
+func Golden(name string) string {
+	data, err := os.ReadFile("testdata/" + name + ".golden")
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}

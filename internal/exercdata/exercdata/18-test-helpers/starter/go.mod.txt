@@ -1,0 +1,3 @@
+module go-practicum-test-helpers
+
+go 1.23

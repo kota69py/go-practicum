@@ -1,0 +1,76 @@
+package main
+
+import (
+	"os"
+	"testing"
+	"time"
+)
+
+func setEnv(k, v string) func() {
+	old, existed := os.LookupEnv(k)
+	os.Setenv(k, v)
+	if !existed {
+		return func() { os.Unsetenv(k) }
+	}
+	return func() { os.Setenv(k, old) }
+}
+
+func TestLoadConfigDefaults(t *testing.T) {
+	cfg := LoadConfig()
+	if cfg.Port != 8080 {
+		t.Errorf("Port = %d, want 8080", cfg.Port)
+	}
+	if cfg.Debug {
+		t.Error("Debug = true, want false")
+	}
+	if cfg.Timeout != 30*time.Second {
+		t.Errorf("Timeout = %v, want 30s", cfg.Timeout)
+	}
+	if cfg.DBPath != "data/app.db" {
+		t.Errorf("DBPath = %q, want %q", cfg.DBPath, "data/app.db")
+	}
+}
+
+func TestLoadConfigFromEnv(t *testing.T) {
+	cleanups := []func(){
+		setEnv("APP_PORT", "3000"),
+		setEnv("APP_DEBUG", "true"),
+		setEnv("APP_TIMEOUT", "5s"),
+		setEnv("APP_DB_PATH", "/tmp/test.db"),
+	}
+	defer func() {
+		for _, c := range cleanups {
+			c()
+		}
+	}()
+
+	cfg := LoadConfig()
+	if cfg.Port != 3000 {
+		t.Errorf("Port = %d, want 3000", cfg.Port)
+	}
+	if !cfg.Debug {
+		t.Error("Debug = false, want true")
+	}
+	if cfg.Timeout != 5*time.Second {
+		t.Errorf("Timeout = %v, want 5s", cfg.Timeout)
+	}
+	if cfg.DBPath != "/tmp/test.db" {
+		t.Errorf("DBPath = %q, want %q", cfg.DBPath, "/tmp/test.db")
+	}
+}
+
+func TestLoadConfigPartialEnv(t *testing.T) {
+	cleanup := setEnv("APP_PORT", "9090")
+	defer cleanup()
+
+	cfg := LoadConfig()
+	if cfg.Port != 9090 {
+		t.Errorf("Port = %d, want 9090", cfg.Port)
+	}
+	if cfg.Debug {
+		t.Error("Debug = true, want false (default)")
+	}
+	if cfg.DBPath != "data/app.db" {
+		t.Errorf("DBPath = %q, want default", cfg.DBPath)
+	}
+}

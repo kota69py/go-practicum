@@ -1,0 +1,70 @@
+package main
+
+import (
+	"context"
+	"sync"
+)
+
+type Pipeline struct {
+	gen func(ctx context.Context) <-chan int
+}
+
+func NewPipeline(ctx context.Context, gen func(ctx context.Context) <-chan int) *Pipeline {
+	return &Pipeline{gen: gen}
+}
+
+func (p *Pipeline) FanOut(n int, ctx context.Context, worker func(ctx context.Context, val int) int) []<-chan int {
+	outputs := make([]chan int, n)
+	for i := range n {
+		outputs[i] = make(chan int, 1)
+	}
+	go func() {
+		defer func() {
+			for _, ch := range outputs {
+				close(ch)
+			}
+		}()
+		input := p.gen(ctx)
+		i := 0
+		for v := range input {
+			select {
+			case <-ctx.Done():
+				return
+			case outputs[i%n] <- worker(ctx, v):
+			}
+			i++
+		}
+	}()
+	result := make([]<-chan int, n)
+	for i := range n {
+		result[i] = outputs[i]
+	}
+	return result
+}
+
+func FanIn(ctx context.Context, chs ...<-chan int) <-chan int {
+	out := make(chan int)
+	var wg sync.WaitGroup
+	wg.Add(len(chs))
+	for _, ch := range chs {
+		go func(c <-chan int) {
+			defer wg.Done()
+			for v := range c {
+				select {
+				case <-ctx.Done():
+					return
+				case out <- v:
+				}
+			}
+		}(ch)
+	}
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
+}
+
+func (p *Pipeline) Run(ctx context.Context) []int {
+	return nil
+}

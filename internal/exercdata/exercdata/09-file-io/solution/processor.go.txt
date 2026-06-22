@@ -7,6 +7,12 @@ import (
 	"strconv"
 )
 
+type Record struct {
+	Name  string
+	Email string
+	Score int
+}
+
 func ProcessCSV(path string) ([]Record, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -23,7 +29,7 @@ func ProcessCSV(path string) ([]Record, error) {
 	var result []Record
 	for i, row := range records {
 		if i == 0 {
-			continue // header
+			continue
 		}
 		if len(row) < 3 {
 			continue

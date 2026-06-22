@@ -1,0 +1,3 @@
+module go-practicum-graceful-shutdown
+
+go 1.23

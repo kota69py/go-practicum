@@ -1,0 +1,34 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"os"
+	"time"
+)
+
+// TODO: RunServer を実装してください。
+//   addr で Listen する HTTP サーバーを起動し、sig チャネルでシグナルを受信したら
+//   猶予時間 timeout で graceful に停止します。
+//
+//   実装すべきこと:
+//   1. http.Server{Addr: addr, Handler: handler} を作成
+//   2. goroutine で server.ListenAndServe() を起動
+//   3. sig チャネルからシグナルを待機
+//   4. シグナル受信後、context.WithTimeout(ctx, timeout) で猶予時間を設定
+//   5. server.Shutdown(ctx) で graceful に停止
+func RunServer(addr string, handler http.Handler, timeout time.Duration, sig <-chan os.Signal) error {
+	server := &http.Server{Addr: addr, Handler: handler}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			// ignore expected ErrServerClosed
+		}
+	}()
+
+	<-sig
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return server.Shutdown(ctx)
+}

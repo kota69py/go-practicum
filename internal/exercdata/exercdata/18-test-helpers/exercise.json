@@ -1,0 +1,16 @@
+{
+  "name": "18-test-helpers",
+  "title": "テストヘルパー — t.Helper と Golden Files",
+  "category": "testing",
+  "difficulty": 3,
+  "description": "Go のテストを効率化するヘルパー関数と Golden File パターンを実践します。t.Helper でエラー行を正しく報告するヘルパー、テストのセットアップ/ティアダウン、Golangci-lint 準拠の cmp パッケージ代替パターンを学びます。",
+  "hints": [
+    "t.Helper() をヘルパー関数の先頭で呼ぶとエラー行が呼び出し元に",
+    "t.Cleanup(func) でテスト終了時の後処理を登録できます",
+    "Golden File: testdata/ ディレクトリに期待値を保存し、-update フラグで更新",
+    "got, want := result, string(golden); if got != want { t.Fatalf(...) }",
+    "testing.T の Log/Logf/Errorf/Fatalf を使い分ける",
+    "テーブル駆動テストとヘルパーを組み合わせると強力"
+  ],
+  "files": ["helper.go.txt"]
+}

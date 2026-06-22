@@ -1,0 +1,41 @@
+package main
+
+import (
+	"context"
+	"time"
+)
+
+type Limiter struct {
+	tokens chan struct{}
+	ticker *time.Ticker
+}
+
+func NewLimiter(rate int, burst int) *Limiter {
+	l := &Limiter{
+		tokens: make(chan struct{}, burst),
+		ticker: time.NewTicker(time.Second / time.Duration(rate)),
+	}
+	// Fill bucket initially
+	for range burst {
+		l.tokens <- struct{}{}
+	}
+	// Refill periodically
+	go func() {
+		for range l.ticker.C {
+			select {
+			case l.tokens <- struct{}{}:
+			default: // bucket full, drop
+			}
+		}
+	}()
+	return l
+}
+
+func (l *Limiter) Wait(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-l.tokens:
+		return nil
+	}
+}
