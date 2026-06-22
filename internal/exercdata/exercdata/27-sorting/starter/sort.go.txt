@@ -1,0 +1,34 @@
+package main
+
+import "sort"
+
+// TODO: SortByLength を実装してください。
+//   文字列スライスを長さの昇順でソートします。
+func SortByLength(vals []string) {
+	// TODO
+}
+
+// TODO: SortByAge を実装してください。
+//   Person スライスを年齢の昇順でソートします。同率は名前順。
+type Person struct {
+	Name string
+	Age  int
+}
+
+func SortByAge(people []Person) {
+	// TODO
+}
+
+// TODO: SearchInt を実装してください。
+//   ソート済み整数スライスから target を二分探索し、見つかれば true を返します。
+func SearchInt(sorted []int, target int) bool {
+	// TODO
+	return false
+}
+
+// TODO: Deduplicate を実装してください。
+//   ソート済み整数スライスから重複を除去します。
+func Deduplicate(sorted []int) []int {
+	// TODO
+	return nil
+}

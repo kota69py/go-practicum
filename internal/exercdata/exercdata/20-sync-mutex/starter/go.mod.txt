@@ -1,0 +1,4 @@
+module go-practicum-20-sync-mutex
+
+go 1.23
+

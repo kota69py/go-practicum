@@ -1,0 +1,41 @@
+package main
+
+import "reflect"
+
+// Person は構造体タグの例題用です。
+type Person struct {
+	Name  string `json:"name" validate:"required"`
+	Age   int    `json:"age" validate:"min=0"`
+	Email string `json:"email,omitempty" validate:"email"`
+}
+
+// TODO: GetFieldNames を実装してください。
+//   構造体の全フィールド名を文字列スライスで返します。
+func GetFieldNames(v any) []string {
+	// TODO
+	return nil
+}
+
+// TODO: GetFieldValues を実装してください。
+//   構造体の全フィールド値を map[string]any で返します。
+//   ポインタは Elem() で間接参照します。
+func GetFieldValues(v any) map[string]any {
+	// TODO
+	return nil
+}
+
+// TODO: GetTags を実装してください。
+//   指定されたタグキー（例: "json", "validate"）の値を
+//   フィールド名をキーとした map で返します。
+func GetTags(v any, tagKey string) map[string]string {
+	// TODO
+	return nil
+}
+
+// TODO: SetField を実装してください。
+//   指定されたフィールド名に値を設定します。
+//   v はポインタである必要があります。
+func SetField(v any, name string, value any) error {
+	// TODO
+	return nil
+}

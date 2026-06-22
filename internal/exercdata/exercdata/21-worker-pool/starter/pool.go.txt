@@ -1,0 +1,30 @@
+package main
+
+import "context"
+
+// Job は実行するタスクを表します。
+type Job struct {
+	ID   int
+	Data string
+}
+
+// Result はタスクの実行結果を表します。
+type Result struct {
+	JobID  int
+	Output string
+	Err    error
+}
+
+// TODO: Worker 関数を実装してください。
+//   jobs チャネルから Job を受け取り、results チャネルに Result を送信します。
+//   ctx がキャンセルされたら終了します。
+func Worker(ctx context.Context, id int, jobs <-chan Job, results chan<- Result) {
+	// TODO
+}
+
+// TODO: StartPool を実装してください。
+//   n 個のワーカーを起動し、ジョブ処理を開始します。
+//   コンテキストがキャンセルされるか、jobs がクローズされると終了します。
+func StartPool(ctx context.Context, n int, jobs <-chan Job, results chan<- Result) {
+	// TODO
+}

@@ -1,0 +1,16 @@
+package main
+
+// TODO: ParseHex を実装してください。
+//   16進数文字列をパースして []byte を返します。
+//   無効な文字が含まれている場合はエラーを返します。
+func ParseHex(input string) ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: IsValidHex を実装してください。
+//   文字列が有効な16進数かどうかを判定します。
+func IsValidHex(input string) bool {
+	// TODO
+	return false
+}

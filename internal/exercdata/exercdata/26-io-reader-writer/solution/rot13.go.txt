@@ -1,0 +1,38 @@
+package main
+
+import "io"
+
+type ROT13Reader struct {
+	r io.Reader
+}
+
+func rot13(b byte) byte {
+	switch {
+	case 'A' <= b && b <= 'Z':
+		return 'A' + (b-'A'+13)%26
+	case 'a' <= b && b <= 'z':
+		return 'a' + (b-'a'+13)%26
+	default:
+		return b
+	}
+}
+
+func (rot *ROT13Reader) Read(p []byte) (int, error) {
+	n, err := rot.r.Read(p)
+	for i := range n {
+		p[i] = rot13(p[i])
+	}
+	return n, err
+}
+
+type ROT13Writer struct {
+	w io.Writer
+}
+
+func (rot *ROT13Writer) Write(p []byte) (int, error) {
+	transformed := make([]byte, len(p))
+	for i, b := range p {
+		transformed[i] = rot13(b)
+	}
+	return rot.w.Write(transformed)
+}

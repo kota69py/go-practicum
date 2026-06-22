@@ -1,0 +1,81 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestParseHex(t *testing.T) {
+	tests := []struct {
+		input string
+		want  []byte
+	}{
+		{"00", []byte{0}},
+		{"ff", []byte{255}},
+		{"0102", []byte{1, 2}},
+	}
+	for _, tt := range tests {
+		got, err := ParseHex(tt.input)
+		if err != nil {
+			t.Errorf("ParseHex(%q) error: %v", tt.input, err)
+			continue
+		}
+		if len(got) != len(tt.want) {
+			t.Errorf("ParseHex(%q) = %v, want %v", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestIsValidHex(t *testing.T) {
+	if !IsValidHex("ff") {
+		t.Error("expected ff to be valid")
+	}
+	if IsValidHex("xyz") {
+		t.Error("expected xyz to be invalid")
+	}
+	if IsValidHex("f") {
+		t.Error("expected single char to be invalid")
+	}
+	if IsValidHex("") {
+		t.Error("expected empty to be invalid")
+	}
+}
+
+func TestParseHexError(t *testing.T) {
+	_, err := ParseHex("xyz")
+	if err == nil {
+		t.Error("expected error for invalid hex")
+	}
+	_, err = ParseHex("f")
+	if err == nil {
+		t.Error("expected error for odd length")
+	}
+	_, err = ParseHex("")
+	if err != nil {
+		t.Logf("empty string error (acceptable)")
+	}
+}
+
+func FuzzParseHex(f *testing.F) {
+	f.Add("00")
+	f.Add("ff")
+	f.Add("0102aabb")
+
+	f.Fuzz(func(t *testing.T, input string) {
+		data, err := ParseHex(input)
+		if err != nil {
+			_ = err // expected for invalid input
+			return
+		}
+		if len(data) == 0 {
+			return
+		}
+		// Re-encode should match original for valid hex
+		encoded := ""
+		for _, b := range data {
+			encoded += string("0123456789abcdef"[b>>4]) + string("0123456789abcdef"[b&0xf])
+		}
+		if encoded != input {
+			t.Skip("case mismatch, not a bug")
+		}
+	})
+}

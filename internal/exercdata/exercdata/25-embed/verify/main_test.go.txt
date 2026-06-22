@@ -1,0 +1,37 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestHelloText(t *testing.T) {
+	if helloText == "" {
+		t.Error("helloText is empty")
+	}
+}
+
+func TestGreetingBytes(t *testing.T) {
+	if len(greetingBytes) == 0 {
+		t.Error("greetingBytes is empty")
+	}
+}
+
+func TestTemplateFS(t *testing.T) {
+	entries, err := templateFS.ReadDir("templates")
+	if err != nil {
+		t.Fatalf("ReadDir error: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Error("no templates found")
+	}
+}
+
+func TestTemplateContent(t *testing.T) {
+	data, err := templateFS.ReadFile("templates/index.html")
+	if err != nil {
+		t.Fatalf("ReadFile error: %v", err)
+	}
+	if len(data) == 0 {
+		t.Error("index.html is empty")
+	}
+}

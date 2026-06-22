@@ -1,0 +1,75 @@
+package main
+
+import (
+	"errors"
+	"reflect"
+)
+
+type Person struct {
+	Name  string `json:"name" validate:"required"`
+	Age   int    `json:"age" validate:"min=0"`
+	Email string `json:"email,omitempty" validate:"email"`
+}
+
+func GetFieldNames(v any) []string {
+	typ := reflect.TypeOf(v)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	if typ.Kind() != reflect.Struct {
+		return nil
+	}
+	names := make([]string, typ.NumField())
+	for i := range typ.NumField() {
+		names[i] = typ.Field(i).Name
+	}
+	return names
+}
+
+func GetFieldValues(v any) map[string]any {
+	val := reflect.ValueOf(v)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		return nil
+	}
+	result := make(map[string]any)
+	typ := val.Type()
+	for i := range val.NumField() {
+		result[typ.Field(i).Name] = val.Field(i).Interface()
+	}
+	return result
+}
+
+func GetTags(v any, tagKey string) map[string]string {
+	typ := reflect.TypeOf(v)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	if typ.Kind() != reflect.Struct {
+		return nil
+	}
+	result := make(map[string]string)
+	for i := range typ.NumField() {
+		result[typ.Field(i).Name] = typ.Field(i).Tag.Get(tagKey)
+	}
+	return result
+}
+
+func SetField(v any, name string, value any) error {
+	val := reflect.ValueOf(v)
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
+		return errors.New("must be pointer to struct")
+	}
+	val = val.Elem()
+	field := val.FieldByName(name)
+	if !field.IsValid() {
+		return errors.New("field not found: " + name)
+	}
+	if !field.CanSet() {
+		return errors.New("field cannot be set: " + name)
+	}
+	field.Set(reflect.ValueOf(value))
+	return nil
+}

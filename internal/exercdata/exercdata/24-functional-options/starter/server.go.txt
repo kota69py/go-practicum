@@ -1,0 +1,50 @@
+package main
+
+// Server は HTTP サーバーの設定を保持します。
+type Server struct {
+	addr    string
+	port    int
+	timeout int
+	debug   bool
+}
+
+// Option は Server の設定を変更する関数型です。
+type Option func(*Server)
+
+// TODO: WithPort を実装してください。
+//   ポート番号を設定する Option を返します。
+func WithPort(port int) Option {
+	// TODO
+	return nil
+}
+
+// TODO: WithTimeout を実装してください。
+//   タイムアウト秒数を設定する Option を返します。
+func WithTimeout(seconds int) Option {
+	// TODO
+	return nil
+}
+
+// TODO: WithDebug を実装してください。
+//   デバッグモードを有効にする Option を返します。
+func WithDebug() Option {
+	// TODO
+	return nil
+}
+
+// TODO: NewServer を実装してください。
+//   デフォルト設定で Server を作成し、opts を適用します。
+func NewServer(addr string, opts ...Option) *Server {
+	// TODO
+	return nil
+}
+
+// Addr はサーバーのアドレス文字列を返します（例: ":8080"）。
+func (s *Server) Addr() string {
+	return s.addr
+}
+
+// Start はサーバーを起動します（ダミー）。
+func (s *Server) Start() error {
+	return nil
+}

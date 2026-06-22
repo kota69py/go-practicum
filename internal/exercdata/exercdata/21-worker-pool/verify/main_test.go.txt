@@ -1,0 +1,75 @@
+package main
+
+import (
+	"context"
+	"testing"
+)
+
+func TestWorker(t *testing.T) {
+	ctx := context.Background()
+	jobs := make(chan Job, 3)
+	results := make(chan Result, 3)
+
+	jobs <- Job{ID: 1, Data: "hello"}
+	jobs <- Job{ID: 2, Data: "world"}
+	close(jobs)
+
+	go Worker(ctx, 1, jobs, results)
+
+	count := 0
+	for range 2 {
+		r := <-results
+		if r.Err != nil {
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+		if r.Output == "" {
+			t.Error("expected non-empty output")
+		}
+		count++
+	}
+	if count != 2 {
+		t.Errorf("got %d results, want 2", count)
+	}
+}
+
+func TestStartPool(t *testing.T) {
+	ctx := context.Background()
+	jobs := make(chan Job, 10)
+	results := make(chan Result, 10)
+
+	for i := 0; i < 10; i++ {
+		jobs <- Job{ID: i, Data: "task"}
+	}
+	close(jobs)
+
+	StartPool(ctx, 3, jobs, results)
+
+	count := 0
+	for r := range results {
+		_ = r
+		count++
+	}
+	if count != 10 {
+		t.Errorf("got %d results, want 10", count)
+	}
+}
+
+func TestContextCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	jobs := make(chan Job)
+	results := make(chan Result, 10)
+
+	go func() {
+		for i := 0; i < 100; i++ {
+			jobs <- Job{ID: i, Data: "task"}
+		}
+	}()
+
+	StartPool(ctx, 3, jobs, results)
+
+	cancel()
+
+	// Should exit without hang
+	for range results {
+	}
+}

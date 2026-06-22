@@ -1,0 +1,50 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestConcat(t *testing.T) {
+	vals := []string{"a", "b", "c"}
+	r := Concat(vals)
+	if r != "abc" {
+		t.Errorf("Concat = %q, want %q", r, "abc")
+	}
+}
+
+func TestJoin(t *testing.T) {
+	vals := []string{"a", "b", "c"}
+	r := Join(vals)
+	if r != "abc" {
+		t.Errorf("Join = %q, want %q", r, "abc")
+	}
+}
+
+func TestBuilder(t *testing.T) {
+	vals := []string{"a", "b", "c"}
+	r := Builder(vals)
+	if r != "abc" {
+		t.Errorf("Builder = %q, want %q", r, "abc")
+	}
+}
+
+func BenchmarkConcat(b *testing.B) {
+	vals := []string{"hello", " ", "world", " ", "from", " ", "Go"}
+	for range b.N {
+		Concat(vals)
+	}
+}
+
+func BenchmarkJoin(b *testing.B) {
+	vals := []string{"hello", " ", "world", " ", "from", " ", "Go"}
+	for range b.N {
+		Join(vals)
+	}
+}
+
+func BenchmarkBuilder(b *testing.B) {
+	vals := []string{"hello", " ", "world", " ", "from", " ", "Go"}
+	for range b.N {
+		Builder(vals)
+	}
+}

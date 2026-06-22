@@ -1,0 +1,4 @@
+module go-practicum-25-embed
+
+go 1.23
+

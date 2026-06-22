@@ -1,0 +1,12 @@
+package main
+
+import "embed"
+
+//go:embed hello
+var helloText string
+
+//go:embed greeting
+var greetingBytes []byte
+
+//go:embed templates
+var templateFS embed.FS

@@ -1,0 +1,80 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestGetFieldNames(t *testing.T) {
+	p := Person{Name: "Alice", Age: 30}
+	names := GetFieldNames(p)
+	expected := []string{"Name", "Age", "Email"}
+	if len(names) != len(expected) {
+		t.Fatalf("got %d fields, want %d", len(names), len(expected))
+	}
+	for i, n := range names {
+		if n != expected[i] {
+			t.Errorf("field[%d] = %q, want %q", i, n, expected[i])
+		}
+	}
+}
+
+func TestGetFieldValues(t *testing.T) {
+	p := Person{Name: "Alice", Age: 30, Email: "alice@test.com"}
+	vals := GetFieldValues(p)
+	if vals["Name"] != "Alice" {
+		t.Errorf("Name = %v, want Alice", vals["Name"])
+	}
+	if vals["Age"] != 30 {
+		t.Errorf("Age = %v, want 30", vals["Age"])
+	}
+	if vals["Email"] != "alice@test.com" {
+		t.Errorf("Email = %v, want alice@test.com", vals["Email"])
+	}
+}
+
+func TestGetTags(t *testing.T) {
+	p := Person{}
+	jsonTags := GetTags(p, "json")
+	if jsonTags["Name"] != "name" {
+		t.Errorf("json tag for Name = %q, want %q", jsonTags["Name"], "name")
+	}
+	if jsonTags["Age"] != "age" {
+		t.Errorf("json tag for Age = %q, want %q", jsonTags["Age"], "age")
+	}
+	validateTags := GetTags(p, "validate")
+	if validateTags["Name"] != "required" {
+		t.Errorf("validate tag for Name = %q", validateTags["Name"])
+	}
+}
+
+func TestSetField(t *testing.T) {
+	p := &Person{}
+	err := SetField(p, "Name", "Bob")
+	if err != nil {
+		t.Fatalf("SetField error: %v", err)
+	}
+	if p.Name != "Bob" {
+		t.Errorf("Name = %q, want Bob", p.Name)
+	}
+
+	err = SetField(p, "Age", 25)
+	if err != nil {
+		t.Fatalf("SetField error: %v", err)
+	}
+	if p.Age != 25 {
+		t.Errorf("Age = %d, want 25", p.Age)
+	}
+}
+
+func TestSetFieldInvalid(t *testing.T) {
+	p := Person{} // not a pointer
+	err := SetField(p, "Name", "Bob")
+	if err == nil {
+		t.Error("expected error for non-pointer")
+	}
+
+	err = SetField(&Person{}, "Nonexistent", "x")
+	if err == nil {
+		t.Error("expected error for nonexistent field")
+	}
+}

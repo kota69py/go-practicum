@@ -1,0 +1,21 @@
+package main
+
+import (
+	"encoding/hex"
+	"errors"
+)
+
+func ParseHex(input string) ([]byte, error) {
+	if len(input)%2 != 0 {
+		return nil, errors.New("odd length")
+	}
+	return hex.DecodeString(input)
+}
+
+func IsValidHex(input string) bool {
+	if input == "" || len(input)%2 != 0 {
+		return false
+	}
+	_, err := hex.DecodeString(input)
+	return err == nil
+}

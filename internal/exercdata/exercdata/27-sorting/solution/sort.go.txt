@@ -1,0 +1,41 @@
+package main
+
+import "sort"
+
+func SortByLength(vals []string) {
+	sort.Slice(vals, func(i, j int) bool {
+		return len(vals[i]) < len(vals[j])
+	})
+}
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func SortByAge(people []Person) {
+	sort.Slice(people, func(i, j int) bool {
+		if people[i].Age != people[j].Age {
+			return people[i].Age < people[j].Age
+		}
+		return people[i].Name < people[j].Name
+	})
+}
+
+func SearchInt(sorted []int, target int) bool {
+	idx := sort.SearchInts(sorted, target)
+	return idx < len(sorted) && sorted[idx] == target
+}
+
+func Deduplicate(sorted []int) []int {
+	if len(sorted) == 0 {
+		return sorted
+	}
+	result := sorted[:1]
+	for _, v := range sorted[1:] {
+		if v != result[len(result)-1] {
+			result = append(result, v)
+		}
+	}
+	return result
+}

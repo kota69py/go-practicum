@@ -1,0 +1,43 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"os"
+)
+
+// TODO: RunCLI を実装してください。
+//   os.Args をパースして以下のサブコマンドを処理します。
+//
+//   サブコマンド:
+//     greet <name>  — "Hello, <name>!" を表示（-lang フラグ対応）
+//     add <a> <b>   — 2つの整数の和を表示
+//     help          — 使用方法を表示
+//
+//   グローバルフラグ:
+//     -verbose      — 詳細ログを有効化
+//
+//   greet サブコマンドのフラグ:
+//     -lang string  — 言語指定 ("en"/"ja"/"fr")（デフォルト: "en"）
+func RunCLI() {
+	// TODO
+}
+
+func main() {
+	RunCLI()
+}
+
+func greet(name, lang string) string {
+	switch lang {
+	case "ja":
+		return fmt.Sprintf("こんにちは、%s！", name)
+	case "fr":
+		return fmt.Sprintf("Bonjour, %s !", name)
+	default:
+		return fmt.Sprintf("Hello, %s!", name)
+	}
+}
+
+func add(a, b int) int {
+	return a + b
+}

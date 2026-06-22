@@ -1,0 +1,31 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestNewServerDefaults(t *testing.T) {
+	s := NewServer(":8080")
+	if s.Addr() != ":8080" {
+		t.Errorf("Addr = %q, want %q", s.Addr(), ":8080")
+	}
+}
+
+func TestWithPort(t *testing.T) {
+	_ = NewServer("localhost", WithPort(9090))
+}
+
+func TestWithDebug(t *testing.T) {
+	_ = NewServer(":8080", WithDebug())
+}
+
+func TestMultipleOptions(t *testing.T) {
+	_ = NewServer("0.0.0.0", WithPort(3000), WithTimeout(60), WithDebug())
+}
+
+func TestServerStarts(t *testing.T) {
+	s := NewServer(":0", WithTimeout(5))
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start error: %v", err)
+	}
+}

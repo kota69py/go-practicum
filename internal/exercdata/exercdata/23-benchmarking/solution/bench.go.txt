@@ -1,0 +1,30 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func Concat(vals []string) string {
+	var r string
+	for _, v := range vals {
+		r += v
+	}
+	return r
+}
+
+func Join(vals []string) string {
+	return strings.Join(vals, "")
+}
+
+func Builder(vals []string) string {
+	var b strings.Builder
+	for _, v := range vals {
+		b.WriteString(v)
+	}
+	return b.String()
+}
+
+func FormatOutput(vals []string) string {
+	return fmt.Sprintf("values: %s", Join(vals))
+}

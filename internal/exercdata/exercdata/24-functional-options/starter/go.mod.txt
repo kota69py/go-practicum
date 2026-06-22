@@ -1,0 +1,4 @@
+module go-practicum-24-functional-options
+
+go 1.23
+

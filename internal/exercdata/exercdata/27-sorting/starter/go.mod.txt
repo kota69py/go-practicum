@@ -1,0 +1,4 @@
+module go-practicum-27-sorting
+
+go 1.23
+

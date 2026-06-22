@@ -1,0 +1,4 @@
+module go-practicum-23-benchmarking
+
+go 1.23
+

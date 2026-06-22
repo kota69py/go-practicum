@@ -1,0 +1,4 @@
+module go-practicum-28-fuzzing
+
+go 1.23
+

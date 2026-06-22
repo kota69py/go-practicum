@@ -1,0 +1,4 @@
+module go-practicum-26-io-reader-writer
+
+go 1.23
+

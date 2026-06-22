@@ -1,0 +1,16 @@
+package main
+
+import (
+	"embed"
+)
+
+// TODO: 以下の埋め込みを実装してください。
+//   - hello.txt の内容を string として埋め込む
+//   - greeting.txt の内容を []byte として埋め込む
+//   - templates/ ディレクトリを embed.FS として埋め込む
+
+// TODO: hello を string として埋め込んでください。
+
+// TODO: greeting を []byte として埋め込んでください。
+
+// TODO: templates/ を embed.FS として埋め込んでください。

@@ -1,0 +1,67 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"strconv"
+)
+
+func RunCLI() {
+	if len(os.Args) < 2 {
+		fmt.Fprintf(os.Stderr, "Usage: %s <command> [args]\n", os.Args[0])
+		os.Exit(1)
+	}
+
+	verbose := false
+	for i, a := range os.Args[1:] {
+		if a == "-verbose" {
+			verbose = true
+			os.Args = append(os.Args[:i+1], os.Args[i+2:]...)
+			break
+		}
+	}
+
+	cmd := os.Args[1]
+	switch cmd {
+	case "greet":
+		fs := flag.NewFlagSet("greet", flag.ExitOnError)
+		lang := fs.String("lang", "en", "language (en/ja/fr)")
+		fs.Parse(os.Args[2:])
+		name := fs.Arg(0)
+		if name == "" {
+			fmt.Fprintln(os.Stderr, "Usage: greet <name>")
+			os.Exit(1)
+		}
+		fmt.Println(greet(name, *lang))
+	case "add":
+		if len(os.Args) < 4 {
+			fmt.Fprintln(os.Stderr, "Usage: add <a> <b>")
+			os.Exit(1)
+		}
+		a, _ := strconv.Atoi(os.Args[2])
+		b, _ := strconv.Atoi(os.Args[3])
+		fmt.Println(add(a, b))
+	case "help":
+		fmt.Println("Commands: greet <name>, add <a> <b>, help")
+	default:
+		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
+		os.Exit(1)
+	}
+	_ = verbose
+}
+
+func greet(name, lang string) string {
+	switch lang {
+	case "ja":
+		return fmt.Sprintf("こんにちは、%s！", name)
+	case "fr":
+		return fmt.Sprintf("Bonjour, %s !", name)
+	default:
+		return fmt.Sprintf("Hello, %s!", name)
+	}
+}
+
+func add(a, b int) int {
+	return a + b
+}

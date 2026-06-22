@@ -1,0 +1,35 @@
+package main
+
+import "io"
+
+// ROT13Reader は io.Reader をラップし、ROT13 変換を適用します。
+type ROT13Reader struct {
+	r io.Reader
+}
+
+// TODO: Read を実装してください。
+//   ラップされた Reader から読み取り、ROT13 変換を適用します。
+//   ROT13: A-Z → N-M, a-z → n-m, その他はそのまま。
+func (rot *ROT13Reader) Read(p []byte) (int, error) {
+	// TODO
+	return 0, nil
+}
+
+// ROT13Writer は io.Writer をラップし、ROT13 変換を適用します。
+type ROT13Writer struct {
+	w io.Writer
+}
+
+// TODO: Write を実装してください。
+//   データに ROT13 変換を適用してからラップされた Writer に書き込みます。
+func (rot *ROT13Writer) Write(p []byte) (int, error) {
+	// TODO
+	return 0, nil
+}
+
+// TODO: rot13 ヘルパー関数を実装してください。
+//   1バイトの ROT13 変換を行います。
+func rot13(b byte) byte {
+	// TODO
+	return b
+}

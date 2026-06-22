@@ -1,0 +1,32 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+// TODO: Concat を実装してください。
+//   + 演算子を使って文字列を連結します。
+func Concat(vals []string) string {
+	// TODO
+	return ""
+}
+
+// TODO: Join を実装してください。
+//   strings.Join を使って文字列を連結します。
+func Join(vals []string) string {
+	// TODO
+	return ""
+}
+
+// TODO: Builder を実装してください。
+//   strings.Builder を使って文字列を連結します。
+func Builder(vals []string) string {
+	// TODO
+	return ""
+}
+
+// FormatOutput は出力用の書式です。
+func FormatOutput(vals []string) string {
+	return fmt.Sprintf("values: %s", Join(vals))
+}

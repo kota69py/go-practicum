@@ -1,0 +1,71 @@
+package main
+
+import (
+	"sync"
+	"testing"
+)
+
+func TestCounterIncrement(t *testing.T) {
+	var c Counter
+	var wg sync.WaitGroup
+	for range 100 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Increment()
+		}()
+	}
+	wg.Wait()
+	if v := c.Value(); v != 100 {
+		t.Errorf("Value = %d, want 100", v)
+	}
+}
+
+func TestCounterRace(t *testing.T) {
+	var c Counter
+	var wg sync.WaitGroup
+	for range 1000 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Increment()
+			_ = c.Value()
+		}()
+	}
+	wg.Wait()
+}
+
+func TestCacheGetSet(t *testing.T) {
+	c := NewCache()
+	c.Set("key1", "value1")
+
+	v, ok := c.Get("key1")
+	if !ok {
+		t.Error("expected key1 to exist")
+	}
+	if v != "value1" {
+		t.Errorf("got %q, want %q", v, "value1")
+	}
+}
+
+func TestCacheGetMissing(t *testing.T) {
+	c := NewCache()
+	_, ok := c.Get("nonexistent")
+	if ok {
+		t.Error("expected missing key to return false")
+	}
+}
+
+func TestCacheConcurrent(t *testing.T) {
+	c := NewCache()
+	var wg sync.WaitGroup
+	for i := range 50 {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			c.Set("key", "value")
+			c.Get("key")
+		}(i)
+	}
+	wg.Wait()
+}
