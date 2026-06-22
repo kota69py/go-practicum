@@ -1,0 +1,23 @@
+package main
+
+// TODO: Map を実装してください。
+//   スライスの各要素に関数を適用し、新しいスライスを返すジェネリック関数。
+func Map[T, U any](items []T, fn func(T) U) []U {
+	// TODO
+	return nil
+}
+
+// TODO: Filter を実装してください。
+//   条件に合う要素だけを抽出するジェネリック関数。
+func Filter[T any](items []T, fn func(T) bool) []T {
+	// TODO
+	return nil
+}
+
+// TODO: Reduce を実装してください。
+//   スライスの要素を順次畳み込んで単一の値にするジェネリック関数。
+func Reduce[T, U any](items []T, initial U, fn func(U, T) U) U {
+	// TODO
+	var zero U
+	return zero
+}

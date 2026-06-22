@@ -1,0 +1,16 @@
+{
+  "name": "09-file-io",
+  "title": "ファイル I/O — CSV 読み込みとデータ処理",
+  "category": "io",
+  "difficulty": 3,
+  "description": "os と bufio パッケージを使って CSV ファイルを読み込み、バリデーション・集計を行うファイル処理関数を実装します。",
+  "hints": [
+    "os.Open(path) でファイルを開き、defer f.Close() で閉じます",
+    "encoding/csv.NewReader(f) で CSV リーダーを作れます",
+    "reader.Read() で1行ずつ、reader.ReadAll() で一括読み込み",
+    "ヘッダー行は最初の Read() で読み飛ばしましょう",
+    "strconv.Atoi で文字列→数値変換、エラーは適切にハンドリング",
+    "ファイルが存在しない場合のエラーは errors.Is(err, fs.ErrNotExist) で判定"
+  ],
+  "files": ["processor.go.txt"]
+}

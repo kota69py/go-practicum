@@ -1,0 +1,16 @@
+{
+  "name": "12-http-client",
+  "title": "HTTP Client — タイムアウトとリトライ",
+  "category": "net",
+  "difficulty": 3,
+  "description": "net/http クライアントを使った堅牢な外部API呼び出しを実装します。タイムアウト・コンテキストによるキャンセル・指数バックオフ付きリトライのパターンを学びます。",
+  "hints": [
+    "http.Client{Timeout: duration} でクライアント全体のタイムアウトを設定",
+    "context.WithTimeout(ctx, duration) でリクエスト個別のタイムアウト",
+    "http.NewRequestWithContext(ctx, method, url, body) で Context 付きリクエスト",
+    "リトライ間隔は time.Sleep(duration) で待機、指数バックオフが定石",
+    "レスポンスボディは resp.Body.Close() を必ず defer で閉じる",
+    "リトライ回数は設定可能にし、上限を設ける（無限リトライは避ける）"
+  ],
+  "files": ["client.go.txt"]
+}

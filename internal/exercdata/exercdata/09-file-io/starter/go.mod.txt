@@ -1,0 +1,3 @@
+module go-practicum-file-io
+
+go 1.23

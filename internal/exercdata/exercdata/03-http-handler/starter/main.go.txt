@@ -1,0 +1,14 @@
+package main
+
+import (
+	"log"
+	"net/http"
+)
+
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /tasks", handleListTasks)
+	mux.HandleFunc("POST /tasks", handleCreateTask)
+	mux.HandleFunc("GET /tasks/{id}", handleGetTask)
+	log.Fatal(http.ListenAndServe(":8080", mux))
+}

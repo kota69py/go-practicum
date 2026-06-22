@@ -1,0 +1,73 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"testing"
+)
+
+func TestLogOrderOutput(t *testing.T) {
+	var buf bytes.Buffer
+	LogOrder(&buf, "ORD-001", 2500, "completed")
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("expected JSON output, got error: %v\nraw: %s", err, buf.String())
+	}
+
+	if result["msg"] != "order processed" {
+		t.Errorf("msg = %v, want %q", result["msg"], "order processed")
+	}
+	if result["level"] != "INFO" {
+		t.Errorf("level = %v, want INFO", result["level"])
+	}
+}
+
+func TestLogOrderGroup(t *testing.T) {
+	var buf bytes.Buffer
+	LogOrder(&buf, "ORD-002", 5000, "pending")
+
+	var result map[string]interface{}
+	json.Unmarshal(buf.Bytes(), &result)
+
+	order, ok := result["order"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected 'order' group, got %+v", result)
+	}
+	if order["order_id"] != "ORD-002" {
+		t.Errorf("order_id = %v, want ORD-002", order["order_id"])
+	}
+	if order["amount"].(float64) != 5000 {
+		t.Errorf("amount = %v, want 5000", order["amount"])
+	}
+	if order["status"] != "pending" {
+		t.Errorf("status = %v, want pending", order["status"])
+	}
+}
+
+func TestLogOrderMultipleCalls(t *testing.T) {
+	var buf bytes.Buffer
+	LogOrder(&buf, "ORD-001", 100, "shipped")
+
+	lines := bytes.Split(bytes.TrimSpace(buf.Bytes()), []byte("\n"))
+	if len(lines) != 1 {
+		t.Fatalf("expected 1 log line, got %d", len(lines))
+	}
+
+	var result map[string]interface{}
+	json.Unmarshal(lines[0], &result)
+
+	if result["msg"] != "order processed" {
+		t.Errorf("msg = %v", result["msg"])
+	}
+}
+
+func TestLogOrderNewLoggerEachCall(t *testing.T) {
+	var buf bytes.Buffer
+	LogOrder(&buf, "ORD-A", 10, "new")
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("expected valid JSON: %v", err)
+	}
+}

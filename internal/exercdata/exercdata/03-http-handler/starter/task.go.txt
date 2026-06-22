@@ -1,0 +1,38 @@
+package main
+
+import "fmt"
+
+type Task struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Done  bool   `json:"done"`
+}
+
+var tasks = map[string]Task{}
+var nextID = 1
+
+func resetStore() {
+	tasks = map[string]Task{}
+	nextID = 1
+}
+
+func addTask(title string) Task {
+	id := fmt.Sprintf("%d", nextID)
+	nextID++
+	t := Task{ID: id, Title: title, Done: false}
+	tasks[id] = t
+	return t
+}
+
+func getTask(id string) (Task, bool) {
+	t, ok := tasks[id]
+	return t, ok
+}
+
+func listTasks() []Task {
+	result := make([]Task, 0, len(tasks))
+	for _, t := range tasks {
+		result = append(result, t)
+	}
+	return result
+}

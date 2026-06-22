@@ -1,0 +1,50 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+)
+
+var searchDelays = map[string]time.Duration{
+	"google": 10 * time.Millisecond,
+	"bing":   20 * time.Millisecond,
+	"yahoo":  30 * time.Millisecond,
+}
+
+func searchSource(ctx context.Context, name, query string) (string, error) {
+	delay := searchDelays[name]
+	select {
+	case <-time.After(delay):
+		return fmt.Sprintf("%s result for %q", name, query), nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+}
+
+func Search(ctx context.Context, query string) (string, error) {
+	sources := []string{"google", "bing", "yahoo"}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	results := make(chan string, len(sources))
+	for _, name := range sources {
+		go func(name string) {
+			result, err := searchSource(ctx, name, query)
+			if err != nil {
+				return
+			}
+			select {
+			case results <- result:
+			case <-ctx.Done():
+			}
+		}(name)
+	}
+
+	select {
+	case r := <-results:
+		return r, nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+}

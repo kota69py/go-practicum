@@ -1,0 +1,61 @@
+package main
+
+import (
+	"os"
+	"testing"
+)
+
+func TestProcessCSV(t *testing.T) {
+	content := "name,email,score\nAlice,alice@test.com,85\nBob,bob@test.com,92\n"
+	tmp, _ := os.CreateTemp("", "test-*.csv")
+	tmp.WriteString(content)
+	tmp.Close()
+	defer os.Remove(tmp.Name())
+
+	records, err := ProcessCSV(tmp.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(records) != 2 {
+		t.Fatalf("got %d records, want 2", len(records))
+	}
+	if records[0].Name != "Alice" || records[0].Score != 85 {
+		t.Errorf("first record = %+v", records[0])
+	}
+	if records[1].Name != "Bob" || records[1].Score != 92 {
+		t.Errorf("second record = %+v", records[1])
+	}
+}
+
+func TestProcessCSVSkipsHeader(t *testing.T) {
+	content := "name,email,score\nCharlie,charlie@test.com,70\n"
+	tmp, _ := os.CreateTemp("", "test-*.csv")
+	tmp.WriteString(content)
+	tmp.Close()
+	defer os.Remove(tmp.Name())
+
+	records, _ := ProcessCSV(tmp.Name())
+	if len(records) != 1 {
+		t.Fatalf("got %d records, want 1 (header skipped)", len(records))
+	}
+}
+
+func TestProcessCSVSkipsEmptyName(t *testing.T) {
+	content := "name,email,score\n,empty@test.com,50\nDave,dave@test.com,80\n"
+	tmp, _ := os.CreateTemp("", "test-*.csv")
+	tmp.WriteString(content)
+	tmp.Close()
+	defer os.Remove(tmp.Name())
+
+	records, _ := ProcessCSV(tmp.Name())
+	if len(records) != 1 {
+		t.Fatalf("got %d records, want 1 (empty name skipped)", len(records))
+	}
+}
+
+func TestProcessCSVFileNotFound(t *testing.T) {
+	_, err := ProcessCSV("/nonexistent/file.csv")
+	if err == nil {
+		t.Fatal("expected error for nonexistent file")
+	}
+}

@@ -1,0 +1,37 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+func FetchWithRetry(ctx context.Context, url string, maxRetries int) (*http.Response, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	backoff := 500 * time.Millisecond
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		reqCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		req, err := http.NewRequestWithContext(reqCtx, "GET", url, nil)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		resp, err := client.Do(req)
+		cancel()
+		if err == nil && resp.StatusCode < 500 {
+			return resp, nil
+		}
+		if err == nil {
+			resp.Body.Close()
+		}
+
+		if attempt < maxRetries {
+			time.Sleep(backoff)
+			backoff *= 2
+		}
+	}
+	return nil, fmt.Errorf("all %d retries failed", maxRetries)
+}

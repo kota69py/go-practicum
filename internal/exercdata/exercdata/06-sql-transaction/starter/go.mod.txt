@@ -1,0 +1,3 @@
+module go-practicum-transaction
+
+go 1.23

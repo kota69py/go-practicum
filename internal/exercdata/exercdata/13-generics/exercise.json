@@ -1,0 +1,15 @@
+{
+  "name": "13-generics",
+  "title": "ジェネリクス — 型安全なユーティリティ関数",
+  "category": "language",
+  "difficulty": 3,
+  "description": "Go 1.18 で導入されたジェネリクスを使って、型安全で再利用可能なユーティリティ関数（Map・Filter・Reduce）を実装します。型パラメータ・型制約（any, comparable, constraints）の使い方を学びます。",
+  "hints": [
+    "ジェネリック関数は func F[T any](items []T) T のように T を宣言します",
+    "複数の型パラメータ: func Map[T, U any](items []T, fn func(T) U) []U",
+    "型制約には any, comparable, または独自のインターフェースを使います",
+    "comparable は == と != をサポートする型の制約です",
+    "カスタム制約は type Number interface { ~int | ~float64 } のように定義"
+  ],
+  "files": ["generic.go.txt"]
+}

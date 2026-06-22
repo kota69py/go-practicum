@@ -1,0 +1,100 @@
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func setupServer() *httptest.Server {
+	resetStore()
+	addTask("buy milk")
+	addTask("write code")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /tasks", handleListTasks)
+	mux.HandleFunc("POST /tasks", handleCreateTask)
+	mux.HandleFunc("GET /tasks/{id}", handleGetTask)
+	return httptest.NewServer(mux)
+}
+
+func TestListTasks(t *testing.T) {
+	s := setupServer()
+	defer s.Close()
+
+	resp, err := http.Get(s.URL + "/tasks")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var tasks []Task
+	json.NewDecoder(resp.Body).Decode(&tasks)
+	resp.Body.Close()
+
+	if len(tasks) != 2 {
+		t.Errorf("expected 2 tasks, got %d", len(tasks))
+	}
+}
+
+func TestCreateTask(t *testing.T) {
+	s := setupServer()
+	defer s.Close()
+
+	body := strings.NewReader(`{"title":"learn Go"}`)
+	resp, err := http.Post(s.URL+"/tasks", "application/json", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusCreated {
+		t.Errorf("expected 201, got %d", resp.StatusCode)
+	}
+
+	var task Task
+	json.NewDecoder(resp.Body).Decode(&task)
+	resp.Body.Close()
+
+	if task.Title != "learn Go" {
+		t.Errorf("expected title %q, got %q", "learn Go", task.Title)
+	}
+	if task.ID == "" {
+		t.Error("expected non-empty ID")
+	}
+}
+
+func TestGetTask(t *testing.T) {
+	s := setupServer()
+	defer s.Close()
+
+	resp, err := http.Get(s.URL + "/tasks/1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var task Task
+	json.NewDecoder(resp.Body).Decode(&task)
+	resp.Body.Close()
+
+	if task.Title != "buy milk" {
+		t.Errorf("expected title %q, got %q", "buy milk", task.Title)
+	}
+}
+
+func TestGetTaskNotFound(t *testing.T) {
+	s := setupServer()
+	defer s.Close()
+
+	resp, err := http.Get(s.URL + "/tasks/999")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", resp.StatusCode)
+	}
+}

@@ -1,0 +1,22 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+// TODO: FetchWithRetry を実装してください。
+//   url に GET リクエストを送り、成功するか maxRetries に達するまでリトライします。
+//
+//   実装すべきこと:
+//   1. http.Client{Timeout: 5 * time.Second} を使う
+//   2. context.WithTimeout(ctx, 3*time.Second) でリクエストごとのタイムアウト
+//   3. 指数バックオフ: リトライ間隔を倍々にする（500ms → 1s → 2s ...）
+//   4. 成功時（ステータスコード 200-299）は即座にレスポンスを返す
+//   5. 最大リトライ回数を超えたらエラー
+func FetchWithRetry(ctx context.Context, url string, maxRetries int) (*http.Response, error) {
+	// TODO
+	return nil, fmt.Errorf("not implemented")
+}

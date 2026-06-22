@@ -1,0 +1,45 @@
+package main
+
+import (
+	"encoding/csv"
+	"fmt"
+	"os"
+	"strconv"
+)
+
+func ProcessCSV(path string) ([]Record, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open file: %w", err)
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	records, err := r.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("read csv: %w", err)
+	}
+
+	var result []Record
+	for i, row := range records {
+		if i == 0 {
+			continue // header
+		}
+		if len(row) < 3 {
+			continue
+		}
+		if row[0] == "" {
+			continue
+		}
+		score, err := strconv.Atoi(row[2])
+		if err != nil {
+			continue
+		}
+		result = append(result, Record{
+			Name:  row[0],
+			Email: row[1],
+			Score: score,
+		})
+	}
+	return result, nil
+}

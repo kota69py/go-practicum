@@ -1,0 +1,3 @@
+module go-practicum-context
+
+go 1.23

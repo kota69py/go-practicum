@@ -1,0 +1,3 @@
+module go-practicum-error-handling
+
+go 1.23

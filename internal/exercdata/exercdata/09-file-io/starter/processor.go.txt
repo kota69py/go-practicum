@@ -1,0 +1,23 @@
+package main
+
+import (
+	"encoding/csv"
+	"fmt"
+	"strconv"
+)
+
+type Record struct {
+	Name  string
+	Email string
+	Score int
+}
+
+// TODO: ProcessCSV を実装してください。
+//   path で指定された CSV ファイルを読み込み、[]Record を返します。
+//   1行目はヘッダー行としてスキップします。
+//   フォーマット: name,email,score
+//   name が空の行はスキップします。
+func ProcessCSV(path string) ([]Record, error) {
+	// TODO
+	return nil, fmt.Errorf("not implemented")
+}

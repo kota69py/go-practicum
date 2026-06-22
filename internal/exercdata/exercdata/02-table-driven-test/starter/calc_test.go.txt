@@ -1,0 +1,39 @@
+package calc
+
+import "testing"
+
+func TestMax(t *testing.T) {
+	tests := []struct {
+		name    string
+		numbers []int
+		want    int
+		wantErr bool
+	}{
+		// TODO: テストケースを追加してください。
+		// 少なくとも以下のケースを追加しましょう:
+		//   - 空スライス → wantErr: true
+		//   - 1要素だけ
+		//   - 昇順・降順・ランダム順
+		//   - 負数を含む
+		//   - すべて同じ値
+		//   - 最大値が先頭 / 末尾
+		{name: "single element", numbers: []int{5}, want: 5},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Max(tt.numbers)
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Max() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}

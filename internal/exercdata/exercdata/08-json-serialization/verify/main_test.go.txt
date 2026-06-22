@@ -1,0 +1,127 @@
+package main
+
+import (
+	"encoding/json"
+	"testing"
+	"time"
+)
+
+func TestMarshalProfile(t *testing.T) {
+	p := Profile{
+		ID: 1, Name: "Alice", Email: "alice@example.com",
+		Age: 30, Bio: "hello",
+	}
+	data, err := json.Marshal(p)
+	if err != nil {
+		t.Fatalf("Marshal error: %v", err)
+	}
+
+	var got map[string]interface{}
+	json.Unmarshal(data, &got)
+
+	if got["id"].(float64) != 1 {
+		t.Errorf("id = %v, want 1", got["id"])
+	}
+	if got["name"] != "Alice" {
+		t.Errorf("name = %v, want Alice", got["name"])
+	}
+	if got["email"] != "alice@example.com" {
+		t.Errorf("email = %v, want alice@example.com", got["email"])
+	}
+	if got["age"].(float64) != 30 {
+		t.Errorf("age = %v, want 30", got["age"])
+	}
+}
+
+func TestMarshalProfileOmitsZero(t *testing.T) {
+	p := Profile{ID: 2, Name: "Bob", Email: "bob@test.com"}
+	data, _ := json.Marshal(p)
+
+	var got map[string]interface{}
+	json.Unmarshal(data, &got)
+
+	if _, ok := got["age"]; ok {
+		t.Error("age should be omitted (zero value)")
+	}
+	if _, ok := got["bio"]; ok {
+		t.Error("bio should be omitted (zero value)")
+	}
+}
+
+func TestMarshalDate(t *testing.T) {
+	d := Date{time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)}
+	data, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("Marshal error: %v", err)
+	}
+	want := `"2024-01-15"`
+	if string(data) != want {
+		t.Errorf("got %s, want %s", string(data), want)
+	}
+}
+
+func TestUnmarshalDate(t *testing.T) {
+	var d Date
+	err := json.Unmarshal([]byte(`"2024-06-22"`), &d)
+	if err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+	if d.Year() != 2024 {
+		t.Errorf("year = %d, want 2024", d.Year())
+	}
+	if d.Month() != 6 {
+		t.Errorf("month = %d, want 6", d.Month())
+	}
+	if d.Day() != 22 {
+		t.Errorf("day = %d, want 22", d.Day())
+	}
+}
+
+func TestUnmarshalDateInvalid(t *testing.T) {
+	var d Date
+	err := json.Unmarshal([]byte(`"not-a-date"`), &d)
+	if err == nil {
+		t.Fatal("expected error for invalid date")
+	}
+}
+
+func TestProfileRoundTrip(t *testing.T) {
+	original := Profile{
+		ID: 10, Name: "Charlie", Email: "c@test.com",
+		Age: 25, Bio: "dev",
+	}
+	data, _ := json.Marshal(original)
+
+	var decoded Profile
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+	if decoded.ID != original.ID {
+		t.Errorf("ID = %d, want %d", decoded.ID, original.ID)
+	}
+	if decoded.Name != original.Name {
+		t.Errorf("Name = %s, want %s", decoded.Name, original.Name)
+	}
+	if decoded.Email != original.Email {
+		t.Errorf("Email = %s, want %s", decoded.Email, original.Email)
+	}
+	if decoded.Age != original.Age {
+		t.Errorf("Age = %d, want %d", decoded.Age, original.Age)
+	}
+	if decoded.Bio != original.Bio {
+		t.Errorf("Bio = %s, want %s", decoded.Bio, original.Bio)
+	}
+}
+
+func TestRoundTripWithDate(t *testing.T) {
+	// Profile 埋め込みではなく、Date 単体の marshal/unmarshal
+	data := []byte(`"2025-12-25"`)
+	var d Date
+	if err := json.Unmarshal(data, &d); err != nil {
+		t.Fatal(err)
+	}
+	out, _ := json.Marshal(d)
+	if string(out) != string(data) {
+		t.Errorf("got %s, want %s", string(out), string(data))
+	}
+}

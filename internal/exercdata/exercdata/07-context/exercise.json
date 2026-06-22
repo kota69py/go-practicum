@@ -1,0 +1,17 @@
+{
+  "name": "07-context",
+  "title": "Context パターン — タイムアウトとキャンセル",
+  "category": "concurrency",
+  "difficulty": 4,
+  "description": "Go の context.Context パターンを実践します。複数の検索ソースを並行に呼び出し、最初に返ってきた結果を採用する Search 関数を実装してください。タイムアウト・キャンセル・goroutine リーク防止がポイントです。",
+  "hints": [
+    "context.WithCancel(ctx) でキャンセル可能な派生 Context を作ります",
+    "返ってきた cancel 関数は必ず呼び出す（defer cancel() が安全）",
+    "select で ctx.Done() と結果チャネルを同時に待ちます",
+    "ctx.Done() が close されると ctx.Err() で理由（Canceled / DeadlineExceeded）が取れます",
+    "context.WithTimeout(ctx, duration) で自動キャンセル付き Context を作れます",
+    "goroutine 内部でも ctx.Done() をチェックし、早期終了する習慣をつけましょう",
+    "results チャネルはバッファ付き（len(sources)）にすると goroutine がブロックしません"
+  ],
+  "files": ["search.go.txt"]
+}

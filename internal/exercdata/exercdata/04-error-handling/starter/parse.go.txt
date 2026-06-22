@@ -1,0 +1,31 @@
+package main
+
+import "fmt"
+
+type User struct {
+	Name string
+	Age  int
+}
+
+// ParseError は入力行のパースに失敗したことを表すカスタムエラー型です。
+type ParseError struct {
+	Line    string
+	Message string
+}
+
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("line %q: %s", e.Line, e.Message)
+}
+
+// TODO: センチネルエラーを定義してください。
+//   ErrInvalidFormat = errors.New("...")
+//   ErrInvalidAge    = errors.New("...")
+
+// TODO: ParseUser を実装してください。
+//   "Alice,30" のような CSV 形式の文字列を受け取り、User を返します。
+//
+//   ルール:
+//   - カンマで分割し、フィールド数が2でなければ ErrInvalidFormat でラップした ParseError
+//   - Name が空なら ParseError（Message に "name is required"）
+//   - Age が数値でなければ ErrInvalidAge でラップした ParseError
+//   - 正常系は User を返す

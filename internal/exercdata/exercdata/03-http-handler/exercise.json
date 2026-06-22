@@ -1,0 +1,17 @@
+{
+  "name": "03-http-handler",
+  "title": "HTTP サーバーハンドラ — REST API の実装",
+  "category": "net",
+  "difficulty": 3,
+  "description": "net/http パッケージを使って、タスク管理の REST API を実装します。GET /tasks（一覧）, POST /tasks（作成）, GET /tasks/{id}（個別取得）の3つのハンドラを完成させてください。",
+  "hints": [
+    "ハンドラのシグネチャは func(w http.ResponseWriter, r *http.Request) です",
+    "JSON レスポンスは json.NewEncoder(w).Encode(data) で返せます",
+    "POST のボディ読み取りは json.NewDecoder(r.Body).Decode(&v) を使います",
+    "ステータスコードは w.WriteHeader(code) で設定します",
+    "パスパラメータは r.PathValue(\"id\") で取得できます（Go 1.22+）",
+    "Content-Type ヘッダーは w.Header().Set(\"Content-Type\", \"application/json\") で設定します",
+    "存在しないリソースは w.WriteHeader(http.StatusNotFound) で 404 を返しましょう"
+  ],
+  "files": ["handler.go.txt"]
+}

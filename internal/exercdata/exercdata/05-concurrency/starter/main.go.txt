@@ -1,0 +1,39 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+)
+
+var fetchDelay = 50 * time.Millisecond
+
+type Result struct {
+	URL     string
+	Content string
+	Err     error
+}
+
+func fetch(url string) (string, error) {
+	time.Sleep(fetchDelay)
+	if strings.HasPrefix(url, "http://") {
+		return "content of " + url, nil
+	}
+	return "", fmt.Errorf("invalid url: %w", errors.New(url))
+}
+
+func main() {
+	results := FetchAll([]string{
+		"http://example.com",
+		"http://golang.org",
+		"bad-url",
+	})
+	for _, r := range results {
+		if r.Err != nil {
+			fmt.Printf("FAIL: %s — %v\n", r.URL, r.Err)
+		} else {
+			fmt.Printf("OK:   %s — %s\n", r.URL, r.Content)
+		}
+	}
+}

@@ -1,0 +1,15 @@
+{
+  "name": "11-structured-log",
+  "title": "構造化ログ — log/slog によるログ出力",
+  "category": "logging",
+  "difficulty": 2,
+  "description": "Go 1.21 で標準化された log/slog パッケージを使った構造化ログを実践します。JSON ハンドラ・ログレベル・グループ・コンテキスト付きログなど、実戦的なログパターンを学びます。",
+  "hints": [
+    "slog.New(slog.NewJSONHandler(w, nil)) で JSON 形式のロガーを作成",
+    "slog.Info(msg, key, val, ...) でキーと値のペアを指定します",
+    "slog.Group(name, key, val, ...) でフィールドをグループ化できます",
+    "slog.Int(key, val), slog.String(key, val) などの Attr 関数があります",
+    "ログレベルは slog.LevelInfo, slog.LevelError などで指定します"
+  ],
+  "files": ["logger.go.txt"]
+}

@@ -1,0 +1,31 @@
+package main
+
+import "errors"
+
+var ErrNotFound = errors.New("key not found")
+
+type Store interface {
+	Save(short, original string) error
+	Get(short string) (string, error)
+}
+
+type MemStore struct {
+	data map[string]string
+}
+
+func NewMemStore() *MemStore {
+	return &MemStore{data: make(map[string]string)}
+}
+
+func (m *MemStore) Save(short, original string) error {
+	m.data[short] = original
+	return nil
+}
+
+func (m *MemStore) Get(short string) (string, error) {
+	original, ok := m.data[short]
+	if !ok {
+		return "", ErrNotFound
+	}
+	return original, nil
+}

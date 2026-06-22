@@ -1,0 +1,38 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+)
+
+var searchDelays = map[string]time.Duration{
+	"google": 10 * time.Millisecond,
+	"bing":   20 * time.Millisecond,
+	"yahoo":  30 * time.Millisecond,
+}
+
+func searchSource(ctx context.Context, name, query string) (string, error) {
+	delay := searchDelays[name]
+	select {
+	case <-time.After(delay):
+		return fmt.Sprintf("%s result for %q", name, query), nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+}
+
+// TODO: Search を実装してください。
+//   google, bing, yahoo の3つのソースを並行検索し、最初に返ってきた結果を返します。
+//
+//   実装すべきこと:
+//   1. context.WithCancel で派生 Context を作る（defer cancel()）
+//   2. 各ソースを goroutine で並行実行
+//   3. select で最初の結果または ctx.Done() を待つ
+//   4. 結果が来たら即座に返し、他の goroutine はキャンセル
+func Search(ctx context.Context, query string) (string, error) {
+	sources := []string{"google", "bing", "yahoo"}
+	// TODO
+	_ = sources
+	return "", nil
+}

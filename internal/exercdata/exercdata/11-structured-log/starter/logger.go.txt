@@ -1,0 +1,20 @@
+package main
+
+import (
+	"io"
+	"log/slog"
+)
+
+// TODO: LogOrder を実装してください。
+//   JSON 形式の構造化ログを w に出力します。
+//   出力内容:
+//     level=INFO, msg="order processed",
+//     group "order" の中に: order_id, amount, status
+//
+//   ヒント:
+//     slog.New(slog.NewJSONHandler(w, nil)) で JSON ロガーを作成
+//     logger.Info(msg, slog.Group("order", attrs...)) でグループ化
+//     slog.String(key, val), slog.Int(key, val) で属性を指定
+func LogOrder(w io.Writer, orderID string, amount int, status string) {
+	// TODO
+}

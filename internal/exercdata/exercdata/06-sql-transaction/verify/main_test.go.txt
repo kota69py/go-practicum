@@ -1,0 +1,168 @@
+package main
+
+import (
+	"errors"
+	"sync"
+	"testing"
+)
+
+// MemTx は Tx インターフェースのインメモリ実装です。
+type MemTx struct {
+	store  *MemStore
+	backup map[int]int // ロールバック用のバックアップ
+}
+
+func (t *MemTx) GetAccount(id int) (Account, error) {
+	t.store.mu.RLock()
+	defer t.store.mu.RUnlock()
+	a, ok := t.store.accounts[id]
+	if !ok {
+		return Account{}, errors.New("account not found")
+	}
+	return a, nil
+}
+
+func (t *MemTx) UpdateBalance(id int, balance int) error {
+	t.store.mu.Lock()
+	defer t.store.mu.Unlock()
+	if _, ok := t.store.accounts[id]; !ok {
+		return errors.New("account not found")
+	}
+	t.store.accounts[id] = Account{
+		ID:      t.store.accounts[id].ID,
+		Owner:   t.store.accounts[id].Owner,
+		Balance: balance,
+	}
+	return nil
+}
+
+func (t *MemTx) Commit() error {
+	t.store.committed = true
+	return nil
+}
+
+func (t *MemTx) Rollback() error {
+	if t.store.committed {
+		return nil
+	}
+	// 何もしない（テストで Rollback 呼ばれたことを確認）
+	t.store.rolledBack = true
+	return nil
+}
+
+// MemStore は Store インターフェースのインメモリ実装です。
+type MemStore struct {
+	mu          sync.RWMutex
+	accounts    map[int]Account
+	committed   bool
+	rolledBack  bool
+	nextAccount int
+}
+
+func NewMemStore() *MemStore {
+	return &MemStore{
+		accounts:    map[int]Account{},
+		nextAccount: 1,
+	}
+}
+
+func (s *MemStore) AddAccount(owner string, balance int) Account {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	id := s.nextAccount
+	s.nextAccount++
+	a := Account{ID: id, Owner: owner, Balance: balance}
+	s.accounts[id] = a
+	return a
+}
+
+func (s *MemStore) BeginTx() (Tx, error) {
+	return &MemTx{store: s}, nil
+}
+
+func TestTransferOK(t *testing.T) {
+	store := NewMemStore()
+	alice := store.AddAccount("Alice", 1000)
+	bob := store.AddAccount("Bob", 500)
+
+	err := Transfer(store, alice.ID, bob.ID, 300)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify final balances
+	tx, _ := store.BeginTx()
+	a, _ := tx.GetAccount(alice.ID)
+	b, _ := tx.GetAccount(bob.ID)
+	if a.Balance != 700 {
+		t.Errorf("Alice balance = %d, want 700", a.Balance)
+	}
+	if b.Balance != 800 {
+		t.Errorf("Bob balance = %d, want 800", b.Balance)
+	}
+}
+
+func TestTransferInsufficientBalance(t *testing.T) {
+	store := NewMemStore()
+	alice := store.AddAccount("Alice", 100)
+	bob := store.AddAccount("Bob", 500)
+
+	err := Transfer(store, alice.ID, bob.ID, 999)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, ErrInsufficient) {
+		t.Errorf("expected ErrInsufficient, got %v", err)
+	}
+
+	// Balances should be unchanged
+	tx, _ := store.BeginTx()
+	a, _ := tx.GetAccount(alice.ID)
+	b, _ := tx.GetAccount(bob.ID)
+	if a.Balance != 100 {
+		t.Errorf("Alice balance = %d, want 100", a.Balance)
+	}
+	if b.Balance != 500 {
+		t.Errorf("Bob balance = %d, want 500", b.Balance)
+	}
+}
+
+func TestTransferAtomic(t *testing.T) {
+	store := NewMemStore()
+	alice := store.AddAccount("Alice", 100)
+	bob := store.AddAccount("Bob", 500)
+
+	_ = Transfer(store, alice.ID, bob.ID, 999) // fails
+
+	// After failed transfer, nothing changed
+	tx, _ := store.BeginTx()
+	a, _ := tx.GetAccount(alice.ID)
+	b, _ := tx.GetAccount(bob.ID)
+	if a.Balance != 100 {
+		t.Errorf("Alice balance = %d, want 100", a.Balance)
+	}
+	if b.Balance != 500 {
+		t.Errorf("Bob balance = %d, want 500", b.Balance)
+	}
+}
+
+func TestTransferZeroAmount(t *testing.T) {
+	store := NewMemStore()
+	alice := store.AddAccount("Alice", 100)
+	bob := store.AddAccount("Bob", 100)
+
+	err := Transfer(store, alice.ID, bob.ID, 0)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	tx, _ := store.BeginTx()
+	a, _ := tx.GetAccount(alice.ID)
+	b, _ := tx.GetAccount(bob.ID)
+	if a.Balance != 100 {
+		t.Errorf("Alice balance = %d, want 100", a.Balance)
+	}
+	if b.Balance != 100 {
+		t.Errorf("Bob balance = %d, want 100", b.Balance)
+	}
+}

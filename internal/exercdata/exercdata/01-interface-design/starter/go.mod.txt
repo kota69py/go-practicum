@@ -1,0 +1,3 @@
+module go-practicum-interface-design
+
+go 1.23

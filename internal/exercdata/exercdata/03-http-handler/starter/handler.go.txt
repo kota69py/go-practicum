@@ -1,0 +1,19 @@
+package main
+
+// TODO: handleListTasks を実装してください。
+//   GET /tasks → listTasks() の結果を JSON で返す
+//   ステータスコード: 200
+//   Content-Type: application/json
+
+// TODO: handleCreateTask を実装してください。
+//   POST /tasks → リクエストボディから title を取得し、addTask() で登録
+//   作成されたタスクを JSON で返す
+//   ステータスコード: 201
+//   Content-Type: application/json
+//   ヒント: r.Body を読むときは defer r.Body.Close() を忘れずに
+
+// TODO: handleGetTask を実装してください。
+//   GET /tasks/{id} → パスパラメータ id を取得し、getTask() で検索
+//   存在する場合は JSON で返す（ステータスコード: 200）
+//   存在しない場合は 404 を返す
+//   ヒント: r.PathValue("id") でパスパラメータを取得

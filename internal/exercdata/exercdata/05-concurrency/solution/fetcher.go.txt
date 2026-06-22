@@ -1,0 +1,26 @@
+package main
+
+import "sync"
+
+func FetchAll(urls []string) []Result {
+	var wg sync.WaitGroup
+	ch := make(chan Result, len(urls))
+
+	for _, url := range urls {
+		wg.Add(1)
+		go func(u string) {
+			defer wg.Done()
+			content, err := fetch(u)
+			ch <- Result{URL: u, Content: content, Err: err}
+		}(url)
+	}
+
+	wg.Wait()
+	close(ch)
+
+	var results []Result
+	for r := range ch {
+		results = append(results, r)
+	}
+	return results
+}

@@ -1,0 +1,17 @@
+{
+  "name": "04-error-handling",
+  "title": "エラーハンドリング戦略 — カスタムエラーとエラーラッピング",
+  "category": "error-handling",
+  "difficulty": 3,
+  "description": "Goのエラーハンドリングパターンを実践します。CSV形式の文字列からユーザー情報をパースする ParseUser 関数を実装し、センチネルエラー・カスタムエラー型・エラーラッピング・errors.Is/As を使った適切なエラー処理を学びます。",
+  "hints": [
+    "センチネルエラーは var ErrXxx = errors.New(\"message\") で定義します",
+    "カスタムエラー型は Error() string メソッドを実装した構造体です",
+    "エラーのラッピングは fmt.Errorf(\"...%w...\", err) で行います",
+    "errors.Is(err, target) はラップされたエラーを再帰的に比較します",
+    "errors.As(err, &target) はエラーを特定の型にアサートします",
+    "パースエラーには ParseError カスタム型を使い、元の入力行を含めましょう",
+    "数値変換エラーには strconv.Atoi を使い、ErrInvalidAge でラップします"
+  ],
+  "files": ["parse.go.txt"]
+}

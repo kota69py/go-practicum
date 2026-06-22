@@ -1,0 +1,44 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestStoreInterface(t *testing.T) {
+	var store Store = NewMemStore()
+
+	if err := store.Save("gh", "https://github.com"); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	got, err := store.Get("gh")
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+	if got != "https://github.com" {
+		t.Errorf("Get got %q, want %q", got, "https://github.com")
+	}
+}
+
+func TestStoreSaveOverwrite(t *testing.T) {
+	var store Store = NewMemStore()
+
+	store.Save("a", "http://example.com")
+	if err := store.Save("a", "http://other.com"); err != nil {
+		t.Fatalf("Save overwrite should not error: %v", err)
+	}
+
+	got, _ := store.Get("a")
+	if got != "http://other.com" {
+		t.Errorf("after overwrite got %q, want %q", got, "http://other.com")
+	}
+}
+
+func TestStoreGetMissing(t *testing.T) {
+	var store Store = NewMemStore()
+
+	_, err := store.Get("nope")
+	if err == nil {
+		t.Error("expected error for missing key, got nil")
+	}
+}

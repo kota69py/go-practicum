@@ -1,0 +1,16 @@
+package main
+
+// TODO: Transfer を実装してください。
+//   fromID の口座から toID の口座に amount だけ送金します。
+//
+//   実装すべきこと:
+//   1. store.BeginTx() でトランザクションを開始
+//   2. fromID の口座残高を確認（ErrInsufficient なら Rollback）
+//   3. 両方の口座残高を更新
+//   4. Commit する（エラー時は Rollback）
+//
+//   安全パターン: defer tx.Rollback() を先に仕込み、成功時のみ Commit()
+func Transfer(store Store, fromID, toID int, amount int) error {
+	// TODO
+	return nil
+}

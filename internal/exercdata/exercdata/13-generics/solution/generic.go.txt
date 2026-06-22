@@ -1,0 +1,27 @@
+package main
+
+func Map[T, U any](items []T, fn func(T) U) []U {
+	result := make([]U, len(items))
+	for i, item := range items {
+		result[i] = fn(item)
+	}
+	return result
+}
+
+func Filter[T any](items []T, fn func(T) bool) []T {
+	var result []T
+	for _, item := range items {
+		if fn(item) {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func Reduce[T, U any](items []T, initial U, fn func(U, T) U) U {
+	result := initial
+	for _, item := range items {
+		result = fn(result, item)
+	}
+	return result
+}

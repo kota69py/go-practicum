@@ -1,0 +1,17 @@
+package main
+
+import (
+	"io"
+	"log/slog"
+)
+
+func LogOrder(w io.Writer, orderID string, amount int, status string) {
+	logger := slog.New(slog.NewJSONHandler(w, nil))
+	logger.Info("order processed",
+		slog.Group("order",
+			slog.String("order_id", orderID),
+			slog.Int("amount", amount),
+			slog.String("status", status),
+		),
+	)
+}

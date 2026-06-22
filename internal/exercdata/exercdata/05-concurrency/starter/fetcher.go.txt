@@ -1,0 +1,14 @@
+package main
+
+// TODO: FetchAll を実装してください。
+//   urls の各要素を fetch() で並行に取得し、[]Result を返します。
+//
+//   実装すべきこと:
+//   1. sync.WaitGroup で goroutine の完了を待つ
+//   2. channel で結果を収集する（バッファ付きチャネル推奨）
+//   3. 各 Result に URL / Content / Err を正しくセットする
+//   4. すべての goroutine が終了したら結果のスライスを返す
+func FetchAll(urls []string) []Result {
+	// TODO
+	return nil
+}

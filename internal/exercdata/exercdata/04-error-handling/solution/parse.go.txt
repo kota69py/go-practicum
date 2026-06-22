@@ -1,0 +1,52 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+type User struct {
+	Name string
+	Age  int
+}
+
+type ParseError struct {
+	Line    string
+	Message string
+}
+
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("line %q: %s", e.Line, e.Message)
+}
+
+var (
+	ErrInvalidFormat = errors.New("invalid format")
+	ErrInvalidAge    = errors.New("invalid age")
+)
+
+func ParseUser(line string) (User, error) {
+	parts := strings.Split(line, ",")
+	if len(parts) != 2 {
+		return User{}, fmt.Errorf("%w: expected 2 fields, got %d: %w",
+			&ParseError{Line: line, Message: "wrong field count"},
+			len(parts), ErrInvalidFormat)
+	}
+
+	name := strings.TrimSpace(parts[0])
+	ageStr := strings.TrimSpace(parts[1])
+
+	if name == "" {
+		return User{}, &ParseError{Line: line, Message: "name is required"}
+	}
+
+	age, err := strconv.Atoi(ageStr)
+	if err != nil {
+		return User{}, fmt.Errorf("%w: %w",
+			&ParseError{Line: line, Message: fmt.Sprintf("cannot parse age %q", ageStr)},
+			ErrInvalidAge)
+	}
+
+	return User{Name: name, Age: age}, nil
+}

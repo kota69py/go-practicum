@@ -1,0 +1,16 @@
+{
+  "name": "06-sql-transaction",
+  "title": "トランザクション処理 — 安全なデータ更新",
+  "category": "database",
+  "difficulty": 3,
+  "description": "データベーストランザクションの概念を Go で実践します。銀行口座間の送金処理 Transfer 関数を実装し、Begin/Commit/Rollback の正しい使い方と、エラー時の安全なロールバックを学びます。",
+  "hints": [
+    "トランザクションは store.BeginTx() で開始します",
+    "取得した Tx は必ず Commit() か Rollback() で終了させます",
+    "defer tx.Rollback() を先に書いておき、成功時に Commit するパターンが安全です",
+    "残高不足の場合は errors.New(\"insufficient balance\") などでエラーを返しましょう",
+    "Commit() が成功したら Rollback() は無害（重複実行は no-op）",
+    "両方の口座更新の前に残高チェックを忘れずに"
+  ],
+  "files": ["transfer.go.txt"]
+}

@@ -1,0 +1,75 @@
+package main
+
+import (
+	"errors"
+	"testing"
+)
+
+type mockGateway struct {
+	chargeFunc    func(amount int) (string, error)
+	chargeCalled  int
+	lastChargeAmt int
+}
+
+func (m *mockGateway) Charge(amount int) (string, error) {
+	m.chargeCalled++
+	m.lastChargeAmt = amount
+	if m.chargeFunc != nil {
+		return m.chargeFunc(amount)
+	}
+	return "tx-mock-123", nil
+}
+
+func (m *mockGateway) Refund(transactionID string) error {
+	return nil
+}
+
+func TestPurchaseSuccess(t *testing.T) {
+	mock := &mockGateway{}
+	svc := NewPurchaseService(mock)
+
+	txID, err := svc.Purchase(500)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if txID != "tx-mock-123" {
+		t.Errorf("txID = %q, want %q", txID, "tx-mock-123")
+	}
+	if mock.chargeCalled != 1 {
+		t.Errorf("Charge called %d times, want 1", mock.chargeCalled)
+	}
+	if mock.lastChargeAmt != 500 {
+		t.Errorf("Charge amount = %d, want 500", mock.lastChargeAmt)
+	}
+}
+
+func TestPurchaseError(t *testing.T) {
+	expectedErr := errors.New("card declined")
+	mock := &mockGateway{
+		chargeFunc: func(amount int) (string, error) {
+			return "", expectedErr
+		},
+	}
+	svc := NewPurchaseService(mock)
+
+	_, err := svc.Purchase(100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("expected wrapped error, got %v", err)
+	}
+}
+
+func TestPurchaseZeroAmount(t *testing.T) {
+	mock := &mockGateway{}
+	svc := NewPurchaseService(mock)
+
+	txID, err := svc.Purchase(0)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if txID == "" {
+		t.Error("expected non-empty transaction ID")
+	}
+}

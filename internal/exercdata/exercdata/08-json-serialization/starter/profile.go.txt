@@ -1,0 +1,26 @@
+package main
+
+import "time"
+
+// Date は "2006-01-02" 形式の日付を表すカスタム型です。
+type Date struct {
+	time.Time
+}
+
+// TODO: Date の MarshalJSON を実装してください。
+//   出力形式: "2006-01-02" (JSON 文字列)
+//   ヒント: time.Time.Format(layout) を使う
+
+// TODO: Date の UnmarshalJSON を実装してください。
+//   入力形式: "2006-01-02" (JSON 文字列)
+//   ヒント: まずダブルクォートを除去し、time.Parse(layout, str) を使う
+
+// TODO: Profile 構造体を定義し、適切な json タグを付けてください。
+//   フィールド:
+//     ID    int     → タグ: "id"
+//     Name  string  → タグ: "name"
+//     Email string  → タグ: "email"
+//     Age   int     → タグ: "age,omitempty"
+//     Bio   string  → タグ: "bio,omitempty"
+//
+//   ヒント: omitempty はゼロ値のときJSONから除外される

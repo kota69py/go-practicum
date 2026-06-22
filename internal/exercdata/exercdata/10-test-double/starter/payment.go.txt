@@ -1,0 +1,26 @@
+package main
+
+import (
+	"errors"
+)
+
+type PaymentGateway interface {
+	Charge(amount int) (string, error)
+	Refund(transactionID string) error
+}
+
+type PurchaseService struct {
+	gateway PaymentGateway
+}
+
+func NewPurchaseService(g PaymentGateway) *PurchaseService {
+	return &PurchaseService{gateway: g}
+}
+
+// TODO: Purchase を実装してください。
+//   amount を Charge し、成功すればトランザクションIDとnilを返します。
+//   Charge がエラーを返した場合、そのエラーをラップして返します。
+func (s *PurchaseService) Purchase(amount int) (string, error) {
+	// TODO
+	return "", errors.New("not implemented")
+}

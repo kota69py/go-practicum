@@ -1,0 +1,16 @@
+{
+  "name": "05-concurrency",
+  "title": "並行処理パターン — ゴールーチンとチャネル",
+  "category": "concurrency",
+  "difficulty": 4,
+  "description": "Goの並行処理パターンを実践します。複数のURLを並行にフェッチする FetchAll 関数を、goroutine・channel・sync.WaitGroup を使って実装してください。",
+  "hints": [
+    "goroutine の起動は go func() { ... }() です",
+    "sync.WaitGroup は Add(1) / Done() / Wait() の3つセットで使います",
+    "結果の収集には make(chan Result, len(urls)) のバッファ付きチャネルが便利です",
+    "チャネルへの送信は ch <- result、受信は result := <-ch です",
+    "すべてのgoroutineが終わったら close(ch) するか、キューイングされた結果を回収します",
+    "time パッケージの計測で、並行実行による速度向上を確認しましょう"
+  ],
+  "files": ["fetcher.go.txt"]
+}

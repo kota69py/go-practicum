@@ -1,0 +1,89 @@
+package main
+
+import (
+	"testing"
+	"time"
+)
+
+func TestFetchAllCount(t *testing.T) {
+	urls := []string{
+		"http://example.com",
+		"http://golang.org",
+		"http://blog.golang.org",
+	}
+	results := FetchAll(urls)
+	if len(results) != len(urls) {
+		t.Errorf("got %d results, want %d", len(results), len(urls))
+	}
+}
+
+func TestFetchAllSuccess(t *testing.T) {
+	results := FetchAll([]string{"http://example.com"})
+	if len(results) != 1 {
+		t.Fatal("expected 1 result")
+	}
+	r := results[0]
+	if r.Err != nil {
+		t.Errorf("unexpected error: %v", r.Err)
+	}
+	if r.Content != "content of http://example.com" {
+		t.Errorf("got content %q, want %q", r.Content, "content of http://example.com")
+	}
+}
+
+func TestFetchAllError(t *testing.T) {
+	results := FetchAll([]string{"bad-url"})
+	if len(results) != 1 {
+		t.Fatal("expected 1 result")
+	}
+	r := results[0]
+	if r.Err == nil {
+		t.Error("expected error, got nil")
+	}
+	if r.URL != "bad-url" {
+		t.Errorf("URL = %q, want %q", r.URL, "bad-url")
+	}
+}
+
+func TestFetchAllMixed(t *testing.T) {
+	urls := []string{"http://ok.com", "bad", "http://other.com"}
+	results := FetchAll(urls)
+	if len(results) != 3 {
+		t.Fatalf("got %d results, want 3", len(results))
+	}
+
+	okCount, errCount := 0, 0
+	for _, r := range results {
+		if r.Err != nil {
+			errCount++
+		} else {
+			okCount++
+		}
+	}
+	if okCount != 2 {
+		t.Errorf("expected 2 successes, got %d", okCount)
+	}
+	if errCount != 1 {
+		t.Errorf("expected 1 failure, got %d", errCount)
+	}
+}
+
+func TestFetchAllConcurrent(t *testing.T) {
+	// 3つのURLを50ms遅延で並行実行 → 合計は ~50ms（直列なら ~150ms）
+	start := time.Now()
+	results := FetchAll([]string{
+		"http://a.com",
+		"http://b.com",
+		"http://c.com",
+	})
+	elapsed := time.Since(start)
+
+	if len(results) != 3 {
+		t.Fatal("expected 3 results")
+	}
+
+	// 並行実行されていれば 150ms より大幅に短いはず
+	if elapsed > 120*time.Millisecond {
+		t.Errorf("took %v, expected ~50ms (concurrent)", elapsed)
+	}
+}

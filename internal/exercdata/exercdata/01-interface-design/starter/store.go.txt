@@ -1,0 +1,9 @@
+package main
+
+// TODO: Store インターフェースを定義してください。
+// 必要なメソッド:
+//   Save(short, original string) error
+//   Get(short string) (string, error)
+
+// TODO: MemStore 構造体を定義し、Store インターフェースを実装してください。
+// ヒント: map[string]string を内部に持ちます。

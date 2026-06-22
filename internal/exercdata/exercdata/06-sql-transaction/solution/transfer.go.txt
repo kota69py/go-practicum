@@ -1,0 +1,31 @@
+package main
+
+func Transfer(store Store, fromID, toID int, amount int) error {
+	tx, err := store.BeginTx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	from, err := tx.GetAccount(fromID)
+	if err != nil {
+		return err
+	}
+	if from.Balance < amount {
+		return ErrInsufficient
+	}
+
+	to, err := tx.GetAccount(toID)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.UpdateBalance(fromID, from.Balance-amount); err != nil {
+		return err
+	}
+	if err := tx.UpdateBalance(toID, to.Balance+amount); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}

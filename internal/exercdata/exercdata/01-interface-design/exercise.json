@@ -1,0 +1,16 @@
+{
+  "name": "01-interface-design",
+  "title": "インターフェース設計 — データストアの抽象化",
+  "category": "design",
+  "difficulty": 2,
+  "description": "URL短縮サービスのデータストアを、インターフェースを使って抽象化します。Store インターフェースを定義し、メモリ上の実装 MemStore を完成させてください。",
+  "hints": [
+    "インターフェースは type Store interface {} で定義します",
+    "Save メソッドは short キーと original URL を受け取り、error を返します",
+    "Get メソッドは short キーに対応する original URL と error を返します",
+    "存在しないキーに対しては errors.New でエラーを返しましょう",
+    "MemStore は map[string]string をフィールドに持つ構造体です",
+    "マップの初期化には make() を使いましょう"
+  ],
+  "files": ["store.go.txt"]
+}

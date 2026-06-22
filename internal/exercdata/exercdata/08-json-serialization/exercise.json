@@ -1,0 +1,16 @@
+{
+  "name": "08-json-serialization",
+  "title": "JSON シリアライゼーション — 構造体タグとカスタム Marshaler",
+  "category": "encoding",
+  "difficulty": 3,
+  "description": "Go の JSON エンコーディングを実践します。Profile 構造体に適切な json タグを付け、Date 型にカスタム MarshalJSON/UnmarshalJSON を実装してください。",
+  "hints": [
+    "struct タグは `json:\"field_name\"` の形式で書きます",
+    "タグに ,omitempty を付けるとゼロ値のフィールドを省略できます",
+    "カスタム型の MarshalJSON は func (t T) MarshalJSON() ([]byte, error)",
+    "UnmarshalJSON はポインタレシーバ: func (t *T) UnmarshalJSON(data []byte) error",
+    "time.Time のフォーマットは time.RFC3339 や \"2006-01-02\" を使います",
+    "json.Valid(data) で JSON の妥当性を事前チェックできます"
+  ],
+  "files": ["profile.go.txt"]
+}

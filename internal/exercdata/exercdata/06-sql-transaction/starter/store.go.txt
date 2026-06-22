@@ -1,0 +1,22 @@
+package main
+
+import "errors"
+
+type Account struct {
+	ID      int
+	Owner   string
+	Balance int
+}
+
+type Tx interface {
+	GetAccount(id int) (Account, error)
+	UpdateBalance(id int, balance int) error
+	Commit() error
+	Rollback() error
+}
+
+type Store interface {
+	BeginTx() (Tx, error)
+}
+
+var ErrInsufficient = errors.New("insufficient balance")

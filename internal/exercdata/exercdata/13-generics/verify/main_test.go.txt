@@ -1,0 +1,82 @@
+package main
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestMapIntToString(t *testing.T) {
+	nums := []int{1, 2, 3}
+	got := Map(nums, func(n int) string {
+		return strings.Repeat("*", n)
+	})
+	want := []string{"*", "**", "***"}
+	if len(got) != len(want) {
+		t.Fatalf("got len %d, want %d", len(got), len(want))
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Errorf("got[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+func TestFilterEven(t *testing.T) {
+	nums := []int{1, 2, 3, 4, 5, 6}
+	got := Filter(nums, func(n int) bool { return n%2 == 0 })
+	want := []int{2, 4, 6}
+	if len(got) != len(want) {
+		t.Fatalf("got len %d, want %d", len(got), len(want))
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Errorf("got[%d] = %d, want %d", i, got[i], want[i])
+		}
+	}
+}
+
+func TestReduceSum(t *testing.T) {
+	nums := []int{1, 2, 3, 4, 5}
+	got := Reduce(nums, 0, func(acc, n int) int { return acc + n })
+	if got != 15 {
+		t.Errorf("got %d, want 15", got)
+	}
+}
+
+func TestReduceConcat(t *testing.T) {
+	words := []string{"hello", " ", "world"}
+	got := Reduce(words, "", func(acc, s string) string { return acc + s })
+	if got != "hello world" {
+		t.Errorf("got %q, want %q", got, "hello world")
+	}
+}
+
+func TestMapStringToUpper(t *testing.T) {
+	words := []string{"go", "rust", "zig"}
+	got := Map(words, strings.ToUpper)
+	want := []string{"GO", "RUST", "ZIG"}
+	if len(got) != len(want) {
+		t.Fatalf("got len %d, want %d", len(got), len(want))
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Errorf("got[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+func TestFilterNoMatch(t *testing.T) {
+	nums := []int{1, 3, 5}
+	got := Filter(nums, func(n int) bool { return n%2 == 0 })
+	if len(got) != 0 {
+		t.Errorf("expected empty, got %v", got)
+	}
+}
+
+func TestReduceProduct(t *testing.T) {
+	nums := []int{2, 3, 4}
+	got := Reduce(nums, 1, func(acc, n int) int { return acc * n })
+	if got != 24 {
+		t.Errorf("got %d, want 24", got)
+	}
+}

@@ -1,0 +1,11 @@
+package main
+
+import "fmt"
+
+func (s *PurchaseService) Purchase(amount int) (string, error) {
+	txID, err := s.gateway.Charge(amount)
+	if err != nil {
+		return "", fmt.Errorf("purchase failed: %w", err)
+	}
+	return txID, nil
+}
