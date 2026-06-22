@@ -1,0 +1,37 @@
+package main
+
+import "context"
+
+// Semaphore はチャネルベースの重み付きセマフォです。
+type Semaphore struct {
+	// TODO: セマフォの内部構造を定義してください。
+}
+
+// TODO: New を実装してください。
+//   容量 n のセマフォを作成します。
+func New(n int) *Semaphore {
+	// TODO
+	return nil
+}
+
+// TODO: Acquire を実装してください。
+//   セマフォを取得します。コンテキストがキャンセルされるか、取得できるまでブロックします。
+func (s *Semaphore) Acquire(ctx context.Context) error {
+	// TODO
+	return nil
+}
+
+// TODO: Release を実装してください。
+//   セマフォを解放します。
+//   解放が獲得より多い場合（不均衡）は panic します。
+func (s *Semaphore) Release() {
+	// TODO
+}
+
+// TODO: TryAcquire を実装してください。
+//   非ブロッキングでセマフォを取得します。
+//   取得できた場合は true、できない場合は false を返します。
+func (s *Semaphore) TryAcquire() bool {
+	// TODO
+	return false
+}

@@ -35,15 +35,15 @@ go-practicum solution
 
 | コマンド | 説明 |
 |----------|------|
-| `list` | 全演習一覧を表示（完了状況・難易度・カテゴリ） |
+| `list` | 全演習一覧を表示（`--category`, `--difficulty` フィルタ対応） |
 | `start <name>` | 演習を開始（カレントディレクトリにスターターコードを展開） |
 | `verify` | 進行中の演習を `go test` で検証（全テスト通過で完了マーク） |
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全38演習）
+## 演習一覧（全48演習）
 
-### concurrency（9演習）
+### concurrency（12演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -56,18 +56,21 @@ go-practicum solution
 | 21 | worker-pool | ★★★ | channel-based worker pool, context cancel |
 | 32 | sync-once-map | ★★★ | sync.Once, sync.Map, CompareAndSwap |
 | 35 | sync-atomic | ★★★ | atomic.Add, atomic.Value, CAS |
+| 40 | pubsub | ★★★★ | チャネルベース publish/subscribe |
+| 45 | context-values | ★★★ | context.WithValue, リクエストスコープデータ |
+| 48 | semaphore | ★★★ | チャネルベース重み付きセマフォ |
 
 ### language（7演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
-| 01 | interface-design | ★★ | Store インターフェース, 依存性注入 |
 | 13 | generics | ★★★ | 型パラメータ, Map/Filter/Reduce |
 | 22 | reflection | ★★★ | reflect.TypeOf/ValueOf, 構造体タグ |
 | 24 | functional-options | ★★★ | 関数型オプションパターン |
 | 27 | sorting | ★★ | sort.Slice, sort.Search, 重複除去 |
 | 30 | time | ★★ | time.Format/Parse, DaysBetween, タイマー |
 | 31 | strings | ★★ | WordCount, Capitalize, strings.Builder |
+| 47 | enum | ★★★ | 型安全 enum, Stringer, JSON 対応 |
 
 ### testing（5演習）
 
@@ -88,13 +91,22 @@ go-practicum solution
 | 26 | io-reader-writer | ★★★ | io.Reader/Writer 実装, ROT13 |
 | 33 | io-multi-pipe | ★★★ | MultiReader, TeeReader, io.Pipe |
 
-### net（3演習）
+### net（4演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 03 | http-handler | ★★★ | REST API, httptest |
 | 12 | http-client | ★★★ | retry with backoff, context timeout |
 | 15 | middleware | ★★★ | HTTP ミドルウェアデコレータパターン |
+| 41 | file-server | ★★ | http.FileServer, 静的ファイル配信 |
+
+### encoding（3演習）
+
+| # | 演習 | 難易度 | トピック |
+|---|------|--------|----------|
+| 08 | json-serialization | ★★★ | struct tags, MarshalJSON/UnmarshalJSON |
+| 38 | encoding-xml | ★★ | xml.Marshal/Unmarshal, 構造体タグ, 属性 |
+| 42 | struct-validation | ★★★ | reflect 構造体タグバリデーション |
 
 ### configuration（2演習）
 
@@ -103,12 +115,26 @@ go-practicum solution
 | 17 | config | ★★ | 環境変数読み込み, デフォルト値 |
 | 29 | cli-flag | ★★ | flag.FlagSet サブコマンド |
 
-### encoding（2演習）
+### error-handling（2演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
-| 08 | json-serialization | ★★★ | struct tags, MarshalJSON/UnmarshalJSON |
-| 38 | encoding-xml | ★★ | xml.Marshal/Unmarshal, 構造体タグ, 属性 |
+| 04 | error-handling | ★★★ | sentinel errors, エラーラッピング, custom error type |
+| 39 | retry-backoff | ★★★ | 指数バックオフ, ジッター付きリトライ |
+
+### os（2演習）
+
+| # | 演習 | 難易度 | トピック |
+|---|------|--------|----------|
+| 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
+| 43 | file-watch | ★★★ | ポーリングベースファイル変更検知 |
+
+### design（2演習）
+
+| # | 演習 | 難易度 | トピック |
+|---|------|--------|----------|
+| 01 | interface-design | ★★ | Store インターフェース, 依存性注入 |
+| 44 | command-pattern | ★★★ | Command インターフェース, Execute/Undo |
 
 ### database（1演習）
 
@@ -116,29 +142,23 @@ go-practicum solution
 |---|------|--------|----------|
 | 06 | sql-transaction | ★★★ | Begin/Commit/Rollback, モックストア |
 
-### error-handling（1演習）
-
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 04 | error-handling | ★★★ | sentinel errors, エラーラッピング, custom error type |
-
 ### logging（1演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 11 | structured-log | ★★ | log/slog, JSON handler, Group |
 
-### os（1演習）
-
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
-
 ### templating（1演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 34 | template | ★★★ | text/template, range, 条件分岐 |
+
+### crypto（1演習）
+
+| # | 演習 | 難易度 | トピック |
+|---|------|--------|----------|
+| 46 | crypto-aes | ★★★ | AES-256-GCM 暗号化・復号 |
 
 ## 進捗管理
 

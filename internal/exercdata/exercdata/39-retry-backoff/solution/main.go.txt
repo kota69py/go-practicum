@@ -1,0 +1,47 @@
+package main
+
+import (
+	"fmt"
+	"math/rand/v2"
+	"time"
+)
+
+func main() {
+	fmt.Println("39-retry-backoff")
+}
+
+func Retry(attempts int, sleep time.Duration, fn func() error) error {
+	if attempts <= 0 {
+		return fmt.Errorf("attempts must be positive")
+	}
+	var lastErr error
+	for i := 0; i < attempts; i++ {
+		lastErr = fn()
+		if lastErr == nil {
+			return nil
+		}
+		if i < attempts-1 {
+			time.Sleep(sleep)
+		}
+	}
+	return lastErr
+}
+
+func RetryWithJitter(attempts int, baseSleep time.Duration, fn func() error) error {
+	if attempts <= 0 {
+		return fmt.Errorf("attempts must be positive")
+	}
+	var lastErr error
+	for i := 0; i < attempts; i++ {
+		lastErr = fn()
+		if lastErr == nil {
+			return nil
+		}
+		if i < attempts-1 {
+			jitter := 1.0 + (rand.Float64()*2-1)*0.25
+			sleep := time.Duration(float64(baseSleep) * jitter)
+			time.Sleep(sleep)
+		}
+	}
+	return lastErr
+}

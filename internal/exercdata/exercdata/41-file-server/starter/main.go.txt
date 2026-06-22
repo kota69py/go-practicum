@@ -1,0 +1,26 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+type FileServer struct {
+	root http.FileSystem
+}
+
+func main() {
+	fmt.Println("41-file-server")
+}
+
+func NewFileServer(root http.FileSystem) *FileServer {
+	panic("not implemented")
+}
+
+func (fs *FileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
+}
+
+func StaticFileServer(dir string) http.Handler {
+	panic("not implemented")
+}

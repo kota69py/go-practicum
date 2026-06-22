@@ -1,0 +1,4 @@
+module go-practicum-46-crypto-aes
+
+go 1.23
+

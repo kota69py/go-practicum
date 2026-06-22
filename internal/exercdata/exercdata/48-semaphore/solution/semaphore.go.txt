@@ -1,0 +1,39 @@
+package main
+
+import "context"
+
+type Semaphore struct {
+	tickets chan struct{}
+}
+
+func New(n int) *Semaphore {
+	return &Semaphore{
+		tickets: make(chan struct{}, n),
+	}
+}
+
+func (s *Semaphore) Acquire(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case s.tickets <- struct{}{}:
+		return nil
+	}
+}
+
+func (s *Semaphore) Release() {
+	select {
+	case <-s.tickets:
+	default:
+		panic("semaphore: release without acquire")
+	}
+}
+
+func (s *Semaphore) TryAcquire() bool {
+	select {
+	case s.tickets <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}

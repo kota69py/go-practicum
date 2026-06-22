@@ -1,0 +1,4 @@
+module go-practicum-45-context-values
+
+go 1.23
+

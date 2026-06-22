@@ -41,7 +41,7 @@ var solutionCmd = &cobra.Command{
 				continue
 			}
 			displayName := strings.TrimSuffix(f, ".txt")
-			fmt.Printf("=== %s ===\n", displayName)
+			fmt.Printf("=== %s ===\n", colorCyan(displayName))
 			fmt.Println(string(data))
 			fmt.Println()
 		}

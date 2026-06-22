@@ -1,0 +1,3 @@
+module go-practicum-43-file-watch
+
+go 1.23

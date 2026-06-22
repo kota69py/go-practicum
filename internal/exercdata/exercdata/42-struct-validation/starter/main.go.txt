@@ -1,0 +1,21 @@
+package main
+
+import "fmt"
+
+type ValidationError struct {
+	Field string
+	Tag   string
+	Value interface{}
+}
+
+func main() {
+	fmt.Println("42-struct-validation")
+}
+
+func (e *ValidationError) Error() string {
+	panic("not implemented")
+}
+
+func Validate(v interface{}) []error {
+	panic("not implemented")
+}

@@ -37,7 +37,7 @@ var hintCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("💡 ヒント:")
+		fmt.Println("💡 " + colorYellow("ヒント:"))
 		fmt.Println()
 		for i, h := range ex.Hints {
 			fmt.Printf("  %d. %s\n", i+1, h)

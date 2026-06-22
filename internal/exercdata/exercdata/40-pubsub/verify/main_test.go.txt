@@ -1,0 +1,80 @@
+package main
+
+import (
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestPubSub(t *testing.T) {
+	t.Run("publish and receive", func(t *testing.T) {
+		ps := New()
+		ch := ps.Subscribe("test")
+		ps.Publish("test", "hello")
+		select {
+		case msg := <-ch:
+			if msg.Topic != "test" {
+				t.Errorf("topic = %q, want %q", msg.Topic, "test")
+			}
+			if msg.Data != "hello" {
+				t.Errorf("data = %v, want %v", msg.Data, "hello")
+			}
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for message")
+		}
+		ps.Close()
+	})
+
+	t.Run("multiple subscribers", func(t *testing.T) {
+		ps := New()
+		ch1 := ps.Subscribe("topic")
+		ch2 := ps.Subscribe("topic")
+		ps.Publish("topic", "data")
+		<-ch1
+		<-ch2
+		ps.Close()
+	})
+
+	t.Run("different topics", func(t *testing.T) {
+		ps := New()
+		ch := ps.Subscribe("alice")
+		ps.Subscribe("bob")
+		ps.Publish("bob", "should not receive")
+		select {
+		case <-ch:
+			t.Error("alice subscriber received bob's message")
+		case <-time.After(10 * time.Millisecond):
+		}
+		ps.Close()
+	})
+
+	t.Run("close stops publish", func(t *testing.T) {
+		ps := New()
+		ch := ps.Subscribe("t")
+		ps.Close()
+		ps.Publish("t", "after close")
+		select {
+		case _, ok := <-ch:
+			if ok {
+				t.Error("channel should be closed")
+			}
+		default:
+		}
+	})
+
+	t.Run("concurrent publish and subscribe", func(t *testing.T) {
+		ps := New()
+		var wg sync.WaitGroup
+		for range 10 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				ch := ps.Subscribe("concurrent")
+				ps.Publish("concurrent", 42)
+				<-ch
+			}()
+		}
+		wg.Wait()
+		ps.Close()
+	})
+}

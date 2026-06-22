@@ -1,0 +1,150 @@
+package main
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func TestStatusString(t *testing.T) {
+	tests := []struct {
+		status Status
+		want   string
+	}{
+		{StatusActive, "active"},
+		{StatusInactive, "inactive"},
+		{StatusArchived, "archived"},
+		{StatusUnknown, "unknown"},
+		{Status(99), "unknown"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			if got := tt.status.String(); got != tt.want {
+				t.Errorf("String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseStatus(t *testing.T) {
+	tests := []struct {
+		input string
+		want  Status
+	}{
+		{"active", StatusActive},
+		{"inactive", StatusInactive},
+		{"archived", StatusArchived},
+		{"ACTIVE", StatusActive},
+		{"InActive", StatusInactive},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := ParseStatus(tt.input)
+			if err != nil {
+				t.Fatalf("ParseStatus(%q) error: %v", tt.input, err)
+			}
+			if got != tt.want {
+				t.Errorf("ParseStatus(%q) = %d, want %d", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseStatusInvalid(t *testing.T) {
+	_, err := ParseStatus("invalid")
+	if err == nil {
+		t.Error("expected error for invalid status")
+	}
+
+	_, err = ParseStatus("")
+	if err == nil {
+		t.Error("expected error for empty string")
+	}
+}
+
+func TestStatusJSONMarshal(t *testing.T) {
+	data, err := json.Marshal(StatusActive)
+	if err != nil {
+		t.Fatalf("Marshal error: %v", err)
+	}
+	if string(data) != `"active"` {
+		t.Errorf("JSON = %s, want %q", data, `"active"`)
+	}
+
+	data, err = json.Marshal(StatusUnknown)
+	if err != nil {
+		t.Fatalf("Marshal error: %v", err)
+	}
+	if string(data) != `"unknown"` {
+		t.Errorf("JSON = %s, want %q", data, `"unknown"`)
+	}
+}
+
+func TestStatusJSONUnmarshal(t *testing.T) {
+	tests := []struct {
+		json  string
+		want  Status
+	}{
+		{`"active"`, StatusActive},
+		{`"inactive"`, StatusInactive},
+		{`"archived"`, StatusArchived},
+	}
+	for _, tt := range tests {
+		t.Run(tt.json, func(t *testing.T) {
+			var s Status
+			if err := json.Unmarshal([]byte(tt.json), &s); err != nil {
+				t.Fatalf("Unmarshal error: %v", err)
+			}
+			if s != tt.want {
+				t.Errorf("Unmarshal = %d, want %d", s, tt.want)
+			}
+		})
+	}
+}
+
+func TestStatusJSONUnmarshalInvalid(t *testing.T) {
+	var s Status
+	err := json.Unmarshal([]byte(`"bogus"`), &s)
+	if err == nil {
+		t.Error("expected error for invalid status JSON")
+	}
+
+	err = json.Unmarshal([]byte(`42`), &s)
+	if err == nil {
+		t.Error("expected error for non-string JSON")
+	}
+}
+
+func TestStatusJSONRoundTrip(t *testing.T) {
+	original := StatusInactive
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("Marshal error: %v", err)
+	}
+	var decoded Status
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+	if decoded != original {
+		t.Errorf("round trip: got %d, want %d", decoded, original)
+	}
+}
+
+func TestIsValidStatus(t *testing.T) {
+	tests := []struct {
+		status Status
+		valid  bool
+	}{
+		{StatusActive, true},
+		{StatusInactive, true},
+		{StatusArchived, true},
+		{StatusUnknown, false},
+		{Status(99), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.status.String(), func(t *testing.T) {
+			if got := IsValidStatus(tt.status); got != tt.valid {
+				t.Errorf("IsValidStatus(%d) = %v, want %v", tt.status, got, tt.valid)
+			}
+		})
+	}
+}

@@ -1,0 +1,24 @@
+package main
+
+import (
+	"context"
+	"fmt"
+)
+
+type FileWatcher struct{}
+
+func main() {
+	fmt.Println("43-file-watch")
+}
+
+func NewFileWatcher(files ...string) *FileWatcher {
+	panic("not implemented")
+}
+
+func (fw *FileWatcher) Start(ctx context.Context) <-chan string {
+	panic("not implemented")
+}
+
+func (fw *FileWatcher) Close() error {
+	panic("not implemented")
+}

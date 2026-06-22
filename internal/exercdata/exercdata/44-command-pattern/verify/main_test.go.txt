@@ -1,0 +1,89 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestPrintCommand(t *testing.T) {
+	cmd := NewPrintCommand("hello")
+	if cmd.Name() != "PrintCommand" {
+		t.Errorf("Name = %q, want %q", cmd.Name(), "PrintCommand")
+	}
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute error: %v", err)
+	}
+	if err := cmd.Undo(); err != nil {
+		t.Fatalf("Undo error: %v", err)
+	}
+}
+
+func TestHistoryExecuteAndUndo(t *testing.T) {
+	h := NewHistory()
+	cmd := NewPrintCommand("test")
+	if err := h.Execute(cmd); err != nil {
+		t.Fatalf("Execute error: %v", err)
+	}
+	if err := h.Undo(); err != nil {
+		t.Fatalf("Undo error: %v", err)
+	}
+}
+
+func TestHistoryUndoEmpty(t *testing.T) {
+	h := NewHistory()
+	if err := h.Undo(); err == nil {
+		t.Error("expected error on empty history")
+	}
+}
+
+func TestHistoryUndoAll(t *testing.T) {
+	h := NewHistory()
+	for i := 0; i < 5; i++ {
+		cmd := NewPrintCommand("test")
+		h.Execute(cmd)
+	}
+	h.UndoAll()
+	// After UndoAll, history should be empty
+	if err := h.Undo(); err == nil {
+		t.Error("expected error after UndoAll")
+	}
+}
+
+func TestFileWriteCommand(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.txt")
+	cmd := NewFileWriteCommand(path, []byte("hello world"))
+	if cmd.Name() != "FileWriteCommand" {
+		t.Errorf("Name = %q, want %q", cmd.Name(), "FileWriteCommand")
+	}
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute error: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile error: %v", err)
+	}
+	if string(data) != "hello world" {
+		t.Errorf("content = %q, want %q", string(data), "hello world")
+	}
+	if err := cmd.Undo(); err != nil {
+		t.Fatalf("Undo error: %v", err)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Error("file should be removed after undo")
+	}
+}
+
+func TestHistoryExecuteCommandError(t *testing.T) {
+	h := NewHistory()
+	// FileWriteCommand with invalid path should fail
+	cmd := NewFileWriteCommand("/invalid/path/file.txt", []byte("data"))
+	if err := h.Execute(cmd); err == nil {
+		t.Error("expected error for invalid path")
+	}
+	// History should not record failed command: undo should return error
+	if err := h.Undo(); err == nil {
+		t.Error("expected error after failed command (stack should be empty)")
+	}
+}

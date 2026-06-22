@@ -1,0 +1,68 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
+
+type Status int
+
+const (
+	StatusUnknown  Status = iota
+	StatusActive
+	StatusInactive
+	StatusArchived
+)
+
+func (s Status) String() string {
+	switch s {
+	case StatusActive:
+		return "active"
+	case StatusInactive:
+		return "inactive"
+	case StatusArchived:
+		return "archived"
+	default:
+		return "unknown"
+	}
+}
+
+func ParseStatus(s string) (Status, error) {
+	switch strings.ToLower(s) {
+	case "active":
+		return StatusActive, nil
+	case "inactive":
+		return StatusInactive, nil
+	case "archived":
+		return StatusArchived, nil
+	default:
+		return StatusUnknown, fmt.Errorf("invalid status: %s", s)
+	}
+}
+
+func (s Status) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s *Status) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	parsed, err := ParseStatus(str)
+	if err != nil {
+		return err
+	}
+	*s = parsed
+	return nil
+}
+
+func IsValidStatus(s Status) bool {
+	switch s {
+	case StatusActive, StatusInactive, StatusArchived:
+		return true
+	default:
+		return false
+	}
+}

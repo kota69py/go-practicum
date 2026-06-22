@@ -1,0 +1,4 @@
+module go-practicum-48-semaphore
+
+go 1.23
+

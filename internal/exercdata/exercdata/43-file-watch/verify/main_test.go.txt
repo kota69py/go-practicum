@@ -1,0 +1,91 @@
+package main
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestFileWatcher(t *testing.T) {
+	t.Run("detects file change", func(t *testing.T) {
+		file := filepath.Join(t.TempDir(), "test.txt")
+		if err := os.WriteFile(file, []byte("v1"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		fw := NewFileWatcher(file)
+		ch := fw.Start(ctx)
+		time.Sleep(200 * time.Millisecond)
+		if err := os.WriteFile(file, []byte("v2"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case changed := <-ch:
+			if changed != file {
+				t.Errorf("got %q, want %q", changed, file)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("timeout waiting for change notification")
+		}
+		fw.Close()
+	})
+
+	t.Run("close stops watcher", func(t *testing.T) {
+		file := filepath.Join(t.TempDir(), "close.txt")
+		if err := os.WriteFile(file, []byte("data"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		fw := NewFileWatcher(file)
+		ch := fw.Start(ctx)
+		fw.Close()
+		select {
+		case _, ok := <-ch:
+			if ok {
+				t.Error("channel should be closed after Close()")
+			}
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for channel close")
+		}
+	})
+
+	t.Run("context cancellation stops watcher", func(t *testing.T) {
+		file := filepath.Join(t.TempDir(), "ctx.txt")
+		if err := os.WriteFile(file, []byte("data"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		fw := NewFileWatcher(file)
+		ch := fw.Start(ctx)
+		cancel()
+		select {
+		case _, ok := <-ch:
+			if ok {
+				t.Error("channel should be closed after cancel")
+			}
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for channel close")
+		}
+		fw.Close()
+	})
+
+	t.Run("no false positive on unchanged file", func(t *testing.T) {
+		file := filepath.Join(t.TempDir(), "static.txt")
+		if err := os.WriteFile(file, []byte("data"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		fw := NewFileWatcher(file)
+		ch := fw.Start(ctx)
+		select {
+		case <-ch:
+			t.Error("unexpected change notification")
+		case <-time.After(300 * time.Millisecond):
+		}
+		cancel()
+		fw.Close()
+	})
+}

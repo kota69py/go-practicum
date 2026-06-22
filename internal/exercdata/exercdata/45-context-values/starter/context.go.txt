@@ -1,0 +1,46 @@
+package main
+
+import (
+	"context"
+	"net/http"
+)
+
+// ctxKey はコンテキストのキーとして使用する unexported な型です。
+type ctxKey string
+
+// TODO: WithUserID を実装してください。
+//   指定された UserID をコンテキストに保存します。
+func WithUserID(ctx context.Context, id string) context.Context {
+	// TODO
+	return nil
+}
+
+// TODO: GetUserID を実装してください。
+//   コンテキストから UserID を取得します。
+//   見つからない場合は空文字と false を返します。
+func GetUserID(ctx context.Context) (string, bool) {
+	// TODO
+	return "", false
+}
+
+// TODO: WithRequestID を実装してください。
+//   指定された RequestID をコンテキストに保存します。
+func WithRequestID(ctx context.Context, id string) context.Context {
+	// TODO
+	return nil
+}
+
+// TODO: GetRequestID を実装してください。
+//   コンテキストから RequestID を取得します。
+//   見つからない場合は空文字と false を返します。
+func GetRequestID(ctx context.Context) (string, bool) {
+	// TODO
+	return "", false
+}
+
+// TODO: Middleware を実装してください。
+//   X-Request-ID ヘッダの値をコンテキストに保存する HTTP Middleware です。
+func Middleware(next http.Handler) http.Handler {
+	// TODO
+	return nil
+}

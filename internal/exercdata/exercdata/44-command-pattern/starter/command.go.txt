@@ -1,0 +1,99 @@
+package main
+
+// Command は実行と Undo が可能な操作を表すインターフェースです。
+type Command interface {
+	Execute() error
+	Undo() error
+	Name() string
+}
+
+// History はコマンドの実行履歴を管理します。
+type History struct {
+	// TODO: コマンドのスタックをフィールドに追加してください。
+}
+
+// TODO: NewHistory を実装してください。
+func NewHistory() *History {
+	// TODO
+	return nil
+}
+
+// TODO: Execute を実装してください。
+//   コマンドを実行し、成功したらスタックにプッシュします。
+func (h *History) Execute(cmd Command) error {
+	// TODO
+	return nil
+}
+
+// TODO: Undo を実装してください。
+//   最後に実行したコマンドを元に戻します。
+func (h *History) Undo() error {
+	// TODO
+	return nil
+}
+
+// TODO: UndoAll を実装してください。
+//   すべてのコマンドを元の順序の逆順で Undo します。
+func (h *History) UndoAll() {
+	// TODO
+}
+
+// PrintCommand はメッセージを表示するコマンドです。
+type PrintCommand struct {
+	// TODO: メッセージを保持するフィールドを追加してください。
+}
+
+// TODO: NewPrintCommand を実装してください。
+func NewPrintCommand(message string) *PrintCommand {
+	// TODO
+	return nil
+}
+
+// TODO: PrintCommand の Execute を実装してください。
+func (c *PrintCommand) Execute() error {
+	// TODO
+	return nil
+}
+
+// TODO: PrintCommand の Undo を実装してください。
+func (c *PrintCommand) Undo() error {
+	// TODO
+	return nil
+}
+
+// TODO: PrintCommand の Name を実装してください。
+func (c *PrintCommand) Name() string {
+	// TODO
+	return ""
+}
+
+// FileWriteCommand はファイルに書き込むコマンドです。
+type FileWriteCommand struct {
+	// TODO: ファイルパスと内容を保持するフィールドを追加してください。
+}
+
+// TODO: NewFileWriteCommand を実装してください。
+func NewFileWriteCommand(path string, content []byte) *FileWriteCommand {
+	// TODO
+	return nil
+}
+
+// TODO: FileWriteCommand の Execute を実装してください。
+//   os.WriteFile を使ってファイルに書き込みます。
+func (c *FileWriteCommand) Execute() error {
+	// TODO
+	return nil
+}
+
+// TODO: FileWriteCommand の Undo を実装してください。
+//   os.Remove で作成したファイルを削除します。
+func (c *FileWriteCommand) Undo() error {
+	// TODO
+	return nil
+}
+
+// TODO: FileWriteCommand の Name を実装してください。
+func (c *FileWriteCommand) Name() string {
+	// TODO
+	return ""
+}

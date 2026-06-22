@@ -1,0 +1,94 @@
+package main
+
+import (
+	"testing"
+)
+
+type User struct {
+	Name  string `validate:"required,min=2,max=50"`
+	Age   int    `validate:"required,min=0,max=150"`
+	Email string `validate:"required,email"`
+}
+
+type Partial struct {
+	Label string `validate:"max=10"`
+	Score int    `validate:"min=0,max=100"`
+}
+
+func TestValidate(t *testing.T) {
+	t.Run("valid struct", func(t *testing.T) {
+		u := User{Name: "Alice", Age: 30, Email: "alice@example.com"}
+		errs := Validate(u)
+		if len(errs) != 0 {
+			t.Errorf("expected no errors, got %v", errs)
+		}
+	})
+
+	t.Run("required fields missing", func(t *testing.T) {
+		u := User{}
+		errs := Validate(u)
+		if len(errs) == 0 {
+			t.Fatal("expected errors")
+		}
+		fields := make(map[string]bool)
+		for _, e := range errs {
+			ve, ok := e.(*ValidationError)
+			if !ok {
+				t.Fatalf("expected *ValidationError, got %T", e)
+			}
+			if ve.Tag == "required" {
+				fields[ve.Field] = true
+			}
+		}
+		if !fields["Name"] || !fields["Age"] || !fields["Email"] {
+			t.Errorf("expected required errors for all fields, got %v", fields)
+		}
+	})
+
+	t.Run("min violation", func(t *testing.T) {
+		u := User{Name: "A", Age: -1, Email: "a@b.co"}
+		errs := Validate(u)
+		if len(errs) == 0 {
+			t.Fatal("expected errors")
+		}
+	})
+
+	t.Run("max violation", func(t *testing.T) {
+		u := User{Name: "abcdefghijklmnopqrstuvwxyz", Age: 200, Email: "a@b.co"}
+		errs := Validate(u)
+		if len(errs) == 0 {
+			t.Fatal("expected errors")
+		}
+	})
+
+	t.Run("invalid email", func(t *testing.T) {
+		u := User{Name: "Bob", Age: 25, Email: "not-an-email"}
+		errs := Validate(u)
+		if len(errs) == 0 {
+			t.Fatal("expected errors")
+		}
+	})
+
+	t.Run("partial validation with min/max", func(t *testing.T) {
+		p := Partial{Label: "too long label", Score: 200}
+		errs := Validate(p)
+		if len(errs) != 2 {
+			t.Errorf("expected 2 errors, got %d", len(errs))
+		}
+	})
+
+	t.Run("partial valid", func(t *testing.T) {
+		p := Partial{Label: "ok", Score: 50}
+		errs := Validate(p)
+		if len(errs) != 0 {
+			t.Errorf("expected no errors, got %v", errs)
+		}
+	})
+
+	t.Run("non-struct input", func(t *testing.T) {
+		errs := Validate("not a struct")
+		if len(errs) == 0 {
+			t.Error("expected error for non-struct")
+		}
+	})
+}

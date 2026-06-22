@@ -1,0 +1,4 @@
+module go-practicum-47-enum
+
+go 1.23
+

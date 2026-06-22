@@ -1,0 +1,51 @@
+package main
+
+// Status は型安全な列挙型です。
+type Status int
+
+const (
+	// TODO: 各 Status の文字列表現を実装してください。
+	//   StatusUnknown → "unknown"
+	//   StatusActive → "active"
+	//   StatusInactive → "inactive"
+	//   StatusArchived → "archived"
+	StatusUnknown  Status = iota
+	StatusActive
+	StatusInactive
+	StatusArchived
+)
+
+// TODO: String メソッドを実装してください。
+//   Status を "unknown", "active", "inactive", "archived" に変換します。
+func (s Status) String() string {
+	// TODO
+	return ""
+}
+
+// TODO: ParseStatus を実装してください。
+//   文字列を Status に変換します。大文字小文字は区別しません。
+func ParseStatus(s string) (Status, error) {
+	// TODO
+	return StatusUnknown, nil
+}
+
+// TODO: MarshalJSON を実装してください。
+//   Status を JSON 文字列としてマーシャリングします。
+func (s Status) MarshalJSON() ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: UnmarshalJSON を実装してください。
+//   JSON 文字列から Status をアンマーシャリングします。
+func (s *Status) UnmarshalJSON(data []byte) error {
+	// TODO
+	return nil
+}
+
+// TODO: IsValidStatus を実装してください。
+//   Status が有効な値かどうかを返します。
+func IsValidStatus(s Status) bool {
+	// TODO
+	return false
+}

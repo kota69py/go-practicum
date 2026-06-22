@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/kota69py/go-practicum/internal/exercise"
 	"github.com/kota69py/go-practicum/internal/progress"
@@ -24,6 +25,11 @@ var verifyCmd = &cobra.Command{
 		}
 
 		cwd, _ := os.Getwd()
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err != nil {
+			fmt.Fprintln(os.Stderr, "エラー: カレントディレクトリに go.mod が見つかりません。演習ディレクトリで実行してください。")
+			os.Exit(1)
+		}
+
 		result, err := exercise.Verify(cwd)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "エラー: 検証失敗: %v\n", err)
@@ -31,11 +37,11 @@ var verifyCmd = &cobra.Command{
 		}
 
 		if result.Passed {
-			fmt.Println("✅ 全テスト通過！")
+			fmt.Println("✅ " + colorGreen("全テスト通過！"))
 			prog.Complete(prog.InProgress)
 			prog.Save()
 		} else {
-			fmt.Println("❌ テスト失敗")
+			fmt.Println("❌ " + colorRed("テスト失敗"))
 		}
 
 		if result.Output != "" {

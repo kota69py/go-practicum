@@ -1,0 +1,100 @@
+package main
+
+import (
+	"errors"
+	"testing"
+	"time"
+)
+
+func TestRetry(t *testing.T) {
+	t.Run("success on first try", func(t *testing.T) {
+		err := Retry(3, time.Millisecond, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+	})
+
+	t.Run("success after retries", func(t *testing.T) {
+		attempts := 0
+		err := Retry(5, time.Millisecond, func() error {
+			attempts++
+			if attempts < 3 {
+				return errors.New("not yet")
+			}
+			return nil
+		})
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+		if attempts != 3 {
+			t.Errorf("expected 3 attempts, got %d", attempts)
+		}
+	})
+
+	t.Run("failure exhausts all attempts", func(t *testing.T) {
+		attempts := 0
+		err := Retry(3, time.Millisecond, func() error {
+			attempts++
+			return errors.New("fail")
+		})
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if attempts != 3 {
+			t.Errorf("expected 3 attempts, got %d", attempts)
+		}
+	})
+
+	t.Run("zero attempts returns error", func(t *testing.T) {
+		callCount := 0
+		err := Retry(0, time.Millisecond, func() error {
+			callCount++
+			return errors.New("fail")
+		})
+		if err == nil {
+			t.Error("expected error")
+		}
+	})
+}
+
+func TestRetryWithJitter(t *testing.T) {
+	t.Run("success on first try", func(t *testing.T) {
+		err := RetryWithJitter(3, time.Millisecond, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+	})
+
+	t.Run("success after retries", func(t *testing.T) {
+		attempts := 0
+		err := RetryWithJitter(5, time.Millisecond, func() error {
+			attempts++
+			if attempts < 2 {
+				return errors.New("not yet")
+			}
+			return nil
+		})
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+	})
+
+	t.Run("failure exhausts all attempts", func(t *testing.T) {
+		attempts := 0
+		expected := errors.New("always fail")
+		err := RetryWithJitter(4, time.Millisecond, func() error {
+			attempts++
+			return expected
+		})
+		if !errors.Is(err, expected) {
+			t.Errorf("expected %v, got %v", expected, err)
+		}
+		if attempts != 4 {
+			t.Errorf("expected 4 attempts, got %d", attempts)
+		}
+	})
+}

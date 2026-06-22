@@ -1,0 +1,96 @@
+package main
+
+import (
+	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+)
+
+type ValidationError struct {
+	Field string
+	Tag   string
+	Value interface{}
+}
+
+func main() {
+	fmt.Println("42-struct-validation")
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("%s: tag %q validation failed (value=%v)", e.Field, e.Tag, e.Value)
+}
+
+func Validate(v interface{}) []error {
+	var errs []error
+	val := reflect.ValueOf(v)
+	typ := reflect.TypeOf(v)
+	if typ.Kind() == reflect.Ptr {
+		val = val.Elem()
+		typ = typ.Elem()
+	}
+	if typ.Kind() != reflect.Struct {
+		return append(errs, fmt.Errorf("expected struct, got %s", typ.Kind()))
+	}
+	emailRE := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		tag := field.Tag.Get("validate")
+		if tag == "" {
+			continue
+		}
+		fv := val.Field(i)
+		rules := strings.Split(tag, ",")
+		for _, rule := range rules {
+			rule = strings.TrimSpace(rule)
+			switch {
+			case rule == "required":
+				switch fv.Kind() {
+				case reflect.String:
+					if fv.String() == "" {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					if fv.Int() == 0 {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				case reflect.Float32, reflect.Float64:
+					if fv.Float() == 0 {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				}
+			case strings.HasPrefix(rule, "min="):
+				var min int
+				fmt.Sscanf(rule, "min=%d", &min)
+				switch fv.Kind() {
+				case reflect.String:
+					if len(fv.String()) < min {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					if fv.Int() < int64(min) {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				}
+			case strings.HasPrefix(rule, "max="):
+				var max int
+				fmt.Sscanf(rule, "max=%d", &max)
+				switch fv.Kind() {
+				case reflect.String:
+					if len(fv.String()) > max {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					if fv.Int() > int64(max) {
+						errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+					}
+				}
+			case rule == "email":
+				if fv.Kind() == reflect.String && !emailRE.MatchString(fv.String()) {
+					errs = append(errs, &ValidationError{Field: field.Name, Tag: rule, Value: fv.Interface()})
+				}
+			}
+		}
+	}
+	return errs
+}

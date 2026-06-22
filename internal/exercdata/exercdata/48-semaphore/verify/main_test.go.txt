@@ -1,0 +1,101 @@
+package main
+
+import (
+	"context"
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestSemaphoreAcquireRelease(t *testing.T) {
+	s := New(3)
+	ctx := context.Background()
+
+	for i := 0; i < 3; i++ {
+		if err := s.Acquire(ctx); err != nil {
+			t.Fatalf("Acquire error: %v", err)
+		}
+	}
+	for i := 0; i < 3; i++ {
+		s.Release()
+	}
+}
+
+func TestSemaphoreBlocksWhenFull(t *testing.T) {
+	s := New(1)
+	ctx := context.Background()
+
+	s.Acquire(ctx)
+
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	if err := s.Acquire(ctxTimeout); err == nil {
+		t.Error("expected timeout when semaphore is full")
+	}
+}
+
+func TestTryAcquire(t *testing.T) {
+	s := New(2)
+
+	if !s.TryAcquire() {
+		t.Error("TryAcquire should succeed")
+	}
+	if !s.TryAcquire() {
+		t.Error("TryAcquire should succeed")
+	}
+	if s.TryAcquire() {
+		t.Error("TryAcquire should fail when full")
+	}
+
+	s.Release()
+	if !s.TryAcquire() {
+		t.Error("TryAcquire should succeed after release")
+	}
+}
+
+func TestReleasePanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic on extra release")
+		}
+	}()
+	s := New(2)
+	s.Release()
+}
+
+func TestConcurrentAcquireRelease(t *testing.T) {
+	s := New(5)
+	ctx := context.Background()
+	var wg sync.WaitGroup
+
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			if err := s.Acquire(ctx); err != nil {
+				t.Errorf("goroutine %d: Acquire error: %v", id, err)
+				return
+			}
+			// simulate work
+			time.Sleep(10 * time.Millisecond)
+			s.Release()
+		}(i)
+	}
+	wg.Wait()
+}
+
+func TestContextCancel(t *testing.T) {
+	s := New(1)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	s.Acquire(ctx)
+
+	cancel()
+
+	// This should return immediately with cancellation error
+	err := s.Acquire(ctx)
+	if err == nil {
+		t.Error("expected error from cancelled context")
+	}
+}

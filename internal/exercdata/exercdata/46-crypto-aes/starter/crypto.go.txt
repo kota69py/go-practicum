@@ -1,0 +1,38 @@
+package main
+
+// TODO: GenerateKey を実装してください。
+//   32 バイトのランダムな AES-256 鍵を生成します。
+func GenerateKey() ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: Encrypt を実装してください。
+//   AES-GCM で平文を暗号化します。
+//   戻り値は nonce + ciphertext の連結です。
+func Encrypt(plaintext []byte, key []byte) ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: Decrypt を実装してください。
+//   AES-GCM で暗号文を復号します。
+//   先頭 12 バイトが nonce、残りが ciphertext です。
+func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: EncryptString を実装してください。
+//   パスフレーズから鍵を導出し、平文文字列を hex エンコードされた暗号文にします。
+func EncryptString(plaintext string, passphrase string) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// TODO: DecryptString を実装してください。
+//   hex エンコードされた暗号文を復号し、元の平文文字列を返します。
+func DecryptString(ciphertext string, passphrase string) (string, error) {
+	// TODO
+	return "", nil
+}

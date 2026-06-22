@@ -1,0 +1,83 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"sync"
+	"time"
+)
+
+type FileWatcher struct {
+	mu     sync.Mutex
+	files  map[string]time.Time
+	done   chan struct{}
+	closed bool
+}
+
+func main() {
+	fmt.Println("43-file-watch")
+}
+
+func NewFileWatcher(files ...string) *FileWatcher {
+	fw := &FileWatcher{
+		files: make(map[string]time.Time),
+		done:  make(chan struct{}),
+	}
+	for _, f := range files {
+		if fi, err := os.Stat(f); err == nil {
+			fw.files[f] = fi.ModTime()
+		}
+	}
+	return fw
+}
+
+func (fw *FileWatcher) Start(ctx context.Context) <-chan string {
+	ch := make(chan string)
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				close(ch)
+				return
+			case <-fw.done:
+				close(ch)
+				return
+			case <-ticker.C:
+				for path := range fw.files {
+					fi, err := os.Stat(path)
+					if err != nil {
+						continue
+					}
+					fw.mu.Lock()
+					old := fw.files[path]
+					fw.files[path] = fi.ModTime()
+					fw.mu.Unlock()
+					if fi.ModTime().After(old) {
+						select {
+						case ch <- path:
+						case <-ctx.Done():
+							return
+						case <-fw.done:
+							return
+						}
+					}
+				}
+			}
+		}
+	}()
+	return ch
+}
+
+func (fw *FileWatcher) Close() error {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	if fw.closed {
+		return nil
+	}
+	fw.closed = true
+	close(fw.done)
+	return nil
+}

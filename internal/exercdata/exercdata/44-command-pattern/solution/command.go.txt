@@ -1,0 +1,86 @@
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+type Command interface {
+	Execute() error
+	Undo() error
+	Name() string
+}
+
+type History struct {
+	stack []Command
+}
+
+func NewHistory() *History {
+	return &History{stack: []Command{}}
+}
+
+func (h *History) Execute(cmd Command) error {
+	if err := cmd.Execute(); err != nil {
+		return err
+	}
+	h.stack = append(h.stack, cmd)
+	return nil
+}
+
+func (h *History) Undo() error {
+	if len(h.stack) == 0 {
+		return fmt.Errorf("nothing to undo")
+	}
+	cmd := h.stack[len(h.stack)-1]
+	h.stack = h.stack[:len(h.stack)-1]
+	return cmd.Undo()
+}
+
+func (h *History) UndoAll() {
+	for len(h.stack) > 0 {
+		h.Undo()
+	}
+}
+
+type PrintCommand struct {
+	message string
+}
+
+func NewPrintCommand(message string) *PrintCommand {
+	return &PrintCommand{message: message}
+}
+
+func (c *PrintCommand) Execute() error {
+	fmt.Println(c.message)
+	return nil
+}
+
+func (c *PrintCommand) Undo() error {
+	fmt.Println("undo:", c.message)
+	return nil
+}
+
+func (c *PrintCommand) Name() string {
+	return "PrintCommand"
+}
+
+type FileWriteCommand struct {
+	path    string
+	content []byte
+}
+
+func NewFileWriteCommand(path string, content []byte) *FileWriteCommand {
+	return &FileWriteCommand{path: path, content: content}
+}
+
+func (c *FileWriteCommand) Execute() error {
+	return os.WriteFile(c.path, c.content, 0644)
+}
+
+func (c *FileWriteCommand) Undo() error {
+	return os.Remove(c.path)
+}
+
+func (c *FileWriteCommand) Name() string {
+	return "FileWriteCommand"
+}

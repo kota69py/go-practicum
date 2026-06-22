@@ -57,21 +57,17 @@ var startCmd = &cobra.Command{
 		prog.InProgress = name
 		prog.Save()
 
-		fmt.Printf("✅ 演習 %q を開始しました\n", ex.Title)
+		fmt.Printf("✅ %s\n", colorGreen("演習「"+ex.Title+"」を開始しました"))
 		fmt.Println()
 		fmt.Printf("  カテゴリ: %s\n", ex.Category)
-		fmt.Printf("  難易度:   ")
-		for i := 0; i < ex.Difficulty; i++ {
-			fmt.Print("★")
-		}
-		fmt.Println()
+		fmt.Printf("  難易度:   %s\n", stars(ex.Difficulty))
 		fmt.Println()
 		fmt.Println("  次のファイルを編集してください:")
 		for _, f := range ex.Files {
 			fmt.Printf("    - %s\n", strings.TrimSuffix(f, ".txt"))
 		}
 		fmt.Println()
-		fmt.Println("  編集後: go-practicum verify")
-		fmt.Println("  ヒント:  go-practicum hint")
+		fmt.Printf("  編集後: %s\n", colorCyan("go-practicum verify"))
+		fmt.Printf("  ヒント:  %s\n", colorCyan("go-practicum hint"))
 	},
 }

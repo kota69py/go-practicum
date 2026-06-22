@@ -1,0 +1,96 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestWithUserID(t *testing.T) {
+	ctx := WithUserID(context.Background(), "user-123")
+	id, ok := GetUserID(ctx)
+	if !ok {
+		t.Error("expected user ID to be found")
+	}
+	if id != "user-123" {
+		t.Errorf("user ID = %q, want %q", id, "user-123")
+	}
+}
+
+func TestGetUserIDMissing(t *testing.T) {
+	_, ok := GetUserID(context.Background())
+	if ok {
+		t.Error("expected false for missing user ID")
+	}
+}
+
+func TestWithRequestID(t *testing.T) {
+	ctx := WithRequestID(context.Background(), "req-456")
+	id, ok := GetRequestID(ctx)
+	if !ok {
+		t.Error("expected request ID to be found")
+	}
+	if id != "req-456" {
+		t.Errorf("request ID = %q, want %q", id, "req-456")
+	}
+}
+
+func TestGetRequestIDMissing(t *testing.T) {
+	_, ok := GetRequestID(context.Background())
+	if ok {
+		t.Error("expected false for missing request ID")
+	}
+}
+
+func TestContextIsolation(t *testing.T) {
+	ctx := WithUserID(context.Background(), "user-1")
+	ctx = WithRequestID(ctx, "req-1")
+
+	uid, _ := GetUserID(ctx)
+	rid, _ := GetRequestID(ctx)
+	if uid != "user-1" || rid != "req-1" {
+		t.Error("both values should be retrievable")
+	}
+
+	childCtx := WithUserID(ctx, "user-2")
+	uid2, _ := GetUserID(childCtx)
+	rid2, _ := GetRequestID(childCtx)
+	if uid2 != "user-2" {
+		t.Error("child should override user ID")
+	}
+	if rid2 != "req-1" {
+		t.Error("child should inherit request ID")
+	}
+}
+
+func TestMiddleware(t *testing.T) {
+	handler := Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := GetRequestID(r.Context())
+		if !ok {
+			t.Error("expected request ID in context")
+		}
+		if id != "test-123" {
+			t.Errorf("request ID = %q, want %q", id, "test-123")
+		}
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Request-ID", "test-123")
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+}
+
+func TestMiddlewareMissingHeader(t *testing.T) {
+	handler := Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := GetRequestID(r.Context())
+		if !ok {
+			t.Error("request ID should be present even if empty")
+		}
+		if id != "" {
+			t.Errorf("expected empty request ID, got %q", id)
+		}
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+}

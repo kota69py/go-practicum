@@ -1,0 +1,34 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+)
+
+type FileServer struct {
+	root    http.FileSystem
+	handler http.Handler
+}
+
+func main() {
+	fmt.Println("41-file-server")
+}
+
+func NewFileServer(root http.FileSystem) *FileServer {
+	return &FileServer{
+		root:    root,
+		handler: http.FileServer(root),
+	}
+}
+
+func (fs *FileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	fs.handler.ServeHTTP(w, r)
+	log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
+}
+
+func StaticFileServer(dir string) http.Handler {
+	return http.FileServer(http.Dir(dir))
+}

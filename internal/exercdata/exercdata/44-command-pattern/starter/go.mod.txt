@@ -1,0 +1,4 @@
+module go-practicum-44-command-pattern
+
+go 1.23
+

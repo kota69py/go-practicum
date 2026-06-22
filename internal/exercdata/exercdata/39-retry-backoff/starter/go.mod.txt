@@ -1,0 +1,3 @@
+module go-practicum-39-retry-backoff
+
+go 1.23

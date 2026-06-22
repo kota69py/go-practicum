@@ -1,0 +1,22 @@
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	fmt.Println("39-retry-backoff")
+}
+
+func Retry(attempts int, sleep time.Duration, fn func() error) error {
+	// TODO: fn を attempts 回実行し、失敗したら sleep 間隔でリトライする
+	// TODO: すべて失敗したら最後のエラーを返す
+	panic("not implemented")
+}
+
+func RetryWithJitter(attempts int, baseSleep time.Duration, fn func() error) error {
+	// TODO: Retry と同様だが、各スリープに ±25% のランダムジッターを加える
+	// TODO: math/rand/v2 を使用すること
+	panic("not implemented")
+}

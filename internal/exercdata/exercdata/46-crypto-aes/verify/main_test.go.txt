@@ -1,0 +1,109 @@
+package main
+
+import (
+	"bytes"
+	"testing"
+)
+
+func TestGenerateKey(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey error: %v", err)
+	}
+	if len(key) != 32 {
+		t.Errorf("key length = %d, want 32", len(key))
+	}
+
+	key2, _ := GenerateKey()
+	if bytes.Equal(key, key2) {
+		t.Error("consecutive keys should be different")
+	}
+}
+
+func TestEncryptDecrypt(t *testing.T) {
+	key := make([]byte, 32)
+	for i := range key {
+		key[i] = byte(i)
+	}
+
+	tests := []struct {
+		name      string
+		plaintext []byte
+	}{
+		{"short", []byte("hello")},
+		{"empty", []byte{}},
+		{"binary", []byte{0x00, 0x01, 0xFF, 0xFE}},
+		{"long", bytes.Repeat([]byte("A"), 1000)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ciphertext, err := Encrypt(tt.plaintext, key)
+			if err != nil {
+				t.Fatalf("Encrypt error: %v", err)
+			}
+			if bytes.Equal(ciphertext, tt.plaintext) {
+				t.Error("ciphertext should not equal plaintext")
+			}
+			decrypted, err := Decrypt(ciphertext, key)
+			if err != nil {
+				t.Fatalf("Decrypt error: %v", err)
+			}
+			if !bytes.Equal(decrypted, tt.plaintext) {
+				t.Errorf("decrypted = %v, want %v", decrypted, tt.plaintext)
+			}
+		})
+	}
+}
+
+func TestDecryptWrongKey(t *testing.T) {
+	key1 := make([]byte, 32)
+	key2 := make([]byte, 32)
+	key2[0] = 1
+
+	ciphertext, err := Encrypt([]byte("secret"), key1)
+	if err != nil {
+		t.Fatalf("Encrypt error: %v", err)
+	}
+	_, err = Decrypt(ciphertext, key2)
+	if err == nil {
+		t.Error("expected error when decrypting with wrong key")
+	}
+}
+
+func TestDecryptTruncated(t *testing.T) {
+	key := make([]byte, 32)
+	_, err := Decrypt([]byte("short"), key)
+	if err == nil {
+		t.Error("expected error for truncated ciphertext")
+	}
+}
+
+func TestEncryptStringRoundTrip(t *testing.T) {
+	ciphertext, err := EncryptString("secret message", "my-passphrase")
+	if err != nil {
+		t.Fatalf("EncryptString error: %v", err)
+	}
+	if ciphertext == "" {
+		t.Fatal("ciphertext should not be empty")
+	}
+
+	plaintext, err := DecryptString(ciphertext, "my-passphrase")
+	if err != nil {
+		t.Fatalf("DecryptString error: %v", err)
+	}
+	if plaintext != "secret message" {
+		t.Errorf("plaintext = %q, want %q", plaintext, "secret message")
+	}
+}
+
+func TestDecryptStringWrongPassphrase(t *testing.T) {
+	ciphertext, err := EncryptString("test data", "correct-pass")
+	if err != nil {
+		t.Fatalf("EncryptString error: %v", err)
+	}
+	_, err = DecryptString(ciphertext, "wrong-pass")
+	if err == nil {
+		t.Error("expected error for wrong passphrase")
+	}
+}
