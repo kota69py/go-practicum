@@ -1,0 +1,27 @@
+package main
+
+import "io"
+
+// TODO: MultiReader を実装してください。
+//   2つの io.Reader を連結する MultiReader を作成します。
+//   io.MultiReader を使用してください。
+func MultiReader(r1, r2 io.Reader) io.Reader {
+	// TODO
+	return nil
+}
+
+// TODO: TeeReader を実装してください。
+//   r から読み取ったデータを w に書き込みながら、そのまま読み取れる
+//   io.Reader を返します。io.TeeReader を使用してください。
+func TeeReader(r io.Reader, w io.Writer) io.Reader {
+	// TODO
+	return nil
+}
+
+// TODO: Pipe を実装してください。
+//   io.Pipe を使って w に書き込んだデータが r から読み取れることを確認します。
+//   書き込み側は渡された文字列を書き込み、読み取り側で受信します。
+func Pipe(writeData string) (string, error) {
+	// TODO
+	return "", nil
+}

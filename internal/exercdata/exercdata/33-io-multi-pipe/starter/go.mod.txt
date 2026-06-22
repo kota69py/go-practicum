@@ -1,0 +1,4 @@
+module go-practicum-33-io-multi-pipe
+
+go 1.23
+

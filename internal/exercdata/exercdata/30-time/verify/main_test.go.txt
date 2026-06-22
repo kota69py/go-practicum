@@ -1,0 +1,61 @@
+package main
+
+import (
+	"testing"
+	"time"
+)
+
+func TestParseDate(t *testing.T) {
+	got, err := ParseDate("2026-01-02")
+	if err != nil {
+		t.Fatalf("ParseDate error: %v", err)
+	}
+	if got.Year() != 2026 || got.Month() != 1 || got.Day() != 2 {
+		t.Errorf("got %v, want 2026-01-02", got)
+	}
+}
+
+func TestParseDateError(t *testing.T) {
+	_, err := ParseDate("not-a-date")
+	if err == nil {
+		t.Error("expected error for invalid date")
+	}
+}
+
+func TestFormatDate(t *testing.T) {
+	d := time.Date(2026, 6, 22, 15, 4, 5, 0, time.UTC)
+	got := FormatDate(d)
+	if got != "2026-06-22 15:04:05" {
+		t.Errorf("got %q, want %q", got, "2026-06-22 15:04:05")
+	}
+}
+
+func TestDaysBetween(t *testing.T) {
+	a := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	b := time.Date(2026, 1, 11, 0, 0, 0, 0, time.UTC)
+	got := DaysBetween(a, b)
+	if got != 10 {
+		t.Errorf("DaysBetween = %d, want 10", got)
+	}
+}
+
+func TestDaysBetweenNegative(t *testing.T) {
+	a := time.Date(2026, 6, 22, 0, 0, 0, 0, time.UTC)
+	b := time.Date(2026, 6, 20, 0, 0, 0, 0, time.UTC)
+	got := DaysBetween(a, b)
+	if got != -2 {
+		t.Errorf("DaysBetween = %d, want -2", got)
+	}
+}
+
+func TestScheduleAfter(t *testing.T) {
+	ch := ScheduleAfter("done", 10*time.Millisecond)
+	select {
+	case msg := <-ch:
+		if msg != "done" {
+			t.Errorf("got %q, want %q", msg, "done")
+		}
+	case <-time.After(1 * time.Second):
+		t.Fatal("timed out waiting for scheduled message")
+	}
+}

@@ -1,0 +1,4 @@
+module go-practicum-32-sync-once-map
+
+go 1.23
+

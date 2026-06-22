@@ -1,0 +1,54 @@
+package main
+
+import (
+	"sync"
+	"testing"
+)
+
+func TestOnce(t *testing.T) {
+	var count int
+	fn := Once(func() { count++ })
+	fn()
+	fn()
+	fn()
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
+	}
+}
+
+func TestCounterIncrement(t *testing.T) {
+	var c Counter
+	var wg sync.WaitGroup
+	for range 100 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Increment("hits")
+		}()
+	}
+	wg.Wait()
+	if v := c.Get("hits"); v != 100 {
+		t.Errorf("hits = %d, want 100", v)
+	}
+}
+
+func TestCounterGetMissing(t *testing.T) {
+	var c Counter
+	if v := c.Get("nonexistent"); v != 0 {
+		t.Errorf("got %d, want 0 for missing key", v)
+	}
+}
+
+func TestSnapshot(t *testing.T) {
+	var c Counter
+	c.Increment("a")
+	c.Increment("b")
+	c.Increment("a")
+	snap := c.Snapshot()
+	if snap["a"] != 2 {
+		t.Errorf("a = %d, want 2", snap["a"])
+	}
+	if snap["b"] != 1 {
+		t.Errorf("b = %d, want 1", snap["b"])
+	}
+}

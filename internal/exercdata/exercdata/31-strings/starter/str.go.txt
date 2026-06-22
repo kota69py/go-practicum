@@ -1,0 +1,32 @@
+package main
+
+import "strings"
+
+// TODO: WordCount を実装してください。
+//   文字列中の単語の出現回数を map で返します。
+func WordCount(s string) map[string]int {
+	// TODO
+	return nil
+}
+
+// TODO: Capitalize を実装してください。
+//   各単語の先頭を大文字にした文字列を返します。
+func Capitalize(s string) string {
+	// TODO
+	return ""
+}
+
+// TODO: MaskEmail を実装してください。
+//   メールアドレスのローカル部を '*' でマスクします。
+//   例: "alice@example.com" → "a***e@example.com"
+func MaskEmail(email string) string {
+	// TODO
+	return ""
+}
+
+// TODO: Lines を実装してください。
+//   文字列を改行で分割して行スライスを返します。
+func Lines(s string) []string {
+	// TODO
+	return nil
+}

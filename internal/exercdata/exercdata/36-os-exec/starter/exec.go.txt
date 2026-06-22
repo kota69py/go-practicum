@@ -1,0 +1,29 @@
+package main
+
+import (
+	"io"
+	"os"
+)
+
+// TODO: RunCommand を実装してください。
+//   コマンドを実行し、stdout を文字列で返します。
+//   コマンドがエラー終了した場合、stderr を含むエラーを返します。
+func RunCommand(name string, args ...string) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// TODO: RunWithStdin を実装してください。
+//   標準入力から input を渡してコマンドを実行し、stdout を返します。
+func RunWithStdin(input string, name string, args ...string) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// TODO: RunAndStream を実装してください。
+//   コマンドの stdout をリアルタイムで os.Stdout に書き込みます。
+//   コマンドが終了するまで待機します。
+func RunAndStream(name string, args ...string) error {
+	// TODO
+	return nil
+}

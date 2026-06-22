@@ -1,0 +1,4 @@
+module go-practicum-38-encoding-xml
+
+go 1.23
+

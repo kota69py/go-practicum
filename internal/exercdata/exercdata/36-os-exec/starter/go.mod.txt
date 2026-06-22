@@ -1,0 +1,4 @@
+module go-practicum-36-os-exec
+
+go 1.23
+

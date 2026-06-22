@@ -1,0 +1,43 @@
+package main
+
+import "sync"
+
+func Once(f func()) func() {
+	var once sync.Once
+	return func() {
+		once.Do(f)
+	}
+}
+
+type Counter struct {
+	items sync.Map
+}
+
+func (c *Counter) Increment(key string) {
+	for {
+		val, loaded := c.items.LoadOrStore(key, int64(1))
+		if !loaded {
+			return
+		}
+		if c.items.CompareAndSwap(key, val, val.(int64)+1) {
+			return
+		}
+	}
+}
+
+func (c *Counter) Get(key string) int {
+	val, ok := c.items.Load(key)
+	if !ok {
+		return 0
+	}
+	return int(val.(int64))
+}
+
+func (c *Counter) Snapshot() map[string]int {
+	result := make(map[string]int)
+	c.items.Range(func(k, v any) bool {
+		result[k.(string)] = int(v.(int64))
+		return true
+	})
+	return result
+}

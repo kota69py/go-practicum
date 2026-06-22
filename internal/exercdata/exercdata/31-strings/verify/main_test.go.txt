@@ -1,0 +1,48 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestWordCount(t *testing.T) {
+	m := WordCount("a b c b a")
+	if len(m) != 3 {
+		t.Fatalf("got %d unique words, want 3", len(m))
+	}
+	if m["a"] != 2 || m["b"] != 2 || m["c"] != 1 {
+		t.Errorf("counts wrong: %v", m)
+	}
+}
+
+func TestCapitalize(t *testing.T) {
+	got := Capitalize("hello world")
+	if got != "Hello World" {
+		t.Errorf("got %q, want %q", got, "Hello World")
+	}
+}
+
+func TestMaskEmail(t *testing.T) {
+	tests := []struct{ in, want string }{
+		{"alice@example.com", "a***e@example.com"},
+		{"a@b.com", "a@b.com"},
+		{"ab@c.com", "ab@c.com"},
+		{"abc@d.com", "a*c@d.com"},
+	}
+	for _, tt := range tests {
+		got := MaskEmail(tt.in)
+		if got != tt.want {
+			t.Errorf("MaskEmail(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestLines(t *testing.T) {
+	s := "line1\nline2\nline3\n"
+	lines := Lines(s)
+	if len(lines) != 3 {
+		t.Fatalf("got %d lines, want 3", len(lines))
+	}
+	if lines[0] != "line1" {
+		t.Errorf("line[0] = %q, want %q", lines[0], "line1")
+	}
+}

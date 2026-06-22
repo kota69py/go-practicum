@@ -1,0 +1,46 @@
+package main
+
+import "sync/atomic"
+
+type AtomicCounter struct {
+	value int64
+}
+
+func (c *AtomicCounter) Increment() {
+	atomic.AddInt64(&c.value, 1)
+}
+
+func (c *AtomicCounter) Value() int64 {
+	return atomic.LoadInt64(&c.value)
+}
+
+type AtomicConfig struct {
+	value atomic.Value
+}
+
+func NewAtomicConfig() *AtomicConfig {
+	c := &AtomicConfig{}
+	c.value.Store("") // initialize
+	return c
+}
+
+func (c *AtomicConfig) Set(v string) {
+	c.value.Store(v)
+}
+
+func (c *AtomicConfig) Get() string {
+	v := c.value.Load()
+	if v == nil {
+		return ""
+	}
+	return v.(string)
+}
+
+func CASIncrement(val *int64) {
+	for {
+		old := atomic.LoadInt64(val)
+		if atomic.CompareAndSwapInt64(val, old, old+1) {
+			return
+		}
+	}
+}

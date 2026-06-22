@@ -1,0 +1,65 @@
+package main
+
+import (
+	"sync"
+	"testing"
+)
+
+func TestAtomicCounter(t *testing.T) {
+	var c AtomicCounter
+	var wg sync.WaitGroup
+	for range 1000 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Increment()
+		}()
+	}
+	wg.Wait()
+	if v := c.Value(); v != 1000 {
+		t.Errorf("Value = %d, want 1000", v)
+	}
+}
+
+func TestAtomicConfigSetGet(t *testing.T) {
+	c := NewAtomicConfig()
+	c.Set("hello")
+	if g := c.Get(); g != "hello" {
+		t.Errorf("Get = %q, want %q", g, "hello")
+	}
+	c.Set("world")
+	if g := c.Get(); g != "world" {
+		t.Errorf("Get = %q, want %q", g, "world")
+	}
+}
+
+func TestAtomicConfigDefault(t *testing.T) {
+	c := NewAtomicConfig()
+	if g := c.Get(); g != "" {
+		t.Errorf("expected empty default, got %q", g)
+	}
+}
+
+func TestCASIncrement(t *testing.T) {
+	var val int64
+	CASIncrement(&val)
+	if val != 1 {
+		t.Errorf("val = %d, want 1", val)
+	}
+}
+
+func TestCASIncrementConcurrent(t *testing.T) {
+	var val int64
+	var wg sync.WaitGroup
+	for range 100 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			CASIncrement(&val)
+		}()
+	}
+	wg.Wait()
+	if val != 100 {
+		t.Errorf("val = %d, want 100", val)
+	}
+}

@@ -1,0 +1,59 @@
+package main
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestToXML(t *testing.T) {
+	p := Person{Name: "Alice", Age: 30, Email: "alice@test.com"}
+	xmlStr, err := ToXML(p)
+	if err != nil {
+		t.Fatalf("ToXML error: %v", err)
+	}
+	if !strings.Contains(xmlStr, "Alice") {
+		t.Error("XML should contain Alice")
+	}
+	if !strings.Contains(xmlStr, "age=\"30\"") {
+		t.Error("XML should contain age attribute")
+	}
+}
+
+func TestFromXML(t *testing.T) {
+	xmlStr := `<person age="25"><name>Bob</name><email>bob@test.com</email></person>`
+	p, err := FromXML(xmlStr)
+	if err != nil {
+		t.Fatalf("FromXML error: %v", err)
+	}
+	if p.Name != "Bob" {
+		t.Errorf("Name = %q, want %q", p.Name, "Bob")
+	}
+	if p.Age != 25 {
+		t.Errorf("Age = %d, want 25", p.Age)
+	}
+	if p.Email != "bob@test.com" {
+		t.Errorf("Email = %q, want %q", p.Email, "bob@test.com")
+	}
+}
+
+func TestFromXMLInvalid(t *testing.T) {
+	_, err := FromXML("invalid-xml")
+	if err == nil {
+		t.Error("expected error for invalid XML")
+	}
+}
+
+func TestXMLRoundTrip(t *testing.T) {
+	original := Person{Name: "Charlie", Age: 35, Email: "charlie@test.com"}
+	xmlStr, err := ToXML(original)
+	if err != nil {
+		t.Fatalf("ToXML error: %v", err)
+	}
+	decoded, err := FromXML(xmlStr)
+	if err != nil {
+		t.Fatalf("FromXML error: %v", err)
+	}
+	if decoded.Name != original.Name || decoded.Age != original.Age || decoded.Email != original.Email {
+		t.Errorf("round trip: got %+v, want %+v", decoded, original)
+	}
+}

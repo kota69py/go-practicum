@@ -1,0 +1,35 @@
+package main
+
+import "sync"
+
+// TODO: Once を実装してください。
+//   sync.Once を使って f を一度だけ実行する関数を返します。
+func Once(f func()) func() {
+	// TODO
+	return nil
+}
+
+// Counter はスレッドセーフなカウンター（sync.Map 使用）です。
+type Counter struct {
+	items sync.Map
+}
+
+// TODO: Increment を実装してください。
+//   キーのカウンターを1増やします（sync.Map の LoadOrStore を活用）。
+func (c *Counter) Increment(key string) {
+	// TODO
+}
+
+// TODO: Get を実装してください。
+//   キーの現在のカウントを返します。
+func (c *Counter) Get(key string) int {
+	// TODO
+	return 0
+}
+
+// TODO: Snapshot を実装してください。
+//   全キーと値のコピーを返します。
+func (c *Counter) Snapshot() map[string]int {
+	// TODO
+	return nil
+}

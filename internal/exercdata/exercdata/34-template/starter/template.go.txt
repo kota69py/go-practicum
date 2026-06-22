@@ -1,0 +1,16 @@
+package main
+
+import "text/template"
+
+// TODO: RenderTemplate を実装してください。
+//   tmpl 文字列をテンプレートとしてパースし、data を注入して文字列として返します。
+func RenderTemplate(tmpl string, data any) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// User はテンプレートに渡すデータ構造です。
+type User struct {
+	Name  string
+	Items []string
+}

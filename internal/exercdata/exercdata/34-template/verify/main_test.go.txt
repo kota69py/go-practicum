@@ -1,0 +1,44 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestRenderTemplateSimple(t *testing.T) {
+	got, err := RenderTemplate("Hello, {{.}}!", "World")
+	if err != nil {
+		t.Fatalf("RenderTemplate error: %v", err)
+	}
+	if got != "Hello, World!" {
+		t.Errorf("got %q, want %q", got, "Hello, World!")
+	}
+}
+
+func TestRenderTemplateStruct(t *testing.T) {
+	u := User{Name: "Alice"}
+	got, err := RenderTemplate("Name: {{.Name}}", u)
+	if err != nil {
+		t.Fatalf("RenderTemplate error: %v", err)
+	}
+	if got != "Name: Alice" {
+		t.Errorf("got %q, want %q", got, "Name: Alice")
+	}
+}
+
+func TestRenderTemplateRange(t *testing.T) {
+	u := User{Name: "Bob", Items: []string{"a", "b", "c"}}
+	got, err := RenderTemplate("{{range .Items}}{{.}}\n{{end}}", u)
+	if err != nil {
+		t.Fatalf("RenderTemplate error: %v", err)
+	}
+	if got != "a\nb\nc\n" {
+		t.Errorf("got %q, want %q", got, "a\nb\nc\n")
+	}
+}
+
+func TestRenderTemplateError(t *testing.T) {
+	_, err := RenderTemplate("{{range .Items}{{.}}{{end}}", nil)
+	if err == nil {
+		t.Error("expected error for invalid template")
+	}
+}

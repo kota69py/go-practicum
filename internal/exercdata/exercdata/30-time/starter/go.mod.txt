@@ -1,0 +1,4 @@
+module go-practicum-30-time
+
+go 1.23
+

@@ -1,0 +1,28 @@
+package main
+
+import (
+	"bytes"
+	"io"
+)
+
+func MultiReader(r1, r2 io.Reader) io.Reader {
+	return io.MultiReader(r1, r2)
+}
+
+func TeeReader(r io.Reader, w io.Writer) io.Reader {
+	return io.TeeReader(r, w)
+}
+
+func Pipe(writeData string) (string, error) {
+	pr, pw := io.Pipe()
+	go func() {
+		defer pw.Close()
+		pw.Write([]byte(writeData))
+	}()
+	var buf bytes.Buffer
+	_, err := io.Copy(&buf, pr)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}

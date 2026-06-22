@@ -1,0 +1,62 @@
+package main
+
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
+
+func TestCompressDecompress(t *testing.T) {
+	original := []byte("Hello, World! This is a test.")
+	compressed, err := Compress(original)
+	if err != nil {
+		t.Fatalf("Compress error: %v", err)
+	}
+	if len(compressed) == 0 {
+		t.Fatal("compressed data is empty")
+	}
+	decompressed, err := Decompress(compressed)
+	if err != nil {
+		t.Fatalf("Decompress error: %v", err)
+	}
+	if string(decompressed) != string(original) {
+		t.Errorf("round trip: got %q, want %q", string(decompressed), string(original))
+	}
+}
+
+func TestCompressEmpty(t *testing.T) {
+	compressed, err := Compress([]byte{})
+	if err != nil {
+		t.Fatalf("Compress error: %v", err)
+	}
+	decompressed, err := Decompress(compressed)
+	if err != nil {
+		t.Fatalf("Decompress error: %v", err)
+	}
+	if len(decompressed) != 0 {
+		t.Errorf("expected empty, got %d bytes", len(decompressed))
+	}
+}
+
+func TestDecompressInvalid(t *testing.T) {
+	_, err := Decompress([]byte("not-gzip-data"))
+	if err == nil {
+		t.Error("expected error for invalid gzip data")
+	}
+}
+
+func TestStreamCompress(t *testing.T) {
+	var buf bytes.Buffer
+	r := strings.NewReader("streaming test data")
+	err := StreamCompress(r, &buf)
+	if err != nil {
+		t.Fatalf("StreamCompress error: %v", err)
+	}
+	decompressed, err := Decompress(buf.Bytes())
+	if err != nil {
+		t.Fatalf("Decompress error: %v", err)
+	}
+	if string(decompressed) != "streaming test data" {
+		t.Errorf("got %q, want %q", string(decompressed), "streaming test data")
+	}
+}

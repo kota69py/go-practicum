@@ -1,0 +1,4 @@
+module go-practicum-37-compress-gzip
+
+go 1.23
+

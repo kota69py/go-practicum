@@ -1,0 +1,43 @@
+package main
+
+import "sync/atomic"
+
+// TODO: AtomicCounter を実装してください。
+//   atomic.AddInt64 を使ったスレッドセーフなカウンター。
+type AtomicCounter struct {
+	value int64
+}
+
+func (c *AtomicCounter) Increment() {
+	// TODO
+}
+
+func (c *AtomicCounter) Value() int64 {
+	// TODO
+	return 0
+}
+
+// TODO: AtomicConfig を実装してください。
+//   atomic.Value を使ったスレッドセーフな設定値の読み書き。
+type AtomicConfig struct {
+	value atomic.Value
+}
+
+func NewAtomicConfig() *AtomicConfig {
+	return &AtomicConfig{}
+}
+
+func (c *AtomicConfig) Set(v string) {
+	// TODO
+}
+
+func (c *AtomicConfig) Get() string {
+	// TODO
+	return ""
+}
+
+// TODO: CASIncrement を実装してください。
+//   CompareAndSwapInt64 を使って spinlock 的にインクリメントします。
+func CASIncrement(val *int64) {
+	// TODO
+}

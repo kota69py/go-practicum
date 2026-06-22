@@ -1,0 +1,33 @@
+package main
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestRunCommand(t *testing.T) {
+	out, err := RunCommand("cmd", "/c", "echo hello")
+	if err != nil {
+		t.Fatalf("RunCommand error: %v", err)
+	}
+	if strings.TrimSpace(out) != "hello" {
+		t.Errorf("got %q, want %q", strings.TrimSpace(out), "hello")
+	}
+}
+
+func TestRunCommandError(t *testing.T) {
+	_, err := RunCommand("nonexistent-command-xyz")
+	if err == nil {
+		t.Error("expected error for nonexistent command")
+	}
+}
+
+func TestRunWithStdin(t *testing.T) {
+	out, err := RunWithStdin("hello", "findstr", ".")
+	if err != nil {
+		t.Fatalf("RunWithStdin error: %v", err)
+	}
+	if strings.TrimSpace(out) != "hello" {
+		t.Errorf("got %q, want %q", strings.TrimSpace(out), "hello")
+	}
+}

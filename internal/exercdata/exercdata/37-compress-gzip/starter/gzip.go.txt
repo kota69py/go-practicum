@@ -1,0 +1,28 @@
+package main
+
+import (
+	"bytes"
+	"compress/gzip"
+	"io"
+)
+
+// TODO: Compress を実装してください。
+//   gzip でデータを圧縮して []byte で返します。
+func Compress(data []byte) ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: Decompress を実装してください。
+//   gzip で圧縮されたデータを展開して []byte で返します。
+func Decompress(compressed []byte) ([]byte, error) {
+	// TODO
+	return nil, nil
+}
+
+// TODO: ストリーミング圧縮の例: StreamCompress を実装してください。
+//   io.Reader から読み取ったデータを gzip 圧縮して io.Writer に書き込みます。
+func StreamCompress(r io.Reader, w io.Writer) error {
+	// TODO
+	return nil
+}

@@ -1,0 +1,4 @@
+module go-practicum-35-sync-atomic
+
+go 1.23
+

@@ -1,0 +1,62 @@
+package main
+
+import (
+	"bytes"
+	"io"
+	"strings"
+	"testing"
+)
+
+func TestMultiReader(t *testing.T) {
+	r1 := strings.NewReader("hello ")
+	r2 := strings.NewReader("world")
+	r := MultiReader(r1, r2)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("ReadAll error: %v", err)
+	}
+	if string(data) != "hello world" {
+		t.Errorf("got %q, want %q", string(data), "hello world")
+	}
+}
+
+func TestMultiReaderEmpty(t *testing.T) {
+	r := MultiReader(strings.NewReader(""), strings.NewReader(""))
+	data, _ := io.ReadAll(r)
+	if len(data) != 0 {
+		t.Errorf("expected empty, got %q", string(data))
+	}
+}
+
+func TestTeeReader(t *testing.T) {
+	var buf bytes.Buffer
+	src := strings.NewReader("data to copy")
+	r := TeeReader(src, &buf)
+	data, _ := io.ReadAll(r)
+	if string(data) != "data to copy" {
+		t.Errorf("read got %q, want %q", string(data), "data to copy")
+	}
+	if buf.String() != "data to copy" {
+		t.Errorf("tee wrote %q, want %q", buf.String(), "data to copy")
+	}
+}
+
+func TestPipe(t *testing.T) {
+	got, err := Pipe("hello through pipe")
+	if err != nil {
+		t.Fatalf("Pipe error: %v", err)
+	}
+	if got != "hello through pipe" {
+		t.Errorf("got %q, want %q", got, "hello through pipe")
+	}
+}
+
+func TestPipeEmpty(t *testing.T) {
+	got, err := Pipe("")
+	if err != nil {
+		t.Fatalf("Pipe error: %v", err)
+	}
+	if got != "" {
+		t.Errorf("got %q, want empty", got)
+	}
+}

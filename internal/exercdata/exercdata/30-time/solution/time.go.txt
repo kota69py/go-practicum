@@ -1,0 +1,22 @@
+package main
+
+import "time"
+
+func ParseDate(s string) (time.Time, error) {
+	return time.Parse("2006-01-02", s)
+}
+
+func FormatDate(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
+}
+
+func DaysBetween(a, b time.Time) int {
+	diff := b.Sub(a)
+	return int(diff.Hours() / 24)
+}
+
+func ScheduleAfter(msg string, duration time.Duration) <-chan string {
+	ch := make(chan string, 1)
+	time.AfterFunc(duration, func() { ch <- msg })
+	return ch
+}

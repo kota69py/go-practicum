@@ -1,0 +1,27 @@
+package main
+
+import "encoding/xml"
+
+// Person は XML のシリアライズ用構造体です。
+type Person struct {
+	// TODO: XMLタグを追加してください。
+	//   Name は <name> 要素、Age は <age> 要素（属性）、
+	//   Email は <email> 要素として出力されるようにします。
+	Name  string
+	Age   int
+	Email string
+}
+
+// TODO: ToXML を実装してください。
+//   Person を XML 文字列にシリアライズします。
+func ToXML(v any) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// TODO: FromXML を実装してください。
+//   XML 文字列を Person にデシリアライズします。
+func FromXML(data string) (*Person, error) {
+	// TODO
+	return nil, nil
+}

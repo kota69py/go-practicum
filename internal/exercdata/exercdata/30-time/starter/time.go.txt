@@ -1,0 +1,31 @@
+package main
+
+import "time"
+
+// TODO: ParseDate を実装してください。
+//   "2026-01-02" 形式の文字列を time.Time にパースします。
+func ParseDate(s string) (time.Time, error) {
+	// TODO
+	return time.Time{}, nil
+}
+
+// TODO: FormatDate を実装してください。
+//   time.Time を "2006-01-02 15:04:05" 形式の文字列にフォーマットします。
+func FormatDate(t time.Time) string {
+	// TODO
+	return ""
+}
+
+// TODO: DaysBetween を実装してください。
+//   2つの日付の差を日数で返します。
+func DaysBetween(a, b time.Time) int {
+	// TODO
+	return 0
+}
+
+// TODO: ScheduleAfter を実装してください。
+//   duration 後に msg を送信するチャネルを返します。
+func ScheduleAfter(msg string, duration time.Duration) <-chan string {
+	// TODO
+	return nil
+}

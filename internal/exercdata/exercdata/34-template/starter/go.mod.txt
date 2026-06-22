@@ -1,0 +1,4 @@
+module go-practicum-34-template
+
+go 1.23
+

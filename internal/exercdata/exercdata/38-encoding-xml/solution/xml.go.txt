@@ -1,0 +1,26 @@
+package main
+
+import "encoding/xml"
+
+type Person struct {
+	XMLName xml.Name `xml:"person"`
+	Name    string   `xml:"name"`
+	Age     int      `xml:"age,attr"`
+	Email   string   `xml:"email"`
+}
+
+func ToXML(v any) (string, error) {
+	data, err := xml.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func FromXML(data string) (*Person, error) {
+	var p Person
+	if err := xml.Unmarshal([]byte(data), &p); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
