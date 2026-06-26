@@ -1,0 +1,108 @@
+package main
+
+import (
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/prometheus/client_golang/prometheus"
+)
+
+func resetRegistry() {
+	prometheus.DefaultRegisterer = prometheus.NewRegistry()
+}
+
+func TestNewMetrics(t *testing.T) {
+	resetRegistry()
+	m := NewMetrics()
+	if m == nil {
+		t.Fatal("NewMetrics returned nil")
+	}
+}
+
+func TestObserveRequest(t *testing.T) {
+	resetRegistry()
+	m := NewMetrics()
+
+	m.ObserveRequest("GET", "/api/users", 200, 0.05)
+	m.ObserveRequest("POST", "/api/users", 201, 0.12)
+
+	handler := MetricsHandler()
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body, _ := io.ReadAll(rec.Body)
+	output := string(body)
+
+	if !strings.Contains(output, `http_requests_total`) {
+		t.Error("expected http_requests_total in metrics output")
+	}
+	if !strings.Contains(output, `http_request_duration_seconds`) {
+		t.Error("expected http_request_duration_seconds in metrics output")
+	}
+	if !strings.Contains(output, `method="GET"`) {
+		t.Error("expected method='GET' label in metrics output")
+	}
+	if !strings.Contains(output, `path="/api/users"`) {
+		t.Error("expected path='/api/users' label in metrics output")
+	}
+	if !strings.Contains(output, `status="200"`) {
+		t.Error("expected status='200' label in metrics output")
+	}
+}
+
+func TestMetricsHandler(t *testing.T) {
+	resetRegistry()
+	_ = NewMetrics()
+
+	handler := MetricsHandler()
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	if !strings.Contains(contentType, "text/plain") {
+		t.Errorf("Content-Type = %q, want text/plain", contentType)
+	}
+}
+
+func TestMiddleware(t *testing.T) {
+	resetRegistry()
+	m := NewMetrics()
+
+	var handlerCalled bool
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	wrapped := MetricsMiddleware(m, next)
+	req := httptest.NewRequest("DELETE", "/api/resource/1", nil)
+	rec := httptest.NewRecorder()
+	wrapped.ServeHTTP(rec, req)
+
+	if !handlerCalled {
+		t.Error("next handler was not called")
+	}
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusNoContent)
+	}
+
+	handler := MetricsHandler()
+	mreq := httptest.NewRequest("GET", "/metrics", nil)
+	mrec := httptest.NewRecorder()
+	handler.ServeHTTP(mrec, mreq)
+
+	body, _ := io.ReadAll(mrec.Body)
+	output := string(body)
+	if !strings.Contains(output, `method="DELETE"`) {
+		t.Error("expected method='DELETE' in metrics output")
+	}
+}

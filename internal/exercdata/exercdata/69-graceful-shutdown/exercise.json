@@ -1,0 +1,16 @@
+{
+  "name": "69-graceful-shutdown",
+  "title": "Graceful Shutdown — シグナルハンドリングと安全な終了",
+  "category": "os",
+  "difficulty": 3,
+  "description": "OSシグナル（SIGINT/SIGTERM）をハンドリングし、HTTPサーバーを安全に停止する Graceful Shutdown を実装します。signal.NotifyContext、context cancellation、http.Server.Shutdown のパターンを学びます。",
+  "hints": [
+    "signal.NotifyContext でシグナル検知用の context を作成",
+    "goroutine で server.ListenAndServe() を起動しエラーを適切に処理",
+    "ctx.Done() でシグナルを待機",
+    "server.Shutdown(ctx) で既存の接続を graceful に終了",
+    "ShutdownWithTimeout では context.WithTimeout で猶予時間を設定",
+    "Shutdown 完了後は server.ListenAndServe が http.ErrServerClosed を返す"
+  ],
+  "files": ["shutdown.go.txt", "server.go.txt"]
+}

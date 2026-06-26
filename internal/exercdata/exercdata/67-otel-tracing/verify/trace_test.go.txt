@@ -1,0 +1,107 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"go.opentelemetry.io/otel/trace"
+)
+
+func TestInitTracerProvider(t *testing.T) {
+	tp, cleanup := InitTracerProvider()
+	if tp == nil {
+		t.Fatal("TracerProvider is nil")
+	}
+	cleanup()
+}
+
+func TestSpanCreation(t *testing.T) {
+	tp, cleanup := InitTracerProvider()
+	defer cleanup()
+
+	tracer := tp.Tracer("test")
+	ctx, span := tracer.Start(context.Background(), "test-span")
+	defer span.End()
+
+	if !span.IsRecording() {
+		t.Error("expected span to be recording")
+	}
+
+	sc := trace.SpanContextFromContext(ctx)
+	if !sc.IsValid() {
+		t.Error("expected valid span context")
+	}
+	if sc.TraceID().IsEmpty() {
+		t.Error("expected non-empty trace ID")
+	}
+
+	traceID := GetTraceID(ctx)
+	if traceID == "" {
+		t.Error("GetTraceID returned empty string")
+	}
+}
+
+func TestStartSpan(t *testing.T) {
+	_, cleanup := InitTracerProvider()
+	defer cleanup()
+
+	ctx, span := StartSpan(context.Background(), "operation")
+	defer span.End()
+
+	if !span.IsRecording() {
+		t.Error("expected span to be recording")
+	}
+
+	traceID := GetTraceID(ctx)
+	if traceID == "" {
+		t.Error("GetTraceID returned empty string")
+	}
+}
+
+func TestChildOperation(t *testing.T) {
+	_, cleanup := InitTracerProvider()
+	defer cleanup()
+
+	ctx, span := StartSpan(context.Background(), "parent")
+	parentID := GetTraceID(ctx)
+
+	ChildOperation(ctx, "child")
+
+	childID := GetTraceID(ctx)
+	if childID != parentID {
+		t.Errorf("trace ID changed: parent=%s child=%s", parentID, childID)
+	}
+	span.End()
+}
+
+func TestTraceMiddleware(t *testing.T) {
+	_, cleanup := InitTracerProvider()
+	defer cleanup()
+
+	var handlerTraceID string
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerTraceID = GetTraceID(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	wrapped := TraceMiddleware(next)
+	req := httptest.NewRequest("GET", "/api/data", nil)
+	rec := httptest.NewRecorder()
+	wrapped.ServeHTTP(rec, req)
+
+	if handlerTraceID == "" {
+		t.Error("expected trace ID in handler context")
+	}
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
+func TestGetTraceID_NoSpan(t *testing.T) {
+	traceID := GetTraceID(context.Background())
+	if traceID != "" {
+		t.Errorf("expected empty trace ID for background context, got %q", traceID)
+	}
+}

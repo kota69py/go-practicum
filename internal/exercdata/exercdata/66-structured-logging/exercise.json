@@ -1,0 +1,14 @@
+{
+  "name": "66-structured-logging",
+  "title": "log/slog — 構造化ログ出力とレベル制御",
+  "category": "logging",
+  "difficulty": 3,
+  "description": "Go 1.21 で標準化された log/slog パッケージを使い、JSON 形式の構造化ログ出力とログレベル制御を実装します。レベルに応じたフィルタリング、リクエストIDの付与、HTTPミドルウェアでのリクエストログ出力を学びます。",
+  "hints": [
+    "slog.NewJSONHandler の HandlerOptions で Level を設定できます",
+    "slog.Level は slog.LevelDebug / LevelInfo / LevelWarn / LevelError があります",
+    "slog.Logger.With(key, val) で追加の属性を持つ子ロガーを作成できます",
+    "slog.NewJSONHandler(os.Stdout, opts) で標準出力に JSON 形式で出力します"
+  ],
+  "files": ["logger.go.txt"]
+}

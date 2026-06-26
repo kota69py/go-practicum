@@ -1,0 +1,16 @@
+{
+  "name": "73-workflow-orchestration",
+  "title": "Workflow Orchestration — ステートマシンとパイプライン処理",
+  "category": "design",
+  "difficulty": 5,
+  "description": "タスクの依存関係を解決しながら実行するワークフローエンジンを実装します。トポロジカルソート、エラーハンドリング、ロールバック、並行実行を扱います。",
+  "hints": [
+    "トポロジカルソートはKahnのアルゴリズム（入次数法）が簡単",
+    "依存関係のないタスク同士は並列実行可能",
+    "ロールバックは完了したタスクの逆順で呼び出す",
+    "RunParallelは同じ依存レベル内のタスクをgoroutineで並列実行する",
+    "sync.WaitGroupで並行タスクの完了を待つ",
+    "ステータスは実行開始→各タスク完了/失敗→全体完了/失敗のように遷移する"
+  ],
+  "files": ["workflow.go.txt"]
+}

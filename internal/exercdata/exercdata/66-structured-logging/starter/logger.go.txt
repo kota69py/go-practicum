@@ -1,0 +1,47 @@
+package main
+
+import (
+	"log/slog"
+	"net/http"
+)
+
+// Logger wraps slog.Logger with level-controlled structured logging.
+type Logger struct {
+	l *slog.Logger
+}
+
+// NewLogger creates a JSON handler logger at the given level.
+// Valid levels: "debug", "info", "warn", "error".
+func NewLogger(level string) (*Logger, error) {
+	panic("not implemented")
+}
+
+// Debug logs at debug level with key-value pairs.
+func (l *Logger) Debug(msg string, attrs ...any) {
+	panic("not implemented")
+}
+
+// Info logs at info level with key-value pairs.
+func (l *Logger) Info(msg string, attrs ...any) {
+	panic("not implemented")
+}
+
+// Warn logs at warn level with key-value pairs.
+func (l *Logger) Warn(msg string, attrs ...any) {
+	panic("not implemented")
+}
+
+// Error logs at error level with key-value pairs.
+func (l *Logger) Error(msg string, attrs ...any) {
+	panic("not implemented")
+}
+
+// WithRequestID returns a logger that includes request_id in every output.
+func (l *Logger) WithRequestID(requestID string) *Logger {
+	panic("not implemented")
+}
+
+// LogMiddleware is an HTTP middleware that logs requests (method, path, status, duration).
+func LogMiddleware(next http.Handler) http.Handler {
+	panic("not implemented")
+}

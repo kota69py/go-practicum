@@ -1,0 +1,157 @@
+package main
+
+import (
+	"context"
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestTokenBucketBasic(t *testing.T) {
+	tb := NewTokenBucket(10, 5)
+
+	for i := 0; i < 5; i++ {
+		if !tb.Allow() {
+			t.Errorf("expected allow at attempt %d", i)
+		}
+	}
+
+	if tb.Allow() {
+		t.Error("expected deny after burst exhausted")
+	}
+}
+
+func TestTokenBucketRefill(t *testing.T) {
+	tb := NewTokenBucket(100, 10)
+
+	for tb.Allow() {
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	allowed := 0
+	for tb.Allow() {
+		allowed++
+	}
+	if allowed < 3 || allowed > 7 {
+		t.Errorf("expected ~5 tokens after 50ms, got %d", allowed)
+	}
+}
+
+func TestTokenBucketAllowN(t *testing.T) {
+	tb := NewTokenBucket(10, 10)
+
+	if !tb.AllowN(5) {
+		t.Error("expected allow for 5 tokens")
+	}
+	if !tb.AllowN(3) {
+		t.Error("expected allow for 3 tokens")
+	}
+	if tb.AllowN(5) {
+		t.Error("expected deny for 5 tokens (only 2 left)")
+	}
+}
+
+func TestTokenBucketWait(t *testing.T) {
+	tb := NewTokenBucket(100, 1)
+
+	tb.Allow()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	if err := tb.Wait(ctx); err != nil {
+		t.Errorf("expected Wait to succeed within timeout: %v", err)
+	}
+}
+
+func TestTokenBucketWaitCancel(t *testing.T) {
+	tb := NewTokenBucket(1000, 20)
+
+	for tb.Allow() {
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if err := tb.Wait(ctx); err == nil {
+		t.Error("expected error on cancelled context")
+	}
+}
+
+func TestTokenBucketConcurrentSafe(t *testing.T) {
+	tb := NewTokenBucket(1000, 100)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				tb.Allow()
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestSlidingWindowBasic(t *testing.T) {
+	sw := NewSlidingWindow(5, time.Second)
+
+	for i := 0; i < 5; i++ {
+		if !sw.Allow() {
+			t.Errorf("expected allow at attempt %d", i)
+		}
+	}
+
+	if sw.Allow() {
+		t.Error("expected deny after limit reached")
+	}
+}
+
+func TestSlidingWindowRefill(t *testing.T) {
+	sw := NewSlidingWindow(5, 50*time.Millisecond)
+
+	for i := 0; i < 5; i++ {
+		sw.Allow()
+	}
+
+	time.Sleep(60 * time.Millisecond)
+
+	if !sw.Allow() {
+		t.Error("expected allow after window passes")
+	}
+}
+
+func TestSlidingWindowRemaining(t *testing.T) {
+	sw := NewSlidingWindow(10, time.Second)
+
+	if r := sw.Remaining(); r != 10 {
+		t.Errorf("expected 10 remaining, got %d", r)
+	}
+
+	sw.Allow()
+	sw.Allow()
+	sw.Allow()
+
+	if r := sw.Remaining(); r != 7 {
+		t.Errorf("expected 7 remaining, got %d", r)
+	}
+}
+
+func TestSlidingWindowConcurrentSafe(t *testing.T) {
+	sw := NewSlidingWindow(100, time.Second)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				sw.Allow()
+				sw.Remaining()
+			}
+		}()
+	}
+	wg.Wait()
+}

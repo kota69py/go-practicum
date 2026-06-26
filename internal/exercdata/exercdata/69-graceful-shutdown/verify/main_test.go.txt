@@ -1,0 +1,133 @@
+package main
+
+import (
+	"context"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+)
+
+func TestWaitForSignal(t *testing.T) {
+	ctx := WaitForSignal()
+	if ctx == nil {
+		t.Fatal("WaitForSignal returned nil")
+	}
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done immediately")
+	default:
+	}
+}
+
+func TestGracefulServerListenAndServe(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	s := NewGracefulServer(":0", handler)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := s.ListenAndServe(ctx)
+	if err != nil {
+		t.Fatalf("ListenAndServe error: %v", err)
+	}
+}
+
+func TestGracefulServerShutdown(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	s := NewGracefulServer(":0", handler)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- s.ListenAndServe(ctx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Errorf("ListenAndServe error: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for shutdown")
+	}
+}
+
+func TestGracefulServerHandlesRequests(t *testing.T) {
+	var handled bool
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := listener.Addr().String()
+	listener.Close()
+
+	s := NewGracefulServer(addr, handler)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- s.ListenAndServe(ctx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	resp, err := http.Get("http://" + addr + "/")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	resp.Body.Close()
+
+	if !handled {
+		t.Error("server did not handle the request")
+	}
+
+	cancel()
+	select {
+	case <-errCh:
+	case <-time.After(time.Second):
+		t.Fatal("timed out")
+	}
+}
+
+func TestShutdownWithTimeout(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	s := NewGracefulServer(":0", handler)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- s.ListenAndServe(ctx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	err := s.ShutdownWithTimeout(5 * time.Second)
+	if err != nil {
+		t.Errorf("ShutdownWithTimeout error: %v", err)
+	}
+
+	cancel()
+	select {
+	case <-errCh:
+	case <-time.After(time.Second):
+		t.Fatal("timed out")
+	}
+}

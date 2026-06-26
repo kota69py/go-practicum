@@ -1,0 +1,21 @@
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func ParseTimestamp(s string) (time.Time, error) {
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		t, err := time.Parse(f, s)
+		if err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unrecognized timestamp format: %s", s)
+}

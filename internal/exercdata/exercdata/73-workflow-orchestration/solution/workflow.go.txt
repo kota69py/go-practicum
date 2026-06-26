@@ -1,0 +1,192 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+)
+
+func NewWorkflow(name string) *Workflow {
+	return &Workflow{
+		Name:         name,
+		Tasks:        make(map[string]*Task),
+		Dependencies: make(map[string][]string),
+	}
+}
+
+func (w *Workflow) AddTask(name string, execute func(ctx context.Context) (any, error), rollback func(ctx context.Context, output any) error) {
+	w.Tasks[name] = &Task{
+		Name:     name,
+		Execute:  execute,
+		Rollback: rollback,
+	}
+}
+
+func (w *Workflow) AddDependency(task, dep string) {
+	w.Dependencies[task] = append(w.Dependencies[task], dep)
+}
+
+func (w *Workflow) NewExecution() *Execution {
+	return &Execution{
+		ID:        fmt.Sprintf("%x", time.Now().UnixNano()),
+		Workflow:  w,
+		Status:    StatusPending,
+		State:     make(map[string]any),
+	}
+}
+
+func (e *Execution) Run(ctx context.Context) error {
+	e.Status = StatusRunning
+
+	inDegree := make(map[string]int)
+	for name := range e.Workflow.Tasks {
+		inDegree[name] = 0
+	}
+	for task, deps := range e.Workflow.Dependencies {
+		inDegree[task] = len(deps)
+	}
+
+	var queue []string
+	for name, degree := range inDegree {
+		if degree == 0 {
+			queue = append(queue, name)
+		}
+	}
+
+	for len(queue) > 0 {
+		name := queue[0]
+		queue = queue[1:]
+
+		task := e.Workflow.Tasks[name]
+		output, err := task.Execute(ctx)
+		if err != nil {
+			e.Status = StatusFailed
+			e.Failed = append(e.Failed, name)
+			for i := len(e.Completed) - 1; i >= 0; i-- {
+				cn := e.Completed[i]
+				if t := e.Workflow.Tasks[cn]; t.Rollback != nil {
+					t.Rollback(ctx, e.State[cn])
+				}
+			}
+			e.Status = StatusRolledBack
+			return err
+		}
+
+		e.Completed = append(e.Completed, name)
+		e.State[name] = output
+
+		for taskName, deps := range e.Workflow.Dependencies {
+			for _, dep := range deps {
+				if dep == name {
+					inDegree[taskName]--
+					if inDegree[taskName] == 0 {
+						queue = append(queue, taskName)
+					}
+				}
+			}
+		}
+	}
+
+	if len(e.Completed) != len(e.Workflow.Tasks) {
+		e.Status = StatusFailed
+		return fmt.Errorf("circular dependency detected")
+	}
+
+	e.Status = StatusCompleted
+	return nil
+}
+
+func (e *Execution) RunParallel(ctx context.Context) error {
+	e.Status = StatusRunning
+
+	inDegree := make(map[string]int)
+	for name := range e.Workflow.Tasks {
+		inDegree[name] = 0
+	}
+	for task, deps := range e.Workflow.Dependencies {
+		inDegree[task] = len(deps)
+	}
+
+	var levels [][]string
+	remaining := make(map[string]bool)
+	for name := range e.Workflow.Tasks {
+		remaining[name] = true
+	}
+
+	for len(remaining) > 0 {
+		var level []string
+		for name := range remaining {
+			if inDegree[name] == 0 {
+				level = append(level, name)
+			}
+		}
+		if len(level) == 0 {
+			e.Status = StatusFailed
+			return fmt.Errorf("circular dependency detected")
+		}
+		levels = append(levels, level)
+		for _, name := range level {
+			delete(remaining, name)
+			for taskName, deps := range e.Workflow.Dependencies {
+				for _, dep := range deps {
+					if dep == name {
+						inDegree[taskName]--
+					}
+				}
+			}
+		}
+	}
+
+	for _, level := range levels {
+		type taskResult struct {
+			name   string
+			output any
+			err    error
+		}
+
+		results := make(chan taskResult, len(level))
+		var wg sync.WaitGroup
+
+		for _, name := range level {
+			wg.Add(1)
+			go func(n string) {
+				defer wg.Done()
+				task := e.Workflow.Tasks[n]
+				output, err := task.Execute(ctx)
+				results <- taskResult{n, output, err}
+			}(name)
+		}
+
+		wg.Wait()
+		close(results)
+
+		var failed []taskResult
+		for r := range results {
+			if r.err != nil {
+				failed = append(failed, r)
+			} else {
+				e.Completed = append(e.Completed, r.name)
+				e.State[r.name] = r.output
+			}
+		}
+
+		if len(failed) > 0 {
+			e.Status = StatusFailed
+			for _, f := range failed {
+				e.Failed = append(e.Failed, f.name)
+			}
+			for i := len(e.Completed) - 1; i >= 0; i-- {
+				cn := e.Completed[i]
+				if t := e.Workflow.Tasks[cn]; t.Rollback != nil {
+					t.Rollback(ctx, e.State[cn])
+				}
+			}
+			e.Status = StatusRolledBack
+			return failed[0].err
+		}
+	}
+
+	e.Status = StatusCompleted
+	return nil
+}

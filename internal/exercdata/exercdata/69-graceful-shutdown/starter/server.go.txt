@@ -1,0 +1,32 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"time"
+)
+
+// GracefulServer wraps an http.Server with graceful shutdown.
+type GracefulServer struct {
+	server *http.Server
+}
+
+// NewGracefulServer creates a server with the given addr and handler.
+func NewGracefulServer(addr string, handler http.Handler) *GracefulServer {
+	return &GracefulServer{
+		server: &http.Server{Addr: addr, Handler: handler},
+	}
+}
+
+// ListenAndServe starts the server and waits for ctx cancellation to shut down gracefully.
+func (s *GracefulServer) ListenAndServe(ctx context.Context) error {
+	// TODO: start s.server.ListenAndServe in a goroutine,
+	// wait for ctx.Done(), then call s.server.Shutdown(context.Background())
+	return nil
+}
+
+// ShutdownWithTimeout attempts shutdown with the given timeout.
+func (s *GracefulServer) ShutdownWithTimeout(timeout time.Duration) error {
+	// TODO: create a timeout context and call s.server.Shutdown
+	return nil
+}

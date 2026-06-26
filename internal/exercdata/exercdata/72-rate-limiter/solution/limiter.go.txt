@@ -1,0 +1,146 @@
+package main
+
+import (
+	"context"
+	"sync"
+	"time"
+)
+
+type TokenBucket struct {
+	mu       sync.Mutex
+	rate     float64
+	burst    int
+	tokens   float64
+	lastTime time.Time
+}
+
+func NewTokenBucket(rate float64, burst int) *TokenBucket {
+	return &TokenBucket{
+		rate:     rate,
+		burst:    burst,
+		tokens:   float64(burst),
+		lastTime: time.Now(),
+	}
+}
+
+func (tb *TokenBucket) Allow() bool {
+	return tb.AllowN(1)
+}
+
+func (tb *TokenBucket) AllowN(n int) bool {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
+	now := time.Now()
+	elapsed := now.Sub(tb.lastTime).Seconds()
+	tb.lastTime = now
+
+	tb.tokens += elapsed * tb.rate
+	if tb.tokens > float64(tb.burst) {
+		tb.tokens = float64(tb.burst)
+	}
+
+	if tb.tokens >= float64(n) {
+		tb.tokens -= float64(n)
+		return true
+	}
+	return false
+}
+
+func (tb *TokenBucket) Wait(ctx context.Context) error {
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		if tb.Allow() {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
+}
+
+func (tb *TokenBucket) Available() int {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
+	now := time.Now()
+	elapsed := now.Sub(tb.lastTime).Seconds()
+	tb.lastTime = now
+
+	tb.tokens += elapsed * tb.rate
+	if tb.tokens > float64(tb.burst) {
+		tb.tokens = float64(tb.burst)
+	}
+
+	return int(tb.tokens)
+}
+
+type SlidingWindow struct {
+	mu              sync.Mutex
+	maxRequests     int
+	window          time.Duration
+	prevCount       int
+	currCount       int
+	prevWindowStart time.Time
+}
+
+func NewSlidingWindow(maxRequests int, window time.Duration) *SlidingWindow {
+	return &SlidingWindow{
+		maxRequests:     maxRequests,
+		window:          window,
+		prevWindowStart: time.Now(),
+	}
+}
+
+func (sw *SlidingWindow) Allow() bool {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+
+	now := time.Now()
+	windowElapsed := now.Sub(sw.prevWindowStart)
+
+	if windowElapsed >= sw.window {
+		sw.prevCount = sw.currCount
+		sw.currCount = 0
+		sw.prevWindowStart = now
+		windowElapsed = 0
+	}
+
+	weight := float64(sw.window-windowElapsed) / float64(sw.window)
+	weightedCount := float64(sw.prevCount)*weight + float64(sw.currCount)
+
+	if weightedCount >= float64(sw.maxRequests) {
+		return false
+	}
+
+	sw.currCount++
+	return true
+}
+
+func (sw *SlidingWindow) Remaining() int {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+
+	now := time.Now()
+	windowElapsed := now.Sub(sw.prevWindowStart)
+
+	if windowElapsed >= sw.window {
+		sw.prevCount = sw.currCount
+		sw.currCount = 0
+		sw.prevWindowStart = now
+		windowElapsed = 0
+	}
+
+	weight := float64(sw.window-windowElapsed) / float64(sw.window)
+	weightedCount := float64(sw.prevCount)*weight + float64(sw.currCount)
+
+	remaining := sw.maxRequests - int(weightedCount)
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}

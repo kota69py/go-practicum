@@ -1,0 +1,97 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+type HealthStatus string
+
+const (
+	StatusHealthy   HealthStatus = "healthy"
+	StatusUnhealthy HealthStatus = "unhealthy"
+)
+
+type CheckResult struct {
+	Name   string       `json:"name"`
+	Status HealthStatus `json:"status"`
+	Error  string       `json:"error,omitempty"`
+}
+
+type HealthReport struct {
+	Status    HealthStatus  `json:"status"`
+	Checks    []CheckResult `json:"checks"`
+	Timestamp time.Time     `json:"timestamp"`
+}
+
+type Checker interface {
+	Name() string
+	Check(ctx context.Context) error
+}
+
+type HealthHandler struct {
+	checkers []Checker
+}
+
+func NewHealthHandler(checks ...Checker) *HealthHandler {
+	return &HealthHandler{checkers: checks}
+}
+
+func (h *HealthHandler) LivezHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+}
+
+func (h *HealthHandler) ReadyzHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		report := HealthReport{
+			Status:    StatusHealthy,
+			Checks:    make([]CheckResult, 0, len(h.checkers)),
+			Timestamp: time.Now(),
+		}
+		for _, c := range h.checkers {
+			result := CheckResult{Name: c.Name(), Status: StatusHealthy}
+			if err := c.Check(r.Context()); err != nil {
+				result.Status = StatusUnhealthy
+				result.Error = err.Error()
+				report.Status = StatusUnhealthy
+			}
+			report.Checks = append(report.Checks, result)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if report.Status == StatusHealthy {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+		json.NewEncoder(w).Encode(report)
+	})
+}
+
+func (h *HealthHandler) AddChecker(c Checker) {
+	h.checkers = append(h.checkers, c)
+}
+
+type dbChecker struct {
+	name       string
+	shouldFail bool
+}
+
+func (d *dbChecker) Name() string { return d.name }
+
+func (d *dbChecker) Check(ctx context.Context) error {
+	if d.shouldFail {
+		return fmt.Errorf("%s is unavailable", d.name)
+	}
+	return nil
+}
+
+func NewDBChecker(name string, shouldFail bool) Checker {
+	return &dbChecker{name: name, shouldFail: shouldFail}
+}

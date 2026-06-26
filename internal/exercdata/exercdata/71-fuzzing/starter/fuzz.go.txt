@@ -1,0 +1,20 @@
+package main
+
+// ValidateEmail checks if the string is a valid email (simple rule-based).
+func ValidateEmail(email string) bool {
+	// TODO: check contains @, local ≤64 chars, domain has dot, no spaces
+	return false
+}
+
+// SplitByComma splits a string by commas, handling quoted strings.
+// "a,b,c" → ["a","b","c"]; `"a,b",c` → ["a,b","c"]
+func SplitByComma(s string) []string {
+	// TODO: split by comma, handle quoted strings
+	return nil
+}
+
+// Reverse returns the string reversed.
+func Reverse(s string) string {
+	// TODO: convert to runes and reverse
+	return ""
+}

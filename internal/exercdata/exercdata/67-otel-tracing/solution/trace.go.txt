@@ -1,0 +1,52 @@
+package main
+
+import (
+	"context"
+	"net/http"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
+)
+
+var tracer = otel.Tracer("go-practicum-otel-tracing")
+
+func InitTracerProvider() (trace.TracerProvider, func()) {
+	exp, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+	if err != nil {
+		otel.Handle(err)
+		return nil, func() {}
+	}
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(resource.Default()),
+	)
+	otel.SetTracerProvider(tp)
+	return tp, func() {
+		_ = tp.Shutdown(context.Background())
+	}
+}
+
+func StartSpan(ctx context.Context, name string) (context.Context, trace.Span) {
+	return tracer.Start(ctx, name)
+}
+
+func GetTraceID(ctx context.Context) string {
+	span := trace.SpanFromContext(ctx)
+	return span.SpanContext().TraceID().String()
+}
+
+func TraceMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, span := tracer.Start(r.Context(), r.URL.Path)
+		defer span.End()
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func ChildOperation(ctx context.Context, name string) {
+	_, span := tracer.Start(ctx, name)
+	defer span.End()
+}

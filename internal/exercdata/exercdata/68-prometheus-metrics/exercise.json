@@ -1,0 +1,14 @@
+{
+  "name": "68-prometheus-metrics",
+  "title": "Prometheus — メトリクス計測と/metrics端点",
+  "category": "net",
+  "difficulty": 4,
+  "description": "Prometheus クライアントライブラリを使い、HTTP リクエストのカウンタメトリクスとヒストグラムメトリクスを実装します。カスタムメトリクスコレクタの作成、/metrics エンドポイントの公開、ミドルウェアでの自動メトリクス記録を学びます。",
+  "hints": [
+    "prometheus.NewCounterVec / NewHistogramVec でメトリクスコレクタを作成します",
+    "prometheus.MustRegister でデフォルトレジストリに登録します",
+    "promhttp.Handler() で /metrics エンドポイントを提供します",
+    "WithLabelValues でラベルを指定してメトリクスを記録します"
+  ],
+  "files": ["metrics.go.txt"]
+}

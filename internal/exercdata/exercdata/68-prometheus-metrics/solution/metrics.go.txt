@@ -1,0 +1,55 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+type Metrics struct {
+	requestsTotal   *prometheus.CounterVec
+	requestDuration *prometheus.HistogramVec
+}
+
+func NewMetrics() *Metrics {
+	m := &Metrics{
+		requestsTotal: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "http_requests_total",
+				Help: "Total number of HTTP requests",
+			},
+			[]string{"method", "path", "status"},
+		),
+		requestDuration: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "http_request_duration_seconds",
+				Help:    "HTTP request duration in seconds",
+				Buckets: prometheus.DefBuckets,
+			},
+			[]string{"method", "path"},
+		),
+	}
+	prometheus.MustRegister(m.requestsTotal)
+	prometheus.MustRegister(m.requestDuration)
+	return m
+}
+
+func MetricsHandler() http.Handler {
+	return promhttp.Handler()
+}
+
+func (m *Metrics) ObserveRequest(method, path string, status int, duration float64) {
+	m.requestsTotal.WithLabelValues(method, path, fmt.Sprintf("%d", status)).Inc()
+	m.requestDuration.WithLabelValues(method, path).Observe(duration)
+}
+
+func MetricsMiddleware(m *Metrics, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		m.ObserveRequest(r.Method, r.URL.Path, http.StatusOK, time.Since(start).Seconds())
+	})
+}

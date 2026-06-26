@@ -1,0 +1,65 @@
+package main
+
+import (
+	"context"
+	"time"
+)
+
+// TokenBucket implements a token bucket rate limiter.
+// Tokens are added at a fixed rate up to a burst capacity.
+type TokenBucket struct {
+	// TODO: define fields
+}
+
+// NewTokenBucket creates a limiter that allows rate tokens/sec with burst capacity
+func NewTokenBucket(rate float64, burst int) *TokenBucket {
+	// TODO: implement
+	return nil
+}
+
+// Allow checks if a token is available. If not, returns false.
+func (tb *TokenBucket) Allow() bool {
+	// TODO: implement
+	return false
+}
+
+// AllowN checks if n tokens are available. If not, returns false.
+func (tb *TokenBucket) AllowN(n int) bool {
+	// TODO: implement
+	return false
+}
+
+// Wait blocks until a token is available, respecting context cancellation.
+func (tb *TokenBucket) Wait(ctx context.Context) error {
+	// TODO: implement
+	return nil
+}
+
+// Available returns the current number of available tokens (approximate)
+func (tb *TokenBucket) Available() int {
+	// TODO: implement
+	return 0
+}
+
+// SlidingWindow implements a sliding window counter rate limiter.
+type SlidingWindow struct {
+	// TODO: define fields
+}
+
+// NewSlidingWindow creates a limiter with max requests per duration
+func NewSlidingWindow(maxRequests int, window time.Duration) *SlidingWindow {
+	// TODO: implement
+	return nil
+}
+
+// Allow checks if a request is within the limit
+func (sw *SlidingWindow) Allow() bool {
+	// TODO: implement
+	return false
+}
+
+// Remaining returns the remaining capacity in the current window
+func (sw *SlidingWindow) Remaining() int {
+	// TODO: implement
+	return 0
+}

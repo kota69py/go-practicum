@@ -1,0 +1,14 @@
+{
+  "name": "67-otel-tracing",
+  "title": "OpenTelemetry — 分散トレーシングの基礎",
+  "category": "net",
+  "difficulty": 4,
+  "description": "OpenTelemetry SDK を使い、分散トレーシングの基礎を実践します。TracerProvider の初期化、スパンの生成と親子関係、HTTP ミドルウェアによるリクエストトレーシング、TraceID の取得を学びます。",
+  "hints": [
+    "sdktrace.NewTracerProvider に Batcher と Resource を指定して初期化します",
+    "otel.Tracer(name) でアプリケーション全体で使うトレーサーを取得します",
+    "tracer.Start(ctx, name) で新しいスパンを開始します",
+    "trace.SpanFromContext(ctx) でコンテキストから現在のスパンを取得できます"
+  ],
+  "files": ["trace.go.txt"]
+}

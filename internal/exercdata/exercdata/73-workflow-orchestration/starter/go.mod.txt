@@ -1,0 +1,3 @@
+module go-practicum-73-workflow-orchestration
+
+go 1.23

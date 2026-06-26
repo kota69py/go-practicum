@@ -1,0 +1,16 @@
+{
+  "name": "72-rate-limiter",
+  "title": "Rate Limiter — トークンバケットとスライディングウィンドウ",
+  "category": "concurrency",
+  "difficulty": 4,
+  "description": "トークンバケットとスライディングウィンドウの2つのレート制限アルゴリズムを実装します。atomic操作とタイマーを使った並行セーフな実装を目指しましょう。",
+  "hints": [
+    "TokenBucketはatomic.AddInt64でナノ秒精度の時刻を管理すると良い",
+    "Allowでは経過時間からトークン増加数を計算し、burstを上限とする",
+    "sync.MutexでAllow/Wait間の状態を保護する",
+    "SlidingWindowでは現在のウィンドウ内の位置に基づいて重み計算を行う",
+    "Waitはtime.NewTickerとselectでcontext cancellationを処理する",
+    "スライディングウィンドウは前回ウィンドウと今回ウィンドウのリクエスト数で計算する"
+  ],
+  "files": ["limiter.go.txt"]
+}

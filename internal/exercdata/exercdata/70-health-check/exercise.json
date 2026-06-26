@@ -1,0 +1,16 @@
+{
+  "name": "70-health-check",
+  "title": "Health Check — Readiness/Liveness プローブ",
+  "category": "net",
+  "difficulty": 3,
+  "description": "Kubernetes スタイルの Readiness/Liveness プローブを実装します。/healthz はプロセス生存確認、/readyz は依存サービスの健全性確認を行います。インターフェースを使った拡張可能なヘルスチェック設計を学びます。",
+  "hints": [
+    "LivezHandler は常時 200 OK と {\"status\":\"ok\"} を返す",
+    "ReadyzHandler は全 Checker の Check() を呼び出す",
+    "CheckResult にエラー情報を含めて JSON エンコードする",
+    "1つでも Unhealthy ならレポート全体の Status も Unhealthy に",
+    "HTTP ステータスコードは 200 (healthy) か 503 (unhealthy)",
+    "NewDBChecker は shouldFail フラグで mock の成功/失敗を切り替える"
+  ],
+  "files": ["health.go.txt"]
+}

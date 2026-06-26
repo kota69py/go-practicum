@@ -1,0 +1,126 @@
+package main
+
+import (
+	"testing"
+	"time"
+	"unicode/utf8"
+)
+
+func TestParseTimestamp(t *testing.T) {
+	tests := []struct {
+		input string
+		ok    bool
+	}{
+		{"2024-01-01T00:00:00Z", true},
+		{"2024-01-01T00:00:00.999Z", true},
+		{"2024-01-01", true},
+		{"not-a-timestamp", false},
+	}
+	for _, tt := range tests {
+		_, err := ParseTimestamp(tt.input)
+		if tt.ok && err != nil {
+			t.Errorf("ParseTimestamp(%q) unexpected error: %v", tt.input, err)
+		}
+		if !tt.ok && err == nil {
+			t.Errorf("ParseTimestamp(%q) expected error", tt.input)
+		}
+	}
+}
+
+func TestParseTimestampError(t *testing.T) {
+	_, err := ParseTimestamp("")
+	if err == nil {
+		t.Error("expected error for empty string")
+	}
+	_, err = ParseTimestamp("2024/01/01")
+	if err == nil {
+		t.Error("expected error for invalid format")
+	}
+}
+
+func TestValidateEmail(t *testing.T) {
+	valid := []string{"a@b.com", "user@example.co.jp", "a@b.c"}
+	invalid := []string{"", "no-at", "@b.com", "a@", "a@b", "user@.com", "has space@b.com"}
+	for _, e := range valid {
+		if !ValidateEmail(e) {
+			t.Errorf("expected valid: %q", e)
+		}
+	}
+	for _, e := range invalid {
+		if ValidateEmail(e) {
+			t.Errorf("expected invalid: %q", e)
+		}
+	}
+}
+
+func TestSplitByComma(t *testing.T) {
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		{"a,b,c", []string{"a", "b", "c"}},
+		{`"a,b",c`, []string{"a,b", "c"}},
+		{"", nil},
+		{"a", []string{"a"}},
+	}
+	for _, tt := range tests {
+		got := SplitByComma(tt.input)
+		if len(got) != len(tt.want) {
+			t.Errorf("SplitByComma(%q) = %v, want %v", tt.input, got, tt.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != tt.want[i] {
+				t.Errorf("SplitByComma(%q)[%d] = %q, want %q", tt.input, i, got[i], tt.want[i])
+			}
+		}
+	}
+}
+
+func TestReverse(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"hello", "olleh"},
+		{"世界", "界世"},
+		{"", ""},
+		{"a", "a"},
+	}
+	for _, tt := range tests {
+		got := Reverse(tt.input)
+		if got != tt.want {
+			t.Errorf("Reverse(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+func FuzzParseTimestamp(f *testing.F) {
+	f.Add("2024-01-01T00:00:00Z")
+	f.Add("not-a-timestamp")
+	f.Fuzz(func(t *testing.T, s string) {
+		result, err := ParseTimestamp(s)
+		if err == nil {
+			roundtrip := result.Format(time.RFC3339)
+			_, err2 := ParseTimestamp(roundtrip)
+			if err2 != nil {
+				t.Errorf("round-trip failed for %q: %v", roundtrip, err2)
+			}
+		}
+	})
+}
+
+func FuzzReverse(f *testing.F) {
+	f.Add("hello")
+	f.Add("世界")
+	f.Fuzz(func(t *testing.T, s string) {
+		rev := Reverse(s)
+		doubleRev := Reverse(rev)
+		if doubleRev != s {
+			t.Errorf("Reverse(Reverse(%q)) = %q, want %q", s, doubleRev, s)
+		}
+		if utf8.ValidString(s) && !utf8.ValidString(rev) {
+			t.Errorf("Reverse produced invalid UTF-8 from valid input %q", s)
+		}
+	})
+}

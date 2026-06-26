@@ -41,9 +41,9 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全65演習）
+## 演習一覧（全73演習）
 
-### concurrency（14演習）
+### concurrency（15演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -61,6 +61,7 @@ go-practicum solution
 | 48 | semaphore | ★★★ | チャネルベース重み付きセマフォ |
 | 50 | errgroup-singleflight | ★★★★ | errgroup, singleflight |
 | 53 | lockfree-ringbuffer | ★★★★★ | lock-free SPSC, sync/atomic, memory ordering |
+| 72 | rate-limiter | ★★★★ | トークンバケット, スライディングウィンドウ, レート制御 |
 
 ### language（9演習）
 
@@ -76,7 +77,7 @@ go-practicum solution
 | 55 | unsafe-memory | ★★★★★ | unsafe.Pointer, struct padding, メモリアライメント |
 | 58 | build-tags | ★★★★ | //go:build, 条件付きビルド, プラットフォーム分岐 |
 
-### testing（5演習）
+### testing（6演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -85,6 +86,7 @@ go-practicum solution
 | 18 | test-helpers | ★★★ | t.Helper, Golden Files, テストユーティリティ |
 | 23 | benchmarking | ★★★ | testing.B, 文字列連結ベンチマーク |
 | 28 | fuzzing | ★★★ | Go 1.18+ fuzzing, hex parser |
+| 71 | fuzzing-advanced | ★★★★ | testing/fuzz, 不変条件テスト, ラウンドトリップ検証 |
 
 ### io（5演習）
 
@@ -95,7 +97,7 @@ go-practicum solution
 | 26 | io-reader-writer | ★★★ | io.Reader/Writer 実装, ROT13 |
 | 33 | io-multi-pipe | ★★★ | MultiReader, TeeReader, io.Pipe |
 
-### net（5演習）
+### net（8演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -104,6 +106,9 @@ go-practicum solution
 | 15 | middleware | ★★★ | HTTP ミドルウェアデコレータパターン |
 | 41 | file-server | ★★ | http.FileServer, 静的ファイル配信 |
 | 49 | grpc-basics | ★★★★ | gRPC, protobuf, UnaryServerInterceptor |
+| 67 | otel-tracing | ★★★★ | OpenTelemetry, 分散トレース, Span, 伝搬 |
+| 68 | prometheus-metrics | ★★★★ | Prometheus, Counter/Histogram, /metrics |
+| 70 | health-check | ★★★ | Readiness/Liveness, Kubernetes Probe, Checker |
 
 ### encoding（3演習）
 
@@ -127,12 +132,13 @@ go-practicum solution
 | 04 | error-handling | ★★★ | sentinel errors, エラーラッピング, custom error type |
 | 39 | retry-backoff | ★★★ | 指数バックオフ, ジッター付きリトライ |
 
-### os（2演習）
+### os（3演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
 | 43 | file-watch | ★★★ | ポーリングベースファイル変更検知 |
+| 69 | graceful-shutdown | ★★★ | os/signal, Shutdown, シグナルハンドリング |
 
 ### performance（7演習）
 
@@ -153,7 +159,7 @@ go-practicum solution
 | 56 | constant-time-comparison | ★★★★ | crypto/subtle, HMAC, タイミング攻撃対策, 定数時間比較 |
 | 59 | secure-memory | ★★★★ | crypto/rand, メモリゼロ化, パスワードハッシュ, 機密情報保護 |
 
-### design（5演習）
+### design（6演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -162,6 +168,7 @@ go-practicum solution
 | 54 | circuit-breaker | ★★★★ | サーキットブレーカー, 障害分離, 自動回復 |
 | 60 | hook-pattern | ★★★★ | Hook/インターセプターチェーン, パイプライン, Recovery |
 | 63 | connection-pool | ★★★★ | 汎用Pool[T], 借用/返却, idle管理, リソース制御 |
+| 73 | workflow-orchestration | ★★★★★ | ステートマシン, パイプライン, ロールバック |
 
 ### database（1演習）
 
@@ -169,11 +176,12 @@ go-practicum solution
 |---|------|--------|----------|
 | 06 | sql-transaction | ★★★ | Begin/Commit/Rollback, モックストア |
 
-### logging（1演習）
+### logging（2演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 11 | structured-log | ★★ | log/slog, JSON handler, Group |
+| 66 | structured-logging | ★★★ | log/slog レベル制御, 構造化ログ, With/コンテキスト |
 
 ### templating（1演習）
 

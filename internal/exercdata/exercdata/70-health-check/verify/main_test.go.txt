@@ -1,0 +1,102 @@
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
+
+func TestLivezHandler(t *testing.T) {
+	h := NewHealthHandler()
+	ts := httptest.NewServer(h.LivezHandler())
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/healthz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestReadyzHandlerHealthy(t *testing.T) {
+	h := NewHealthHandler(NewDBChecker("db", false))
+	ts := httptest.NewServer(h.ReadyzHandler())
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/readyz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var report HealthReport
+	if err := json.NewDecoder(resp.Body).Decode(&report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != StatusHealthy {
+		t.Errorf("expected healthy, got %s", report.Status)
+	}
+}
+
+func TestReadyzHandlerUnhealthy(t *testing.T) {
+	h := NewHealthHandler(NewDBChecker("db", true))
+	ts := httptest.NewServer(h.ReadyzHandler())
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/readyz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("expected 503, got %d", resp.StatusCode)
+	}
+
+	var report HealthReport
+	if err := json.NewDecoder(resp.Body).Decode(&report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != StatusUnhealthy {
+		t.Errorf("expected unhealthy, got %s", report.Status)
+	}
+}
+
+func TestHealthReportJSON(t *testing.T) {
+	report := HealthReport{
+		Status: StatusHealthy,
+		Checks: []CheckResult{
+			{Name: "db", Status: StatusHealthy},
+		},
+		Timestamp: time.Now(),
+	}
+	data, err := json.Marshal(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded HealthReport
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Status != StatusHealthy {
+		t.Errorf("expected healthy, got %s", decoded.Status)
+	}
+}
+
+func TestAddChecker(t *testing.T) {
+	h := NewHealthHandler()
+	h.AddChecker(NewDBChecker("cache", false))
+	if len(h.checkers) != 1 {
+		t.Errorf("expected 1 checker, got %d", len(h.checkers))
+	}
+}

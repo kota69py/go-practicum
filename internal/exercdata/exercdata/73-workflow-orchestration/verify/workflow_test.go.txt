@@ -1,0 +1,172 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestLinearWorkflow(t *testing.T) {
+	w := NewWorkflow("linear")
+	var order []string
+
+	w.AddTask("A", func(ctx context.Context) (any, error) {
+		order = append(order, "A")
+		return "A", nil
+	}, nil)
+	w.AddTask("B", func(ctx context.Context) (any, error) {
+		order = append(order, "B")
+		return "B", nil
+	}, nil)
+	w.AddTask("C", func(ctx context.Context) (any, error) {
+		order = append(order, "C")
+		return "C", nil
+	}, nil)
+
+	w.AddDependency("B", "A")
+	w.AddDependency("C", "B")
+
+	e := w.NewExecution()
+	err := e.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Status != StatusCompleted {
+		t.Errorf("expected completed, got %s", e.Status)
+	}
+	if len(order) != 3 || order[0] != "A" || order[1] != "B" || order[2] != "C" {
+		t.Errorf("expected A,B,C order, got %v", order)
+	}
+}
+
+func TestWorkflowRollback(t *testing.T) {
+	w := NewWorkflow("rollback")
+
+	aRolledBack := false
+	bExecuted := false
+
+	w.AddTask("A", func(ctx context.Context) (any, error) {
+		return "A", nil
+	}, func(ctx context.Context, output any) error {
+		aRolledBack = true
+		return nil
+	})
+	w.AddTask("B", func(ctx context.Context) (any, error) {
+		bExecuted = true
+		return nil, errors.New("B failed")
+	}, nil)
+
+	w.AddDependency("B", "A")
+
+	e := w.NewExecution()
+	err := e.Run(context.Background())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !aRolledBack {
+		t.Error("expected A to be rolled back")
+	}
+	if !bExecuted {
+		t.Error("expected B to be executed")
+	}
+	if e.Status != StatusRolledBack {
+		t.Errorf("expected rolled_back, got %s", e.Status)
+	}
+}
+
+func TestWorkflowParallel(t *testing.T) {
+	w := NewWorkflow("parallel")
+
+	var mu sync.Mutex
+	var execOrder []string
+
+	w.AddTask("A", func(ctx context.Context) (any, error) {
+		time.Sleep(50 * time.Millisecond)
+		mu.Lock()
+		execOrder = append(execOrder, "A")
+		mu.Unlock()
+		return nil, nil
+	}, nil)
+	w.AddTask("B", func(ctx context.Context) (any, error) {
+		time.Sleep(50 * time.Millisecond)
+		mu.Lock()
+		execOrder = append(execOrder, "B")
+		mu.Unlock()
+		return nil, nil
+	}, nil)
+	w.AddTask("C", func(ctx context.Context) (any, error) {
+		mu.Lock()
+		execOrder = append(execOrder, "C")
+		mu.Unlock()
+		return nil, nil
+	}, nil)
+	w.AddDependency("C", "A")
+	w.AddDependency("C", "B")
+
+	start := time.Now()
+	e := w.NewExecution()
+	err := e.RunParallel(context.Background())
+	elapsed := time.Since(start)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Status != StatusCompleted {
+		t.Errorf("expected completed, got %s", e.Status)
+	}
+	if elapsed > 100*time.Millisecond {
+		t.Errorf("A and B did not run in parallel: took %v", elapsed)
+	}
+}
+
+func TestWorkflowDependency(t *testing.T) {
+	w := NewWorkflow("dep")
+
+	var execOrder []string
+
+	w.AddTask("A", func(ctx context.Context) (any, error) {
+		execOrder = append(execOrder, "A")
+		return nil, nil
+	}, nil)
+	w.AddTask("B", func(ctx context.Context) (any, error) {
+		execOrder = append(execOrder, "B")
+		return nil, nil
+	}, nil)
+	w.AddDependency("B", "A")
+
+	e := w.NewExecution()
+	err := e.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(execOrder) != 2 || execOrder[0] != "A" || execOrder[1] != "B" {
+		t.Errorf("expected A,B order, got %v", execOrder)
+	}
+}
+
+func TestWorkflowState(t *testing.T) {
+	w := NewWorkflow("state")
+
+	w.AddTask("A", func(ctx context.Context) (any, error) {
+		return "result-A", nil
+	}, nil)
+
+	e := w.NewExecution()
+
+	if e.Status != StatusPending {
+		t.Errorf("expected pending initially, got %s", e.Status)
+	}
+
+	err := e.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Status != StatusCompleted {
+		t.Errorf("expected completed, got %s", e.Status)
+	}
+	if v, ok := e.State["A"]; !ok || v != "result-A" {
+		t.Errorf("expected state[A] = result-A, got %v", v)
+	}
+}

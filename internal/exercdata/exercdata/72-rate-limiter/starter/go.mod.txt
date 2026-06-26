@@ -1,0 +1,3 @@
+module go-practicum-72-rate-limiter
+
+go 1.23

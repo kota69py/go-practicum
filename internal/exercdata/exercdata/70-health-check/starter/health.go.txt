@@ -1,0 +1,65 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"time"
+)
+
+type HealthStatus string
+
+const (
+	StatusHealthy   HealthStatus = "healthy"
+	StatusUnhealthy HealthStatus = "unhealthy"
+)
+
+type CheckResult struct {
+	Name   string       `json:"name"`
+	Status HealthStatus `json:"status"`
+	Error  string       `json:"error,omitempty"`
+}
+
+type HealthReport struct {
+	Status    HealthStatus  `json:"status"`
+	Checks    []CheckResult `json:"checks"`
+	Timestamp time.Time     `json:"timestamp"`
+}
+
+// Checker is an interface for health checks.
+type Checker interface {
+	Name() string
+	Check(ctx context.Context) error
+}
+
+// HealthHandler handles /healthz (liveness) and /readyz (readiness).
+type HealthHandler struct {
+	checkers []Checker
+}
+
+// NewHealthHandler creates a handler with the given checkers.
+func NewHealthHandler(checks ...Checker) *HealthHandler {
+	return &HealthHandler{checkers: checks}
+}
+
+// LivezHandler returns 200 OK if process is alive (no checks).
+func (h *HealthHandler) LivezHandler() http.Handler {
+	// TODO: return 200 OK with {"status":"ok"}
+	return nil
+}
+
+// ReadyzHandler returns 200 OK if all checkers pass, 503 otherwise.
+func (h *HealthHandler) ReadyzHandler() http.Handler {
+	// TODO: iterate checkers, build HealthReport, return 200 if all healthy, 503 otherwise
+	return nil
+}
+
+// AddChecker adds a new health checker.
+func (h *HealthHandler) AddChecker(c Checker) {
+	// TODO: add the checker
+}
+
+// NewDBChecker creates a checker that pings a database (mock).
+func NewDBChecker(name string, shouldFail bool) Checker {
+	// TODO: return a Checker that fails if shouldFail is true
+	return nil
+}

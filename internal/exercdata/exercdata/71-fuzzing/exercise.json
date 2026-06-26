@@ -1,0 +1,17 @@
+{
+  "name": "71-fuzzing",
+  "title": "Fuzzing — testing/fuzz による自動テスト",
+  "category": "testing",
+  "difficulty": 4,
+  "description": "Go 1.18 で導入された built-in fuzzing を活用し、エッジケースを自動発見するテストを書きます。ParseTimestamp、ValidateEmail、SplitByComma、Reverse の各関数に対してファジングテストを実装します。",
+  "hints": [
+    "func FuzzXxx(f *testing.F) { f.Fuzz(func(t *testing.T, ...) {}) }",
+    "f.Add(...) でシードコーパスを追加",
+    "関数シグネチャは fuzzing 引数だけ可変",
+    "go test -fuzz=FuzzXxx -fuzztime=10s で実行",
+    "失敗した入力は testdata/fuzz/FuzzXxx/ に保存",
+    "ParseTimestamp の round-trip 不変条件: パース→フォーマット→再パース",
+    "Reverse の不変条件: 2回適用で元に戻る、UTF-8 正当性を維持"
+  ],
+  "files": ["fuzz.go.txt", "parse.go.txt"]
+}

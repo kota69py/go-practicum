@@ -1,0 +1,14 @@
+package main
+
+import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+)
+
+// WaitForSignal returns a context that cancels on SIGINT or SIGTERM.
+func WaitForSignal() context.Context {
+	// TODO: use signal.NotifyContext with os.Interrupt and syscall.SIGTERM
+	return nil
+}

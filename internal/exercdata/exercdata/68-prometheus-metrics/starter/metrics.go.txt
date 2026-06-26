@@ -1,0 +1,28 @@
+package main
+
+import "net/http"
+
+// Metrics holds Prometheus metric collectors.
+type Metrics struct {
+	// TODO: define counter and histogram collectors
+}
+
+// NewMetrics creates and registers request counter, duration histogram.
+func NewMetrics() *Metrics {
+	panic("not implemented")
+}
+
+// MetricsHandler returns an HTTP handler for /metrics.
+func MetricsHandler() http.Handler {
+	panic("not implemented")
+}
+
+// ObserveRequest records request count and duration.
+func (m *Metrics) ObserveRequest(method, path string, status int, duration float64) {
+	panic("not implemented")
+}
+
+// MetricsMiddleware is HTTP middleware that records request metrics.
+func MetricsMiddleware(m *Metrics, next http.Handler) http.Handler {
+	panic("not implemented")
+}

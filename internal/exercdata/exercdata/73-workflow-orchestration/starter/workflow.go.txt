@@ -1,0 +1,87 @@
+package main
+
+import "context"
+
+// WorkflowState represents the current state of a workflow
+type WorkflowState string
+
+// WorkflowStatus represents the overall status
+type WorkflowStatus string
+
+const (
+	StatusPending    WorkflowStatus = "pending"
+	StatusRunning    WorkflowStatus = "running"
+	StatusCompleted  WorkflowStatus = "completed"
+	StatusFailed     WorkflowStatus = "failed"
+	StatusRolledBack WorkflowStatus = "rolled_back"
+)
+
+// TaskResult holds the result of a single task execution
+type TaskResult struct {
+	TaskName string
+	Error    error
+	Output   any
+}
+
+// Task defines a single unit of work in the workflow
+type Task struct {
+	Name    string
+	Execute func(ctx context.Context) (any, error)
+	// Rollback undoes the task. Called when the workflow fails after this task.
+	Rollback func(ctx context.Context, output any) error
+}
+
+// Workflow is a directed acyclic graph of tasks.
+type Workflow struct {
+	Name         string
+	Tasks        map[string]*Task
+	Dependencies map[string][]string
+}
+
+// Execution tracks a single run of a workflow
+type Execution struct {
+	ID        string
+	Workflow  *Workflow
+	Status    WorkflowStatus
+	State     map[string]any
+	Completed []string
+	Failed    []string
+}
+
+// NewWorkflow creates an empty workflow
+func NewWorkflow(name string) *Workflow {
+	// TODO: implement
+	return nil
+}
+
+// AddTask adds a task to the workflow
+func (w *Workflow) AddTask(name string, execute func(ctx context.Context) (any, error), rollback func(ctx context.Context, output any) error) {
+	// TODO: implement
+}
+
+// AddDependency sets a dependency: task depends on dep
+func (w *Workflow) AddDependency(task, dep string) {
+	// TODO: implement
+}
+
+// NewExecution creates a new execution for the workflow
+func (w *Workflow) NewExecution() *Execution {
+	// TODO: implement
+	return nil
+}
+
+// Run executes the workflow respecting dependencies.
+// Runs tasks in dependency order (topological sort).
+// If any task fails, runs rollback on all completed tasks and returns the error.
+func (e *Execution) Run(ctx context.Context) error {
+	// TODO: implement
+	return nil
+}
+
+// RunParallel executes independent tasks concurrently.
+// Tasks at the same dependency level run in parallel.
+// If any task in a level fails, that level's tasks are rolled back.
+func (e *Execution) RunParallel(ctx context.Context) error {
+	// TODO: implement
+	return nil
+}

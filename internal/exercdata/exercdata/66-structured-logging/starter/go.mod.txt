@@ -1,0 +1,3 @@
+module go-practicum-structured-logging
+
+go 1.23

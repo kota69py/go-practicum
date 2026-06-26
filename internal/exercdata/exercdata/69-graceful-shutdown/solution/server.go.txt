@@ -1,0 +1,41 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"time"
+)
+
+type GracefulServer struct {
+	server *http.Server
+}
+
+func NewGracefulServer(addr string, handler http.Handler) *GracefulServer {
+	return &GracefulServer{
+		server: &http.Server{Addr: addr, Handler: handler},
+	}
+}
+
+func (s *GracefulServer) ListenAndServe(ctx context.Context) error {
+	errCh := make(chan error, 1)
+	go func() {
+		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		return s.server.Shutdown(shutdownCtx)
+	case err := <-errCh:
+		return err
+	}
+}
+
+func (s *GracefulServer) ShutdownWithTimeout(timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return s.server.Shutdown(ctx)
+}

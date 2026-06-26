@@ -1,0 +1,77 @@
+package main
+
+import (
+	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+)
+
+type Logger struct {
+	l *slog.Logger
+}
+
+func NewLogger(level string) (*Logger, error) {
+	var lvl slog.Level
+	switch strings.ToLower(level) {
+	case "debug":
+		lvl = slog.LevelDebug
+	case "info":
+		lvl = slog.LevelInfo
+	case "warn":
+		lvl = slog.LevelWarn
+	case "error":
+		lvl = slog.LevelError
+	default:
+		return nil, fmt.Errorf("unknown log level: %s", level)
+	}
+	h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})
+	return &Logger{l: slog.New(h)}, nil
+}
+
+func (l *Logger) Debug(msg string, attrs ...any) {
+	l.l.Debug(msg, attrs...)
+}
+
+func (l *Logger) Info(msg string, attrs ...any) {
+	l.l.Info(msg, attrs...)
+}
+
+func (l *Logger) Warn(msg string, attrs ...any) {
+	l.l.Warn(msg, attrs...)
+}
+
+func (l *Logger) Error(msg string, attrs ...any) {
+	l.l.Error(msg, attrs...)
+}
+
+func (l *Logger) WithRequestID(requestID string) *Logger {
+	return &Logger{l: l.l.With("request_id", requestID)}
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func LogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		sr := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(sr, r)
+		duration := time.Since(start)
+		slog.Debug("request",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", sr.status,
+			"duration", duration,
+		)
+	})
+}
