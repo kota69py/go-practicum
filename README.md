@@ -86,7 +86,7 @@ go-practicum solution
 | 23 | benchmarking | ★★★ | testing.B, 文字列連結ベンチマーク |
 | 28 | fuzzing | ★★★ | Go 1.18+ fuzzing, hex parser |
 
-### io（4演習）
+### io（5演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|

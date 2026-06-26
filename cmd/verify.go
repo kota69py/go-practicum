@@ -39,6 +39,7 @@ var verifyCmd = &cobra.Command{
 		if result.Passed {
 			fmt.Println("✅ " + colorGreen("全テスト通過！"))
 			prog.Complete(prog.InProgress)
+			prog.InProgress = ""
 			prog.Save()
 		} else {
 			fmt.Println("❌ " + colorRed("テスト失敗"))

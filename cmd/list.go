@@ -17,7 +17,7 @@ var (
 
 func init() {
 	listCmd.Flags().StringVarP(&listCategory, "category", "c", "", "カテゴリでフィルタ (例: concurrency, testing)")
-	listCmd.Flags().IntVarP(&listDifficulty, "difficulty", "d", 0, "難易度でフィルタ (1-4)")
+	listCmd.Flags().IntVarP(&listDifficulty, "difficulty", "d", 0, "難易度でフィルタ (1-5)")
 	rootCmd.AddCommand(listCmd)
 }
 
