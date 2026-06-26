@@ -1,0 +1,71 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"log"
+	"sync"
+
+	pb "go-practicum-grpc-streaming/proto/stream"
+	"google.golang.org/grpc"
+)
+
+type ChatRoom struct {
+	mu      sync.Mutex
+	members map[string]chan *pb.ChatMessage
+}
+
+func NewChatRoom() *ChatRoom {
+	return &ChatRoom{members: make(map[string]chan *pb.ChatMessage)}
+}
+
+func (r *ChatRoom) Join(user string) chan *pb.ChatMessage {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	ch := make(chan *pb.ChatMessage, 10)
+	r.members[user] = ch
+	return ch
+}
+
+func (r *ChatRoom) Leave(user string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if ch, ok := r.members[user]; ok {
+		close(ch)
+		delete(r.members, user)
+	}
+}
+
+func (r *ChatRoom) Broadcast(sender string, msg *pb.ChatMessage) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for user, ch := range r.members {
+		if user != sender {
+			select {
+			case ch <- msg:
+			default:
+			}
+		}
+	}
+}
+
+type StreamServer struct {
+	pb.UnimplementedStreamServiceServer
+	room *ChatRoom
+}
+
+func NewStreamServer() *StreamServer {
+	return &StreamServer{room: NewChatRoom()}
+}
+
+func (s *StreamServer) ServerStream(req *pb.StreamRequest, stream grpc.ServerStreamingServer[pb.StreamResponse]) error {
+	panic("not implemented")
+}
+
+func (s *StreamServer) ClientStream(stream grpc.ClientStreamingServer[pb.StreamRequest, pb.StreamSummary]) error {
+	panic("not implemented")
+}
+
+func (s *StreamServer) BidirectionalStream(stream grpc.BidiStreamingServer[pb.ChatMessage, pb.ChatMessage]) error {
+	panic("not implemented")
+}

@@ -1,0 +1,49 @@
+package main
+
+import (
+	"context"
+	"io"
+
+	pb "go-practicum-grpc-streaming/proto/stream"
+	"google.golang.org/grpc"
+)
+
+type StreamClient struct {
+	client pb.StreamServiceClient
+}
+
+func NewStreamClient(conn *grpc.ClientConn) *StreamClient {
+	return &StreamClient{client: pb.NewStreamServiceClient(conn)}
+}
+
+func (c *StreamClient) DoServerStream(ctx context.Context, data string, count int32) ([]*pb.StreamResponse, error) {
+	stream, err := c.client.ServerStream(ctx, &pb.StreamRequest{Data: data, Count: count})
+	if err != nil {
+		return nil, err
+	}
+	var resps []*pb.StreamResponse
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		resps = append(resps, resp)
+	}
+	return resps, nil
+}
+
+func (c *StreamClient) DoClientStream(ctx context.Context, datas []string) (*pb.StreamSummary, error) {
+	stream, err := c.client.ClientStream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, data := range datas {
+		if err := stream.Send(&pb.StreamRequest{Data: data}); err != nil {
+			return nil, err
+		}
+	}
+	return stream.CloseAndRecv()
+}

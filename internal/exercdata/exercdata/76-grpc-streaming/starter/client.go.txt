@@ -1,0 +1,24 @@
+package main
+
+import (
+	"context"
+
+	pb "go-practicum-grpc-streaming/proto/stream"
+	"google.golang.org/grpc"
+)
+
+type StreamClient struct {
+	client pb.StreamServiceClient
+}
+
+func NewStreamClient(conn *grpc.ClientConn) *StreamClient {
+	return &StreamClient{client: pb.NewStreamServiceClient(conn)}
+}
+
+func (c *StreamClient) DoServerStream(ctx context.Context, data string, count int32) ([]*pb.StreamResponse, error) {
+	panic("not implemented")
+}
+
+func (c *StreamClient) DoClientStream(ctx context.Context, datas []string) (*pb.StreamSummary, error) {
+	panic("not implemented")
+}

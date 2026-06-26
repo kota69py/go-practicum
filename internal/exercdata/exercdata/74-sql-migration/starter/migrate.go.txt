@@ -1,0 +1,49 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"embed"
+	"io/fs"
+
+	"github.com/golang-migrate/migrate/v4"
+)
+
+// Migrator wraps golang-migrate with convenience methods.
+type Migrator struct {
+	m *migrate.Migrate
+}
+
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
+
+// NewMigrator creates a migrator using an embedded filesystem source
+// and a *sql.DB instance. Returns nil, error if initialization fails.
+func NewMigrator(db *sql.DB) (*Migrator, error)
+
+// Up applies all pending migrations.
+func (m *Migrator) Up() error
+
+// Down rolls back the last applied migration.
+func (m *Migrator) Down() error
+
+// Steps applies n migrations (positive=up, negative=down).
+func (m *Migrator) Steps(n int) error
+
+// Version returns the current migration version and whether it's dirty.
+func (m *Migrator) Version() (uint, bool, error)
+
+// MigrateFile represents a parsed migration file.
+type MigrateFile struct {
+	Version  uint
+	Name     string
+	FilePath string
+	Content  string
+}
+
+// ReadMigrationFile reads a migration file by its version and direction.
+// Searches in the embedded migrations directory for the matching file.
+func ReadMigrationFile(version uint, direction string) (*MigrateFile, error)
+
+// Close releases migrator resources.
+func (m *Migrator) Close() (sourceErr, databaseErr error)

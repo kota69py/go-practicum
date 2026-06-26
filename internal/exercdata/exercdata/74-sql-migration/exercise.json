@@ -1,0 +1,16 @@
+{
+  "name": "74-sql-migration",
+  "title": "SQL Migration — golang-migrate によるスキーマ管理",
+  "category": "database",
+  "difficulty": 3,
+  "description": "golang-migrate を使ったデータベースマイグレーションを実践します。マイグレーションファイルの作成、Up/Down の適用、マイグレーション履歴管理を学びます。",
+  "hints": [
+    "migrate.NewWithDatabaseInstance または migrate.New でマイグレーターを作成します",
+    "m.Up() で pending のマイグレーションをすべて適用します",
+    "m.Down() で 1 つ戻します。すべて戻すには m.Drop() またはループで m.Steps(-1)",
+    "m.Steps(n) で n 個のマイグレーションを適用/ロールバック",
+    "io/fs ベースのソースには migrate.NewWithSourceInstance で embed や os.DirFS が使えます",
+    "埋め込みマイグレーションには github.com/golang-migrate/migrate/v4/source/iofs が必要です"
+  ],
+  "files": ["migrate.go.txt"]
+}

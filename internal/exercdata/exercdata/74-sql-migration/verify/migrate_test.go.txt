@@ -1,0 +1,51 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestReadMigrationFile_Exists(t *testing.T) {
+	f, err := ReadMigrationFile(1, "up")
+	if err != nil {
+		t.Fatalf("ReadMigrationFile(1, \"up\") error: %v", err)
+	}
+	if f.Version != 1 {
+		t.Errorf("Version = %d, want 1", f.Version)
+	}
+	if f.Name != "create_users_table" {
+		t.Errorf("Name = %q, want %q", f.Name, "create_users_table")
+	}
+	if f.Content == "" {
+		t.Error("Content is empty")
+	}
+}
+
+func TestReadMigrationFile_NotFound(t *testing.T) {
+	_, err := ReadMigrationFile(999, "up")
+	if err == nil {
+		t.Error("expected error for nonexistent migration")
+	}
+}
+
+func TestReadMigrationFile_Down(t *testing.T) {
+	f, err := ReadMigrationFile(1, "down")
+	if err != nil {
+		t.Fatalf("ReadMigrationFile(1, \"down\") error: %v", err)
+	}
+	if f.Version != 1 {
+		t.Errorf("Version = %d, want 1", f.Version)
+	}
+	if f.Content == "" {
+		t.Error("Content is empty")
+	}
+}
+
+func TestEmbeddedMigrations(t *testing.T) {
+	entries, err := migrationsFS.ReadDir("migrations")
+	if err != nil {
+		t.Fatalf("ReadDir error: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Error("no migration files embedded")
+	}
+}

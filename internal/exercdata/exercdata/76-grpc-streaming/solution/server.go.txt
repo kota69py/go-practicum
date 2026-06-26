@@ -1,0 +1,124 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"strings"
+	"sync"
+
+	pb "go-practicum-grpc-streaming/proto/stream"
+	"google.golang.org/grpc"
+)
+
+type ChatRoom struct {
+	mu      sync.Mutex
+	members map[string]chan *pb.ChatMessage
+}
+
+func NewChatRoom() *ChatRoom {
+	return &ChatRoom{members: make(map[string]chan *pb.ChatMessage)}
+}
+
+func (r *ChatRoom) Join(user string) chan *pb.ChatMessage {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	ch := make(chan *pb.ChatMessage, 10)
+	r.members[user] = ch
+	return ch
+}
+
+func (r *ChatRoom) Leave(user string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if ch, ok := r.members[user]; ok {
+		close(ch)
+		delete(r.members, user)
+	}
+}
+
+func (r *ChatRoom) Broadcast(sender string, msg *pb.ChatMessage) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for user, ch := range r.members {
+		if user != sender {
+			select {
+			case ch <- msg:
+			default:
+			}
+		}
+	}
+}
+
+type StreamServer struct {
+	pb.UnimplementedStreamServiceServer
+	room *ChatRoom
+}
+
+func NewStreamServer() *StreamServer {
+	return &StreamServer{room: NewChatRoom()}
+}
+
+func (s *StreamServer) ServerStream(req *pb.StreamRequest, stream grpc.ServerStreamingServer[pb.StreamResponse]) error {
+	for i := int32(0); i < req.Count; i++ {
+		resp := &pb.StreamResponse{
+			Result: fmt.Sprintf("%s-%d", req.Data, i),
+			Index:  i,
+		}
+		if err := stream.Send(resp); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *StreamServer) ClientStream(stream grpc.ClientStreamingServer[pb.StreamRequest, pb.StreamSummary]) error {
+	var total int32
+	var details []string
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		total++
+		details = append(details, req.Data)
+	}
+	return stream.SendAndClose(&pb.StreamSummary{
+		TotalCount: total,
+		Details:    strings.Join(details, ","),
+	})
+}
+
+func (s *StreamServer) BidirectionalStream(stream grpc.BidiStreamingServer[pb.ChatMessage, pb.ChatMessage]) error {
+	firstMsg, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+	user := firstMsg.User
+	ch := s.room.Join(user)
+	defer s.room.Leave(user)
+
+	errCh := make(chan error, 1)
+	go func() {
+		for msg := range ch {
+			if err := stream.Send(msg); err != nil {
+				errCh <- err
+				return
+			}
+		}
+	}()
+
+	s.room.Broadcast(user, firstMsg)
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		s.room.Broadcast(user, msg)
+	}
+}

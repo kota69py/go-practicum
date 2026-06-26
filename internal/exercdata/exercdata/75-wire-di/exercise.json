@@ -1,0 +1,16 @@
+{
+  "name": "75-wire-di",
+  "title": "google/wire — 依存性注入とコンポーネント構成",
+  "category": "design",
+  "difficulty": 4,
+  "description": "google/wire を使った依存性注入を実践します。インターフェースベースの設計、プロバイダ関数、インジェクタ定義、Wire によるコード生成を学びます。",
+  "hints": [
+    "wire.Build(providers...) で依存関係グラフを宣言します",
+    "プロバイダは func() *Type または func(...deps) *Type の形式です",
+    "wire.Struct(new(Config), \"*\") で構造体の全フィールドを注入対象にできます",
+    "wire.Bind(new(Interface), new(*Impl)) でインターフェースと実装をバインドします",
+    "インジェクタ関数は wire.Build を呼び出し、戻り値の型から依存グラフを解決します",
+    "go:generate wire で wire_gen.go を生成します（この演習では手動で書きます）"
+  ],
+  "files": ["wire.go.txt", "wire_gen.go.txt"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "76-grpc-streaming",
+  "title": "gRPC Streaming — Server/Client/Bidirectional Streaming",
+  "category": "net",
+  "difficulty": 4,
+  "description": "gRPC のストリーミング RPC を実践します。Server Streaming、Client Streaming、Bidirectional Streaming の3パターンを実装し、チャットサービスのハンドラーを完成させてください。",
+  "hints": [
+    "Server Streaming: サーバーが複数メッセージを stream.Send(msg) で送信します",
+    "Client Streaming: サーバーが stream.Recv() で受信し、最後に stream.SendAndClose() で応答します",
+    "Bidirectional Streaming: サーバーが goroutine で stream.Recv() と stream.Send() を同時に行います",
+    "stream.Context().Done() でクライアントの切断を検出できます",
+    "ストリーミング RPC は grpc.ServiceDesc の Streams フィールドに定義されます",
+    "チャットでは Join で接続、Leave で切断、SendMessage でメッセージブロードキャストを管理します"
+  ],
+  "files": ["server.go.txt", "client.go.txt", "main.go.txt"]
+}

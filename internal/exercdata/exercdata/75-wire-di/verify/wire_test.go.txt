@@ -1,0 +1,52 @@
+package main
+
+import (
+	"context"
+	"testing"
+)
+
+func TestInitializeServer(t *testing.T) {
+	srv, err := InitializeServer()
+	if err != nil {
+		t.Fatalf("InitializeServer() error: %v", err)
+	}
+	if srv == nil {
+		t.Fatal("InitializeServer() returned nil")
+	}
+	if srv.config.ServerPort != ":8080" {
+		t.Errorf("ServerPort = %q, want %q", srv.config.ServerPort, ":8080")
+	}
+}
+
+func TestGetUser(t *testing.T) {
+	srv, err := InitializeServer()
+	if err != nil {
+		t.Fatalf("InitializeServer() error: %v", err)
+	}
+	user, err := srv.service.GetUser(context.Background(), "1")
+	if err != nil {
+		t.Fatalf("GetUser error: %v", err)
+	}
+	if user == nil {
+		t.Fatal("user is nil")
+	}
+	if user["id"] != "1" {
+		t.Errorf("user id = %q, want %q", user["id"], "1")
+	}
+}
+
+func TestDatabaseInterface(t *testing.T) {
+	config := NewConfig()
+	db, err := NewPostgresDB(config)
+	if err != nil {
+		t.Fatalf("NewPostgresDB error: %v", err)
+	}
+	var d Database = db
+	rows, err := d.Query(context.Background(), "SELECT * FROM users")
+	if err != nil {
+		t.Fatalf("Query error: %v", err)
+	}
+	if len(rows) == 0 {
+		t.Error("expected at least 1 row")
+	}
+}

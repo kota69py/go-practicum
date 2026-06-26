@@ -1,0 +1,141 @@
+package main
+
+import (
+	"context"
+	"strings"
+
+	"github.com/google/wire"
+)
+
+// === Config ===
+
+type Config struct {
+	ServerPort string
+	DBDSN      string
+}
+
+func NewConfig() *Config {
+	return &Config{ServerPort: ":8080", DBDSN: "postgres://localhost:5432/mydb"}
+}
+
+// === Database ===
+
+type Database interface {
+	Query(ctx context.Context, query string, args ...any) ([]map[string]string, error)
+	Close() error
+}
+
+// PostgresDB implements Database (mock — no real connection)
+type PostgresDB struct {
+	DSN string
+}
+
+func NewPostgresDB(config *Config) (*PostgresDB, error) {
+	if config.DBDSN == "" {
+		return nil, ErrNoDSN
+	}
+	return &PostgresDB{DSN: config.DBDSN}, nil
+}
+
+func (db *PostgresDB) Query(ctx context.Context, query string, args ...any) ([]map[string]string, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	if strings.Contains(query, "WHERE id = $1") && len(args) > 0 {
+		id, _ := args[0].(string)
+		return []map[string]string{
+			{"id": id, "name": "Alice"},
+		}, nil
+	}
+	return []map[string]string{
+		{"id": "1", "name": "Alice"},
+		{"id": "2", "name": "Bob"},
+	}, nil
+}
+
+func (db *PostgresDB) Close() error {
+	return nil
+}
+
+// === Repository ===
+
+type UserRepository struct {
+	db Database
+}
+
+func NewUserRepository(db Database) *UserRepository {
+	return &UserRepository{db: db}
+}
+
+func (r *UserRepository) GetUser(ctx context.Context, id string) (map[string]string, error) {
+	rows, err := r.db.Query(ctx, "SELECT * FROM users WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	return rows[0], nil
+}
+
+// === Service ===
+
+type UserService struct {
+	repo *UserRepository
+}
+
+func NewUserService(repo *UserRepository) *UserService {
+	return &UserService{repo: repo}
+}
+
+func (s *UserService) GetUser(ctx context.Context, id string) (map[string]string, error) {
+	return s.repo.GetUser(ctx, id)
+}
+
+// === HTTP Server ===
+
+type HTTPServer struct {
+	config  *Config
+	service *UserService
+}
+
+func NewHTTPServer(config *Config, service *UserService) *HTTPServer {
+	return &HTTPServer{config: config, service: service}
+}
+
+func (s *HTTPServer) Serve() error {
+	return nil
+}
+
+// === Wire Provider Set ===
+
+var ErrNoDSN = errNoDSN()
+
+func errNoDSN() error {
+	return &noDSNError{}
+}
+
+type noDSNError struct{}
+
+func (e *noDSNError) Error() string {
+	return "DBDSN is empty"
+}
+
+var ProviderSet = wire.NewSet(
+	NewConfig,
+	ProvideDatabase,
+	wire.Bind(new(Database), new(*PostgresDB)),
+	NewUserRepository,
+	NewUserService,
+	NewHTTPServer,
+)
+
+func ProvideDatabase(config *Config) (Database, error) {
+	return NewPostgresDB(config)
+}
+
+//go:generate wire
+func InitializeServer() (*HTTPServer, error) {
+	wire.Build(ProviderSet)
+	return nil, nil
+}

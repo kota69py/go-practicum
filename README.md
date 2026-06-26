@@ -41,7 +41,7 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全73演習）
+## 演習一覧（全76演習）
 
 ### concurrency（15演習）
 
@@ -97,7 +97,7 @@ go-practicum solution
 | 26 | io-reader-writer | ★★★ | io.Reader/Writer 実装, ROT13 |
 | 33 | io-multi-pipe | ★★★ | MultiReader, TeeReader, io.Pipe |
 
-### net（8演習）
+### net（9演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -109,6 +109,7 @@ go-practicum solution
 | 67 | otel-tracing | ★★★★ | OpenTelemetry, 分散トレース, Span, 伝搬 |
 | 68 | prometheus-metrics | ★★★★ | Prometheus, Counter/Histogram, /metrics |
 | 70 | health-check | ★★★ | Readiness/Liveness, Kubernetes Probe, Checker |
+| 76 | grpc-streaming | ★★★★ | Server/Client/Bidi Streaming, チャット |
 
 ### encoding（3演習）
 
@@ -159,7 +160,7 @@ go-practicum solution
 | 56 | constant-time-comparison | ★★★★ | crypto/subtle, HMAC, タイミング攻撃対策, 定数時間比較 |
 | 59 | secure-memory | ★★★★ | crypto/rand, メモリゼロ化, パスワードハッシュ, 機密情報保護 |
 
-### design（6演習）
+### design（7演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -169,12 +170,14 @@ go-practicum solution
 | 60 | hook-pattern | ★★★★ | Hook/インターセプターチェーン, パイプライン, Recovery |
 | 63 | connection-pool | ★★★★ | 汎用Pool[T], 借用/返却, idle管理, リソース制御 |
 | 73 | workflow-orchestration | ★★★★★ | ステートマシン, パイプライン, ロールバック |
+| 75 | wire-di | ★★★★ | google/wire, 依存性注入, Provider/Injector |
 
-### database（1演習）
+### database（2演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 06 | sql-transaction | ★★★ | Begin/Commit/Rollback, モックストア |
+| 74 | sql-migration | ★★★ | golang-migrate, スキーマ管理, Up/Down |
 
 ### logging（2演習）
 

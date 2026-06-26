@@ -1,0 +1,87 @@
+package main
+
+import (
+	"context"
+	"net"
+	"testing"
+
+	pb "go-practicum-grpc-streaming/proto/stream"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
+)
+
+const bufSize = 1024 * 1024
+
+func startTestServer(t *testing.T) (*StreamServer, *grpc.ClientConn, func()) {
+	t.Helper()
+	srv := NewStreamServer()
+	s := grpc.NewServer()
+	pb.RegisterStreamServiceServer(s, srv)
+
+	listener := bufconn.Listen(bufSize)
+	go s.Serve(listener)
+
+	conn, err := grpc.DialContext(context.Background(), "bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			return listener.DialContext(ctx)
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatalf("dial error: %v", err)
+	}
+	return srv, conn, func() { conn.Close(); s.Stop() }
+}
+
+func TestServerStreaming(t *testing.T) {
+	_, conn, cleanup := startTestServer(t)
+	defer cleanup()
+	client := NewStreamClient(conn)
+
+	resps, err := client.DoServerStream(context.Background(), "test", 3)
+	if err != nil {
+		t.Fatalf("DoServerStream error: %v", err)
+	}
+	if len(resps) != 3 {
+		t.Fatalf("got %d responses, want 3", len(resps))
+	}
+	for i, r := range resps {
+		if r.Index != int32(i) {
+			t.Errorf("responses[%d].Index = %d, want %d", i, r.Index, i)
+		}
+	}
+}
+
+func TestClientStreaming(t *testing.T) {
+	_, conn, cleanup := startTestServer(t)
+	defer cleanup()
+	client := NewStreamClient(conn)
+
+	summary, err := client.DoClientStream(context.Background(), []string{"a", "b", "c"})
+	if err != nil {
+		t.Fatalf("DoClientStream error: %v", err)
+	}
+	if summary.TotalCount != 3 {
+		t.Errorf("TotalCount = %d, want 3", summary.TotalCount)
+	}
+}
+
+func TestBidirectionalStreaming(t *testing.T) {
+	_, conn, cleanup := startTestServer(t)
+	defer cleanup()
+	client := pb.NewStreamServiceClient(conn)
+
+	stream, err := client.BidirectionalStream(context.Background())
+	if err != nil {
+		t.Fatalf("BidirectionalStream error: %v", err)
+	}
+
+	if err := stream.Send(&pb.ChatMessage{User: "alice", Text: "hello"}); err != nil {
+		t.Fatalf("send error: %v", err)
+	}
+
+	if err := stream.CloseSend(); err != nil {
+		t.Fatalf("CloseSend error: %v", err)
+	}
+}

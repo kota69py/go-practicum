@@ -1,0 +1,125 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"io/fs"
+	"path"
+	"regexp"
+	"strings"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+)
+
+// Migrator wraps golang-migrate with convenience methods.
+type Migrator struct {
+	m *migrate.Migrate
+}
+
+// NewMigrator creates a migrator using an embedded filesystem source
+// and a *sql.DB instance. Returns nil, error if initialization fails.
+func NewMigrator(db *sql.DB) (*Migrator, error) {
+	src, err := iofs.New(migrationsFS, "migrations")
+	if err != nil {
+		return nil, fmt.Errorf("iofs.New: %w", err)
+	}
+
+	inst, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("postgres.WithInstance: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", src, "postgres", inst)
+	if err != nil {
+		if err == migrate.ErrNoChange {
+			return &Migrator{m: m}, nil
+		}
+		return nil, fmt.Errorf("migrate.NewWithSourceInstance: %w", err)
+	}
+
+	return &Migrator{m: m}, nil
+}
+
+// Up applies all pending migrations.
+func (m *Migrator) Up() error {
+	err := m.m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+	return nil
+}
+
+// Down rolls back the last applied migration.
+func (m *Migrator) Down() error {
+	return m.m.Steps(-1)
+}
+
+// Steps applies n migrations (positive=up, negative=down).
+func (m *Migrator) Steps(n int) error {
+	return m.m.Steps(n)
+}
+
+// Version returns the current migration version and whether it's dirty.
+func (m *Migrator) Version() (uint, bool, error) {
+	return m.m.Version()
+}
+
+// MigrateFile represents a parsed migration file.
+type MigrateFile struct {
+	Version  uint
+	Name     string
+	FilePath string
+	Content  string
+}
+
+var migrationFileRe = regexp.MustCompile(`^(\d+)_(.+)\.(up|down)\.sql$`)
+
+// ReadMigrationFile reads a migration file by its version and direction.
+// Searches in the embedded migrations directory for the matching file.
+func ReadMigrationFile(version uint, direction string) (*MigrateFile, error) {
+	entries, err := migrationsFS.ReadDir("migrations")
+	if err != nil {
+		return nil, fmt.Errorf("read migrations dir: %w", err)
+	}
+
+	prefix := fmt.Sprintf("%06d", version)
+
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasPrefix(name, prefix) {
+			continue
+		}
+		if !strings.HasSuffix(name, "."+direction+".sql") {
+			continue
+		}
+
+		matches := migrationFileRe.FindStringSubmatch(name)
+		if matches == nil {
+			continue
+		}
+
+		content, err := migrationsFS.ReadFile(path.Join("migrations", name))
+		if err != nil {
+			return nil, fmt.Errorf("read file %s: %w", name, err)
+		}
+
+		return &MigrateFile{
+			Version:  version,
+			Name:     matches[2],
+			FilePath: name,
+			Content:  string(content),
+		}, nil
+	}
+
+	return nil, fmt.Errorf("migration file not found: version=%d direction=%s", version, direction)
+}
+
+// Close releases migrator resources.
+func (m *Migrator) Close() (sourceErr, databaseErr error) {
+	return m.m.Close()
+}
