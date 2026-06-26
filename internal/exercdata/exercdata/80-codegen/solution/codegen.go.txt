@@ -1,0 +1,218 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"go/types"
+	"os"
+	"strings"
+	"text/template"
+)
+
+type StructInfo struct {
+	Name   string
+	Fields []FieldInfo
+}
+
+type FieldInfo struct {
+	Name string
+	Type string
+	Tag  string
+}
+
+func ParseFile(filename string) ([]StructInfo, error) {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	var structs []StructInfo
+
+	ast.Inspect(f, func(n ast.Node) bool {
+		genDecl, ok := n.(*ast.GenDecl)
+		if !ok {
+			return true
+		}
+		for _, spec := range genDecl.Specs {
+			typeSpec, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			structType, ok := typeSpec.Type.(*ast.StructType)
+			if !ok {
+				continue
+			}
+
+			var fields []FieldInfo
+			for _, field := range structType.Fields.List {
+				if len(field.Names) == 0 {
+					continue
+				}
+				fi := FieldInfo{
+					Name: field.Names[0].Name,
+					Type: types.ExprString(field.Type),
+				}
+				if field.Tag != nil {
+					fi.Tag = strings.Trim(field.Tag.Value, "`")
+				}
+				fields = append(fields, fi)
+			}
+
+			structs = append(structs, StructInfo{
+				Name:   typeSpec.Name.Name,
+				Fields: fields,
+			})
+		}
+		return true
+	})
+
+	return structs, nil
+}
+
+func GenerateJSONMethods(info StructInfo) (string, error) {
+	tmpl := `// MarshalJSON implements json.Marshaler for {{.Name}}.
+func (s *{{.Name}}) MarshalJSON() ([]byte, error) {
+	type Alias {{.Name}}
+	return json.Marshal(&struct{ *Alias }{Alias: (*Alias)(s)})
+}
+
+// UnmarshalJSON implements json.Unmarshaler for {{.Name}}.
+func (s *{{.Name}}) UnmarshalJSON(data []byte) error {
+	type Alias {{.Name}}
+	aux := &struct{ *Alias }{Alias: (*Alias)(s)}
+	return json.Unmarshal(data, aux)
+}
+`
+	t, err := template.New("json").Parse(tmpl)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, info); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func GenerateValidator(info StructInfo) (string, error) {
+	tmpl := `// Validate checks struct fields based on validate tags.
+func (s *{{.Name}}) Validate() error {
+	{{range .Fields}}{{if .Tag}}if tag := s.{{.Name}}; {{end}}
+	{{end}}return nil
+}
+`
+	// Build field-specific validation logic
+	var validationChecks []string
+	for _, f := range info.Fields {
+		tag := parseValidateTag(f.Tag)
+		if tag == "" {
+			continue
+		}
+		switch {
+		case tag == "required":
+			validationChecks = append(validationChecks,
+				fmt.Sprintf(`if s.%s == "" { return fmt.Errorf("%%s is required", "%s") }`, f.Name, f.Name))
+		case tag == "min=3":
+			validationChecks = append(validationChecks,
+				fmt.Sprintf(`if len(s.%s) < 3 { return fmt.Errorf("%%s must be at least 3 characters", "%s") }`, f.Name, f.Name))
+		case tag == "email":
+			validationChecks = append(validationChecks,
+				fmt.Sprintf(`if !strings.Contains(s.%s, "@") { return fmt.Errorf("%%s must contain @", "%s") }`, f.Name, f.Name))
+		}
+	}
+
+	t, err := template.New("validator").Parse(
+		`// Validate checks struct fields based on validate tags.
+func (s *{{.Name}}) Validate() error {
+{{range .Checks}}	{{.}}
+{{end}}	return nil
+}
+`)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, map[string]interface{}{
+		"Name":   info.Name,
+		"Checks": validationChecks,
+	}); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func parseValidateTag(tag string) string {
+	if tag == "" {
+		return ""
+	}
+	// Simple tag parser for `validate:"..."` format
+	parts := strings.Split(tag, " ")
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if strings.HasPrefix(p, "validate:") {
+			val := strings.Trim(p, `"`)
+			val = strings.TrimPrefix(val, "validate:")
+			val = strings.Trim(val, `"`)
+			return val
+		}
+	}
+	return ""
+}
+
+func GenerateStringer(info StructInfo) (string, error) {
+	tmpl := `// String returns a string representation of {{.Name}}.
+func (s *{{.Name}}) String() string {
+	return fmt.Sprintf("{{.Name}}{ {{range $i, $f := .Fields}}{{if $i}}, {{end}}{{$f.Name}}: %v{{end}} }", {{range $i, $f := .Fields}}{{if $i}}, {{end}}s.{{$f.Name}}{{end}})
+}
+`
+	t, err := template.New("stringer").Parse(tmpl)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, info); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type GenerateOptions struct {
+	JSON      bool
+	Validator bool
+	Stringer  bool
+}
+
+func GenerateAll(info StructInfo, opts GenerateOptions) (map[string]string, error) {
+	result := make(map[string]string)
+	if opts.JSON {
+		code, err := GenerateJSONMethods(info)
+		if err != nil {
+			return nil, err
+		}
+		result["MarshalJSON"] = code
+	}
+	if opts.Validator {
+		code, err := GenerateValidator(info)
+		if err != nil {
+			return nil, err
+		}
+		result["Validate"] = code
+	}
+	if opts.Stringer {
+		code, err := GenerateStringer(info)
+		if err != nil {
+			return nil, err
+		}
+		result["String"] = code
+	}
+	return result, nil
+}
+
+func WriteGeneratedFile(filename, generatedCode string) error {
+	header := "// Code generated by go-practicum-codegen. DO NOT EDIT.\n\n"
+	return os.WriteFile(filename, []byte(header+generatedCode), 0644)
+}

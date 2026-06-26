@@ -1,0 +1,3 @@
+module go-practicum-api-pagination
+
+go 1.23

@@ -1,0 +1,2 @@
+module go-practicum-feature-flag
+go 1.23

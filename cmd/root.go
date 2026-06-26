@@ -23,11 +23,13 @@ var rootCmd = &cobra.Command{
 並行処理パターンなどを「自分で考えてコードを書く」ことに焦点を当てています。
 
 使い方:
-  go-practicum list                   演習一覧を表示
-  go-practicum start <name>           演習を開始（カレントディレクトリに展開）
-  go-practicum verify                 演習を検証（go test を実行）
-  go-practicum hint                   ヒントを表示
-  go-practicum solution               解答例を表示`,
+   go-practicum list                   演習一覧を表示
+   go-practicum start <name>           演習を開始（カレントディレクトリに展開）
+   go-practicum verify                 演習を検証（go test を実行）
+   go-practicum hint                   ヒントを表示
+   go-practicum solution               解答例を表示
+   go-practicum check                  コードを静的解析
+   go-practicum export [json|html]     学習進捗をエクスポート`,
 }
 
 func Execute() {

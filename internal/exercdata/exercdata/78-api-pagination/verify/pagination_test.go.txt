@@ -1,0 +1,98 @@
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestOffsetPagination(t *testing.T) {
+	store := NewItemStore()
+	resp := PaginateOffset(store, OffsetPageRequest{Page: 1, Limit: 10})
+	if len(resp.Data) != 10 {
+		t.Errorf("page 1 got %d items, want 10", len(resp.Data))
+	}
+	if resp.Total != 100 {
+		t.Errorf("Total = %d, want 100", resp.Total)
+	}
+	if resp.TotalPages != 10 {
+		t.Errorf("TotalPages = %d, want 10", resp.TotalPages)
+	}
+	if resp.Page != 1 {
+		t.Errorf("Page = %d, want 1", resp.Page)
+	}
+}
+
+func TestOffsetPaginationLastPage(t *testing.T) {
+	store := NewItemStore()
+	resp := PaginateOffset(store, OffsetPageRequest{Page: 10, Limit: 10})
+	if len(resp.Data) != 10 {
+		t.Errorf("last page got %d items, want 10", len(resp.Data))
+	}
+}
+
+func TestCursorPagination(t *testing.T) {
+	store := NewItemStore()
+	resp := PaginateCursor(store, CursorPageRequest{Cursor: "", Limit: 10})
+	if len(resp.Data) != 10 {
+		t.Errorf("first page got %d items, want 10", len(resp.Data))
+	}
+	if !resp.HasMore {
+		t.Error("HasMore should be true")
+	}
+	if resp.NextCursor == "" {
+		t.Error("NextCursor should be set")
+	}
+}
+
+func TestCursorPaginationFollow(t *testing.T) {
+	store := NewItemStore()
+	page1 := PaginateCursor(store, CursorPageRequest{Cursor: "", Limit: 10})
+	page2 := PaginateCursor(store, CursorPageRequest{Cursor: page1.NextCursor, Limit: 10})
+	if len(page2.Data) != 10 {
+		t.Errorf("page 2 got %d items, want 10", len(page2.Data))
+	}
+	if page2.Data[0].ID != 11 {
+		t.Errorf("page 2 first item ID = %d, want 11", page2.Data[0].ID)
+	}
+}
+
+func TestOffsetHandler(t *testing.T) {
+	store := NewItemStore()
+	handler := OffsetHandler(store)
+	req := httptest.NewRequest("GET", "/api/items?page=2&limit=5", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	var resp OffsetPageResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if len(resp.Data) != 5 {
+		t.Errorf("got %d items, want 5", len(resp.Data))
+	}
+	if resp.Page != 2 {
+		t.Errorf("Page = %d, want 2", resp.Page)
+	}
+}
+
+func TestCursorHandler(t *testing.T) {
+	store := NewItemStore()
+	handler := CursorHandler(store)
+	req := httptest.NewRequest("GET", "/api/items/cursor?limit=10", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	var resp CursorPageResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if len(resp.Data) != 10 {
+		t.Errorf("got %d items, want 10", len(resp.Data))
+	}
+}

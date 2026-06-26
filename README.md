@@ -41,7 +41,7 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全76演習）
+## 演習一覧（全80演習）
 
 ### concurrency（15演習）
 
@@ -63,7 +63,7 @@ go-practicum solution
 | 53 | lockfree-ringbuffer | ★★★★★ | lock-free SPSC, sync/atomic, memory ordering |
 | 72 | rate-limiter | ★★★★ | トークンバケット, スライディングウィンドウ, レート制御 |
 
-### language（9演習）
+### language（10演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -76,8 +76,9 @@ go-practicum solution
 | 47 | enum | ★★★ | 型安全 enum, Stringer, JSON 対応 |
 | 55 | unsafe-memory | ★★★★★ | unsafe.Pointer, struct padding, メモリアライメント |
 | 58 | build-tags | ★★★★ | //go:build, 条件付きビルド, プラットフォーム分岐 |
+| 80 | codegen | ★★★★★ | go:generate, AST解析, コード自動生成 |
 
-### testing（6演習）
+### testing（7演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -87,6 +88,7 @@ go-practicum solution
 | 23 | benchmarking | ★★★ | testing.B, 文字列連結ベンチマーク |
 | 28 | fuzzing | ★★★ | Go 1.18+ fuzzing, hex parser |
 | 71 | fuzzing-advanced | ★★★★ | testing/fuzz, 不変条件テスト, ラウンドトリップ検証 |
+| 79 | mockgen | ★★★ | go.uber.org/mock, モック生成, 呼び出し検証 |
 
 ### io（5演習）
 
@@ -119,12 +121,13 @@ go-practicum solution
 | 38 | encoding-xml | ★★ | xml.Marshal/Unmarshal, 構造体タグ, 属性 |
 | 42 | struct-validation | ★★★ | reflect 構造体タグバリデーション |
 
-### configuration（2演習）
+### configuration（3演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 17 | config | ★★ | 環境変数読み込み, デフォルト値 |
 | 29 | cli-flag | ★★ | flag.FlagSet サブコマンド |
+| 77 | feature-flag | ★★★★ | 段階的ロールアウト, A/Bテスト, Kill Switch |
 
 ### error-handling（2演習）
 
@@ -160,7 +163,7 @@ go-practicum solution
 | 56 | constant-time-comparison | ★★★★ | crypto/subtle, HMAC, タイミング攻撃対策, 定数時間比較 |
 | 59 | secure-memory | ★★★★ | crypto/rand, メモリゼロ化, パスワードハッシュ, 機密情報保護 |
 
-### design（7演習）
+### design（8演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -171,6 +174,7 @@ go-practicum solution
 | 63 | connection-pool | ★★★★ | 汎用Pool[T], 借用/返却, idle管理, リソース制御 |
 | 73 | workflow-orchestration | ★★★★★ | ステートマシン, パイプライン, ロールバック |
 | 75 | wire-di | ★★★★ | google/wire, 依存性注入, Provider/Injector |
+| 78 | api-pagination | ★★★ | Cursor/Offset ページネーション, トークン |
 
 ### database（2演習）
 

@@ -1,0 +1,2 @@
+module go-practicum-codegen
+go 1.23

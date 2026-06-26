@@ -1,0 +1,16 @@
+{
+  "name": "77-feature-flag",
+  "title": "Feature Flag — 段階的ロールアウトとA/Bテスト",
+  "category": "configuration",
+  "difficulty": 4,
+  "description": "Feature Flag システムを実装し、段階的ロールアウト、A/Bテスト、Kill Switch を実現します。フラグの評価、ターゲティングルール、ユーザーコホート分割を学びます。",
+  "hints": [
+    "FeatureFlag は name, enabled, percentage, targeting rules を持つ",
+    "percentage は 0-100 の整数で、hash(userID) % 100 < percentage で評価",
+    "ターゲティングルールは条件(国、プラン)と値を組み合わせる",
+    "Rule は Attribute, Operator, Value を持ち、Match(user) で判定",
+    "評価順序: ターゲティングルール → グローバル有効/無効 → 段階ロールアウト",
+    "Kill Switch は enabled=false ですべてのユーザーに無効化"
+  ],
+  "files": ["flags.go.txt"]
+}

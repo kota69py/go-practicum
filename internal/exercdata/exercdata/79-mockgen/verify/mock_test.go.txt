@@ -1,0 +1,97 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"go.uber.org/mock/gomock"
+)
+
+func TestRegister_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := NewMockUserRepository(ctrl)
+	mockNotif := NewMockNotificationService(ctrl)
+
+	svc := NewUserService(mockRepo, mockNotif)
+	user := &User{ID: "1", Email: "test@example.com", Name: "Test"}
+
+	mockRepo.EXPECT().Save(gomock.Any(), user).Return(nil)
+	mockNotif.EXPECT().SendEmail(gomock.Any(), user.Email, "Welcome!", "Thanks for joining!").Return(nil)
+
+	if err := svc.Register(context.Background(), user); err != nil {
+		t.Fatalf("Register error: %v", err)
+	}
+}
+
+func TestRegister_RepoError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := NewMockUserRepository(ctrl)
+	mockNotif := NewMockNotificationService(ctrl)
+
+	svc := NewUserService(mockRepo, mockNotif)
+	user := &User{ID: "1", Email: "test@example.com"}
+
+	mockRepo.EXPECT().Save(gomock.Any(), user).Return(errors.New("db error"))
+
+	err := svc.Register(context.Background(), user)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDeactivate_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := NewMockUserRepository(ctrl)
+	mockNotif := NewMockNotificationService(ctrl)
+
+	svc := NewUserService(mockRepo, mockNotif)
+	user := &User{ID: "1", Email: "bye@example.com"}
+
+	mockRepo.EXPECT().Get(gomock.Any(), "1").Return(user, nil)
+	mockRepo.EXPECT().Delete(gomock.Any(), "1").Return(nil)
+	mockNotif.EXPECT().SendEmail(gomock.Any(), user.Email, "Goodbye", "Your account has been deleted.").Return(nil)
+
+	if err := svc.Deactivate(context.Background(), "1"); err != nil {
+		t.Fatalf("Deactivate error: %v", err)
+	}
+}
+
+func TestDeactivate_UserNotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := NewMockUserRepository(ctrl)
+	mockNotif := NewMockNotificationService(ctrl)
+
+	svc := NewUserService(mockRepo, mockNotif)
+	mockRepo.EXPECT().Get(gomock.Any(), "1").Return(nil, errors.New("not found"))
+
+	err := svc.Deactivate(context.Background(), "1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestRegister_Times(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := NewMockUserRepository(ctrl)
+	mockNotif := NewMockNotificationService(ctrl)
+
+	svc := NewUserService(mockRepo, mockNotif)
+
+	// Expect Save to be called exactly 2 times
+	mockRepo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	mockNotif.EXPECT().SendEmail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(2)
+
+	svc.Register(context.Background(), &User{ID: "1", Email: "a@b.com"})
+	svc.Register(context.Background(), &User{ID: "2", Email: "c@d.com"})
+}

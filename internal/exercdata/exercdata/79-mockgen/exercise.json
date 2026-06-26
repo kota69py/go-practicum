@@ -1,0 +1,17 @@
+{
+  "name": "79-mockgen",
+  "title": "Mock Generation — go.uber.org/mock によるテストダブル",
+  "category": "testing",
+  "difficulty": 3,
+  "description": "go.uber.org/mock (旧 gomock) を使ったモック生成とテストを実践します。インターフェース定義からモックを生成し、Expect による呼び出し検証を学びます。",
+  "hints": [
+    "go.uber.org/mock は Go 1.23+ 対応のモックフレームワークです",
+    "go generate ディレクティブで mockgen を実行: //go:generate go run go.uber.org/mock/mockgen -source=...",
+    "ctrl := gomock.NewController(t) でコントローラを作成",
+    "mock.EXPECT().Method(ctx, arg).Return(result, nil) で期待値を設定",
+    "gomock.Any() で任意の引数、gomock.Eq() で特定の値にマッチ",
+    "ctrl.Finish() は t.Cleanup で自動実行される",
+    "Times(n) で呼び出し回数を指定 (デフォルトは 1 回)"
+  ],
+  "files": ["service.go.txt", "mock_test.go.txt"]
+}

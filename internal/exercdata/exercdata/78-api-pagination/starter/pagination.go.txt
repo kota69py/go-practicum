@@ -1,0 +1,75 @@
+package main
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
+)
+
+// Item represents a paginated resource.
+type Item struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+}
+
+// ItemStore is an in-memory data source.
+type ItemStore struct {
+	items []Item
+}
+
+func NewItemStore() *ItemStore
+
+func (s *ItemStore) All() []Item
+
+// --- Offset Pagination ---
+
+type OffsetPageRequest struct {
+	Page  int // 1-indexed
+	Limit int
+}
+
+type OffsetPageResponse struct {
+	Data       []Item `json:"data"`
+	Page       int    `json:"page"`
+	Limit      int    `json:"limit"`
+	Total      int    `json:"total"`
+	TotalPages int    `json:"total_pages"`
+}
+
+// PaginateOffset returns items for the given page.
+func PaginateOffset(store *ItemStore, req OffsetPageRequest) OffsetPageResponse
+
+// --- Cursor Pagination ---
+
+type CursorPageRequest struct {
+	Cursor string // base64-encoded last ID
+	Limit  int
+}
+
+type CursorPageResponse struct {
+	Data       []Item `json:"data"`
+	NextCursor string `json:"next_cursor,omitempty"`
+	HasMore    bool   `json:"has_more"`
+}
+
+// encodeCursor creates a base64 cursor from the last item ID.
+func encodeCursor(lastID int) string
+
+// decodeCursor decodes a base64 cursor to an ID.
+func decodeCursor(cursor string) (int, error)
+
+// PaginateCursor returns items after the cursor.
+func PaginateCursor(store *ItemStore, req CursorPageRequest) CursorPageResponse
+
+// --- HTTP Handlers ---
+
+// OffsetHandler handles GET /api/items?page=1&limit=10
+func OffsetHandler(store *ItemStore) http.HandlerFunc
+
+// CursorHandler handles GET /api/items/cursor?cursor=abc&limit=10
+func CursorHandler(store *ItemStore) http.HandlerFunc

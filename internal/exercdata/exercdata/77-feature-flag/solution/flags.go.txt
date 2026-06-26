@@ -1,0 +1,102 @@
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/binary"
+	"fmt"
+)
+
+type FlagStatus string
+
+const (
+	StatusEnabled  FlagStatus = "enabled"
+	StatusDisabled FlagStatus = "disabled"
+)
+
+type UserContext struct {
+	UserID string
+	Plan   string
+	Region string
+}
+
+type Rule struct {
+	Attribute string
+	Operator  string
+	Values    []string
+}
+
+func (r *Rule) Match(user UserContext) bool {
+	val := ""
+	switch r.Attribute {
+	case "plan":
+		val = user.Plan
+	case "region":
+		val = user.Region
+	}
+	switch r.Operator {
+	case "eq":
+		return len(r.Values) > 0 && r.Values[0] == val
+	case "neq":
+		return len(r.Values) > 0 && r.Values[0] != val
+	case "in":
+		for _, v := range r.Values {
+			if v == val {
+				return true
+			}
+		}
+		return false
+	}
+	return false
+}
+
+type FeatureFlag struct {
+	Name        string
+	Enabled     bool
+	Percentage  int
+	Rules       []Rule
+	Description string
+}
+
+type FlagEngine struct {
+	flags map[string]*FeatureFlag
+}
+
+func NewFlagEngine() *FlagEngine {
+	return &FlagEngine{flags: make(map[string]*FeatureFlag)}
+}
+
+func (e *FlagEngine) AddFlag(f *FeatureFlag) {
+	e.flags[f.Name] = f
+}
+
+func (e *FlagEngine) IsEnabled(flagName string, user UserContext) (FlagStatus, error) {
+	flag, ok := e.flags[flagName]
+	if !ok {
+		return StatusDisabled, fmt.Errorf("flag %s not found", flagName)
+	}
+	if !flag.Enabled {
+		return StatusDisabled, nil
+	}
+	for _, rule := range flag.Rules {
+		if rule.Match(user) {
+			return StatusEnabled, nil
+		}
+	}
+	if userHash(user.UserID) < flag.Percentage {
+		return StatusEnabled, nil
+	}
+	return StatusDisabled, nil
+}
+
+func (e *FlagEngine) GetFlags() []*FeatureFlag {
+	result := make([]*FeatureFlag, 0, len(e.flags))
+	for _, f := range e.flags {
+		result = append(result, f)
+	}
+	return result
+}
+
+func userHash(userID string) int {
+	h := sha256.Sum256([]byte(userID))
+	return int(binary.BigEndian.Uint32(h[:4]) % 100)
+}

@@ -1,0 +1,42 @@
+package main
+
+import "context"
+
+// User represents a user in the system.
+type User struct {
+	ID    string
+	Email string
+	Name  string
+}
+
+// UserRepository defines the data access interface.
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -destination=mock_user.go -package=main
+type UserRepository interface {
+	Get(ctx context.Context, id string) (*User, error)
+	Save(ctx context.Context, user *User) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context) ([]*User, error)
+}
+
+// NotificationService sends notifications to users.
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -destination=mock_notification.go -package=main
+type NotificationService interface {
+	SendEmail(ctx context.Context, email, subject, body string) error
+	SendSMS(ctx context.Context, phone, message string) error
+}
+
+// UserService orchestrates user operations.
+type UserService struct {
+	repo UserRepository
+	notif NotificationService
+}
+
+func NewUserService(repo UserRepository, notif NotificationService) *UserService {
+	return &UserService{repo: repo, notif: notif}
+}
+
+// Register creates a user and sends a welcome email.
+func (s *UserService) Register(ctx context.Context, user *User) error
+
+// Deactivate deletes a user and notifies them.
+func (s *UserService) Deactivate(ctx context.Context, id string) error

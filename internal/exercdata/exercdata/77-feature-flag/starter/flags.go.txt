@@ -1,0 +1,65 @@
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/binary"
+	"fmt"
+)
+
+// FlagStatus represents the evaluation result of a feature flag.
+type FlagStatus string
+
+const (
+	StatusEnabled  FlagStatus = "enabled"
+	StatusDisabled FlagStatus = "disabled"
+)
+
+// UserContext holds attributes for flag evaluation.
+type UserContext struct {
+	UserID string
+	Plan   string // "free", "pro", "enterprise"
+	Region string // "us", "eu", "asia"
+}
+
+// Rule defines a targeting condition.
+type Rule struct {
+	Attribute string // "plan", "region"
+	Operator  string // "eq", "neq", "in"
+	Values    []string
+}
+
+// Match checks if the user context matches this rule.
+func (r *Rule) Match(user UserContext) bool
+
+// FeatureFlag defines a single feature flag.
+type FeatureFlag struct {
+	Name        string
+	Enabled     bool          // global kill switch
+	Percentage  int           // 0-100, rollout percentage
+	Rules       []Rule        // targeting rules
+	Description string
+}
+
+// FlagEngine manages multiple feature flags.
+type FlagEngine struct {
+	flags map[string]*FeatureFlag
+}
+
+// NewFlagEngine creates an empty engine.
+func NewFlagEngine() *FlagEngine
+
+// AddFlag adds a flag definition.
+func (e *FlagEngine) AddFlag(f *FeatureFlag)
+
+// IsEnabled evaluates whether the flag is enabled for the given user.
+// Evaluation order: targeting rules → global enabled → percentage rollout.
+func (e *FlagEngine) IsEnabled(flagName string, user UserContext) (FlagStatus, error)
+
+// GetFlags returns all registered flags.
+func (e *FlagEngine) GetFlags() []*FeatureFlag
+
+// userHash computes a deterministic hash-based bucket (0-99) for a user.
+func userHash(userID string) int {
+	h := sha256.Sum256([]byte(userID))
+	return int(binary.BigEndian.Uint32(h[:4]) % 100)
+}

@@ -1,0 +1,49 @@
+package main
+
+import "context"
+
+type User struct {
+	ID    string
+	Email string
+	Name  string
+}
+
+// UserRepository defines the data access interface.
+type UserRepository interface {
+	Get(ctx context.Context, id string) (*User, error)
+	Save(ctx context.Context, user *User) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context) ([]*User, error)
+}
+
+type NotificationService interface {
+	SendEmail(ctx context.Context, email, subject, body string) error
+	SendSMS(ctx context.Context, phone, message string) error
+}
+
+type UserService struct {
+	repo UserRepository
+	notif NotificationService
+}
+
+func NewUserService(repo UserRepository, notif NotificationService) *UserService {
+	return &UserService{repo: repo, notif: notif}
+}
+
+func (s *UserService) Register(ctx context.Context, user *User) error {
+	if err := s.repo.Save(ctx, user); err != nil {
+		return err
+	}
+	return s.notif.SendEmail(ctx, user.Email, "Welcome!", "Thanks for joining!")
+}
+
+func (s *UserService) Deactivate(ctx context.Context, id string) error {
+	user, err := s.repo.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+	return s.notif.SendEmail(ctx, user.Email, "Goodbye", "Your account has been deleted.")
+}

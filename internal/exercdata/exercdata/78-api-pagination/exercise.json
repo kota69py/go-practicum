@@ -1,0 +1,16 @@
+{
+  "name": "78-api-pagination",
+  "title": "API Pagination — Cursor & Offset ベースページネーション",
+  "category": "design",
+  "difficulty": 3,
+  "description": "REST API のページネーションを実装します。Offset ベース（page/limit）と Cursor ベース（cursor/next）の2方式を実践し、それぞれのトレードオフを学びます。",
+  "hints": [
+    "Offset pagination: page=(offset/limit)+1, 総数が必要、大きな offset で遅くなる",
+    "Cursor pagination: 前ページの最後の ID をカーソルに使う、総数不要、安定した性能",
+    "PageResponse は Data, Total(optional), NextCursor を持つ",
+    "Cursor は base64 エンコードしてURL安全にする",
+    "ソート順が変わると cursor が不正になるので注意",
+    "Cursor 方式は total が必要なければ効率的だが、ランダムアクセスができない"
+  ],
+  "files": ["pagination.go.txt"]
+}

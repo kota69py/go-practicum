@@ -1,0 +1,68 @@
+package main
+
+import "testing"
+
+func TestRuleMatchEq(t *testing.T) {
+	r := Rule{Attribute: "plan", Operator: "eq", Values: []string{"pro"}}
+	if !r.Match(UserContext{Plan: "pro"}) {
+		t.Error("expected match")
+	}
+	if r.Match(UserContext{Plan: "free"}) {
+		t.Error("expected no match")
+	}
+}
+
+func TestRuleMatchIn(t *testing.T) {
+	r := Rule{Attribute: "region", Operator: "in", Values: []string{"us", "eu"}}
+	if !r.Match(UserContext{Region: "us"}) {
+		t.Error("expected match for us")
+	}
+	if r.Match(UserContext{Region: "asia"}) {
+		t.Error("expected no match for asia")
+	}
+}
+
+func TestKillSwitch(t *testing.T) {
+	e := NewFlagEngine()
+	e.AddFlag(&FeatureFlag{Name: "test", Enabled: false})
+	status, _ := e.IsEnabled("test", UserContext{UserID: "1"})
+	if status != StatusDisabled {
+		t.Errorf("with kill switch, got %v, want disabled", status)
+	}
+}
+
+func TestPercentageRollout(t *testing.T) {
+	e := NewFlagEngine()
+	e.AddFlag(&FeatureFlag{Name: "rollout", Enabled: true, Percentage: 50})
+
+	enabled := 0
+	for i := 0; i < 100; i++ {
+		status, _ := e.IsEnabled("rollout", UserContext{UserID: fmt.Sprintf("user-%d", i)})
+		if status == StatusEnabled {
+			enabled++
+		}
+	}
+	if enabled < 20 || enabled > 80 {
+		t.Errorf("expected ~50 enabled, got %d", enabled)
+	}
+}
+
+func TestTargetingRuleBeatsPercentage(t *testing.T) {
+	e := NewFlagEngine()
+	e.AddFlag(&FeatureFlag{
+		Name: "beta", Enabled: true, Percentage: 0,
+		Rules: []Rule{{Attribute: "plan", Operator: "eq", Values: []string{"enterprise"}}},
+	})
+	status, _ := e.IsEnabled("beta", UserContext{UserID: "1", Plan: "enterprise"})
+	if status != StatusEnabled {
+		t.Error("enterprise users should bypass 0% rollout")
+	}
+}
+
+func TestFlagNotFound(t *testing.T) {
+	e := NewFlagEngine()
+	_, err := e.IsEnabled("nonexistent", UserContext{UserID: "1"})
+	if err == nil {
+		t.Error("expected error for nonexistent flag")
+	}
+}

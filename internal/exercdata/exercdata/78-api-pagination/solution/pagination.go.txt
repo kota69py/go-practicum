@@ -1,0 +1,166 @@
+package main
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+)
+
+type Item struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+}
+
+type ItemStore struct {
+	items []Item
+}
+
+func NewItemStore() *ItemStore {
+	s := &ItemStore{}
+	for i := 1; i <= 100; i++ {
+		s.items = append(s.items, Item{
+			ID:        i,
+			Name:      fmt.Sprintf("Item %d", i),
+			CreatedAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(i) * time.Hour).Format(time.RFC3339),
+		})
+	}
+	return s
+}
+
+func (s *ItemStore) All() []Item {
+	return s.items
+}
+
+// --- Offset Pagination ---
+
+type OffsetPageRequest struct {
+	Page  int
+	Limit int
+}
+
+type OffsetPageResponse struct {
+	Data       []Item `json:"data"`
+	Page       int    `json:"page"`
+	Limit      int    `json:"limit"`
+	Total      int    `json:"total"`
+	TotalPages int    `json:"total_pages"`
+}
+
+func PaginateOffset(store *ItemStore, req OffsetPageRequest) OffsetPageResponse {
+	all := store.All()
+	total := len(all)
+	totalPages := int(math.Ceil(float64(total) / float64(req.Limit)))
+	start := (req.Page - 1) * req.Limit
+	if start >= total {
+		return OffsetPageResponse{
+			Data:       []Item{},
+			Page:       req.Page,
+			Limit:      req.Limit,
+			Total:      total,
+			TotalPages: totalPages,
+		}
+	}
+	end := start + req.Limit
+	if end > total {
+		end = total
+	}
+	return OffsetPageResponse{
+		Data:       all[start:end],
+		Page:       req.Page,
+		Limit:      req.Limit,
+		Total:      total,
+		TotalPages: totalPages,
+	}
+}
+
+// --- Cursor Pagination ---
+
+type CursorPageRequest struct {
+	Cursor string
+	Limit  int
+}
+
+type CursorPageResponse struct {
+	Data       []Item `json:"data"`
+	NextCursor string `json:"next_cursor,omitempty"`
+	HasMore    bool   `json:"has_more"`
+}
+
+func encodeCursor(lastID int) string {
+	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", lastID)))
+}
+
+func decodeCursor(cursor string) (int, error) {
+	b, err := base64.StdEncoding.DecodeString(cursor)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.Atoi(string(b))
+}
+
+func PaginateCursor(store *ItemStore, req CursorPageRequest) CursorPageResponse {
+	all := store.All()
+	startIdx := 0
+	if req.Cursor != "" {
+		lastID, err := decodeCursor(req.Cursor)
+		if err == nil {
+			for i, item := range all {
+				if item.ID == lastID {
+					startIdx = i + 1
+					break
+				}
+			}
+		}
+	}
+	endIdx := startIdx + req.Limit
+	if endIdx > len(all) {
+		endIdx = len(all)
+	}
+	data := all[startIdx:endIdx]
+	hasMore := endIdx < len(all)
+	resp := CursorPageResponse{
+		Data:    data,
+		HasMore: hasMore,
+	}
+	if len(data) > 0 && hasMore {
+		resp.NextCursor = encodeCursor(data[len(data)-1].ID)
+	}
+	return resp
+}
+
+// --- HTTP Handlers ---
+
+func OffsetHandler(store *ItemStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		if limit < 1 {
+			limit = 20
+		}
+		resp := PaginateOffset(store, OffsetPageRequest{Page: page, Limit: limit})
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}
+}
+
+func CursorHandler(store *ItemStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cursor := r.URL.Query().Get("cursor")
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		if limit < 1 {
+			limit = 20
+		}
+		resp := PaginateCursor(store, CursorPageRequest{Cursor: cursor, Limit: limit})
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}
+}
