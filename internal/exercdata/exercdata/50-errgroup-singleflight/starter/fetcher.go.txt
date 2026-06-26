@@ -1,0 +1,60 @@
+package fetcher
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/singleflight"
+)
+
+// Fetcher は URL の内容を取得するインターフェースです。
+// テストではモックに置き換えられます。
+type Fetcher interface {
+	Fetch(ctx context.Context, url string) (string, error)
+}
+
+// HTTPFetcher は実際に HTTP リクエストを行う Fetcher 実装です。
+type HTTPFetcher struct {
+	Client *http.Client
+}
+
+func (f *HTTPFetcher) Fetch(ctx context.Context, url string) (string, error) {
+	if f.Client == nil {
+		f.Client = http.DefaultClient
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := f.Client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, url)
+	}
+	return string(body), nil
+}
+
+// FetchAll は複数 URL を errgroup で並行取得します。
+// 1 つでもエラーが発生した場合は最初のエラーを返し、残りはキャンセルされます。
+func FetchAll(ctx context.Context, f Fetcher, urls []string) (map[string]string, error) {
+	_ = errgroup.Group{}
+	return nil, nil
+}
+
+// FetchDedup は singleflight を使って同一 URL への重複リクエストを抑制します。
+// 同時に同じ URL が複数回リクエストされても、実際の Fetch は 1 回だけ実行されます。
+func FetchDedup(ctx context.Context, f Fetcher, urls []string) (map[string]string, error) {
+	var sf singleflight.Group
+	_ = sf
+	return nil, nil
+}

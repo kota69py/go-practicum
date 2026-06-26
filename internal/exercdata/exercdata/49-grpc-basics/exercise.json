@@ -1,0 +1,14 @@
+{
+  "name": "49-grpc-basics",
+  "title": "gRPC 基礎 — サービス実装とインターセプター",
+  "category": "net",
+  "difficulty": 4,
+  "description": "gRPC の基本的なサーバー実装と、サーバー側 Unary インターセプター (ロギング) を実践します。proto 定義に従い EchoService のハンドラーを実装し、リクエスト/レスポンスをログ出力するインターセプターを追加してください。",
+  "hints": [
+    "echo.RegisterEchoServiceServer(s, srv) でサーバーにサービスを登録します",
+    "UnaryServerInterceptor は func(ctx, req, info, handler) (resp, error) のシグネチャです",
+    "インターセプター内で handler(ctx, req) を呼ぶと本来の処理が実行されます",
+    "metadata.Pairs で送信側メタデータ、metadata.FromIncomingContext で受信側メタデータを取得できます"
+  ],
+  "files": ["server.go.txt", "interceptor.go.txt", "main.go.txt"]
+}

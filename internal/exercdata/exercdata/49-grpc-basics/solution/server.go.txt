@@ -1,0 +1,16 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	pb "grpc-exercise/proto/echo"
+)
+
+type server struct {
+	pb.UnimplementedEchoServiceServer
+}
+
+func (s *server) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	return &pb.EchoResponse{Message: fmt.Sprintf("echo: %s", req.Message)}, nil
+}

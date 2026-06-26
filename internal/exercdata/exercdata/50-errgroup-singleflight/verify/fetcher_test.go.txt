@@ -1,0 +1,94 @@
+package fetcher
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"sync"
+	"testing"
+)
+
+type mockFetcher struct {
+	mu     sync.Mutex
+	data   map[string]string
+	called map[string]int
+}
+
+func (m *mockFetcher) Fetch(_ context.Context, url string) (string, error) {
+	m.mu.Lock()
+	m.called[url]++
+	m.mu.Unlock()
+	if strings.HasPrefix(url, "error:") {
+		return "", errors.New(strings.TrimPrefix(url, "error:"))
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.data[url], nil
+}
+
+func TestFetchAll_Success(t *testing.T) {
+	m := &mockFetcher{
+		data:   map[string]string{"a.com": "aaa", "b.com": "bbb"},
+		called: map[string]int{},
+	}
+	results, err := FetchAll(context.Background(), m, []string{"a.com", "b.com"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if results["a.com"] != "aaa" {
+		t.Errorf("a.com = %q, want 'aaa'", results["a.com"])
+	}
+	if results["b.com"] != "bbb" {
+		t.Errorf("b.com = %q, want 'bbb'", results["b.com"])
+	}
+}
+
+func TestFetchAll_Error(t *testing.T) {
+	m := &mockFetcher{
+		data:   map[string]string{"ok.com": "ok"},
+		called: map[string]int{},
+	}
+	_, err := FetchAll(context.Background(), m, []string{"ok.com", "error:boom"})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestFetchAll_EmptyURLs(t *testing.T) {
+	m := &mockFetcher{data: map[string]string{}, called: map[string]int{}}
+	results, err := FetchAll(context.Background(), m, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected empty map, got %v", results)
+	}
+}
+
+func TestFetchDedup_Results(t *testing.T) {
+	m := &mockFetcher{
+		data:   map[string]string{"a.com": "aaa", "b.com": "bbb"},
+		called: map[string]int{},
+	}
+	results, err := FetchDedup(context.Background(), m, []string{"a.com", "b.com"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if results["a.com"] != "aaa" {
+		t.Errorf("a.com = %q, want 'aaa'", results["a.com"])
+	}
+	if results["b.com"] != "bbb" {
+		t.Errorf("b.com = %q, want 'bbb'", results["b.com"])
+	}
+}
+
+func TestFetchDedup_EmptyURLs(t *testing.T) {
+	m := &mockFetcher{data: map[string]string{}, called: map[string]int{}}
+	results, err := FetchDedup(context.Background(), m, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected empty map, got %v", results)
+	}
+}

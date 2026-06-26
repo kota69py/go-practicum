@@ -1,0 +1,118 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"log"
+	"net"
+	"strings"
+	"testing"
+
+	pb "grpc-exercise/proto/echo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/test/bufconn"
+)
+
+const bufSize = 1024
+
+func startTestServer(t *testing.T, withInterceptor bool) *grpc.ClientConn {
+	t.Helper()
+	lis := bufconn.Listen(bufSize)
+	var opts []grpc.ServerOption
+	if withInterceptor {
+		opts = append(opts, grpc.UnaryInterceptor(loggingInterceptor))
+	}
+	s := grpc.NewServer(opts...)
+	pb.RegisterEchoServiceServer(s, &server{})
+	go s.Serve(lis)
+	t.Cleanup(s.Stop)
+
+	conn, err := grpc.DialContext(context.Background(), "bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+			return lis.Dial()
+		}),
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	return conn
+}
+
+func TestEcho(t *testing.T) {
+	conn := startTestServer(t, false)
+	client := pb.NewEchoServiceClient(conn)
+
+	resp, err := client.Echo(context.Background(), &pb.EchoRequest{Message: "hello"})
+	if err != nil {
+		t.Fatalf("Echo failed: %v", err)
+	}
+	if resp.Message != "echo: hello" {
+		t.Errorf("Message = %q, want %q", resp.Message, "echo: hello")
+	}
+}
+
+func TestEcho_EmptyMessage(t *testing.T) {
+	conn := startTestServer(t, false)
+	client := pb.NewEchoServiceClient(conn)
+
+	resp, err := client.Echo(context.Background(), &pb.EchoRequest{Message: ""})
+	if err != nil {
+		t.Fatalf("Echo failed: %v", err)
+	}
+	if resp.Message != "echo: " {
+		t.Errorf("Message = %q, want %q", resp.Message, "echo: ")
+	}
+}
+
+func TestEcho_LoggingInterceptor(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	log.SetFlags(0)
+
+	conn := startTestServer(t, true)
+	client := pb.NewEchoServiceClient(conn)
+
+	md := metadata.Pairs("x-request-id", "req-123")
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	resp, err := client.Echo(ctx, &pb.EchoRequest{Message: "world"})
+	if err != nil {
+		t.Fatalf("Echo failed: %v", err)
+	}
+	if resp.Message != "echo: world" {
+		t.Errorf("Message = %q, want %q", resp.Message, "echo: world")
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "req-123") {
+		t.Errorf("log missing request_id 'req-123': %s", output)
+	}
+	if !strings.Contains(output, "/echo.v1.EchoService/Echo") {
+		t.Errorf("log missing method name: %s", output)
+	}
+}
+
+func TestEcho_LoggingInterceptor_NoMetadata(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	log.SetFlags(0)
+
+	conn := startTestServer(t, true)
+	client := pb.NewEchoServiceClient(conn)
+
+	resp, err := client.Echo(context.Background(), &pb.EchoRequest{Message: "test"})
+	if err != nil {
+		t.Fatalf("Echo failed: %v", err)
+	}
+	if resp.Message != "echo: test" {
+		t.Errorf("Message = %q, want %q", resp.Message, "echo: test")
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "unknown") {
+		t.Errorf("log missing 'unknown' request_id: %s", output)
+	}
+}

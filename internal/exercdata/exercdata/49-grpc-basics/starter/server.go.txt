@@ -1,0 +1,20 @@
+package main
+
+import (
+	"context"
+	pb "grpc-exercise/proto/echo"
+)
+
+// TODO: EchoServer を実装してください。
+// pb.EchoServiceServer インターフェースを満たす構造体を定義し、
+// Echo メソッドを実装します。
+//
+// Echo は受け取った EchoRequest の Message に
+// "echo: " をプレフィックスとして付けて EchoResponse を返します。
+type server struct {
+	pb.UnimplementedEchoServiceServer
+}
+
+func (s *server) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	panic("not implemented")
+}

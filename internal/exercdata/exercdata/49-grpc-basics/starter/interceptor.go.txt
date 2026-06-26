@@ -1,0 +1,20 @@
+package main
+
+import (
+	"context"
+	"log"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+)
+
+// TODO: リクエストログを出力する Unary インターセプターを実装してください。
+//
+// loggingInterceptor は各 gRPC 呼び出しの前に以下の情報をログ出力します:
+//   - method: 呼び出されたメソッド名
+//   - request_id: メタデータの "x-request-id" 値（無ければ "unknown"）
+//
+// 実装後、main.go の grpc.UnaryInterceptor() オプションに渡してください。
+func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	panic("not implemented")
+}

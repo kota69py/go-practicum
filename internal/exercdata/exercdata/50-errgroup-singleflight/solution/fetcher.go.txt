@@ -1,0 +1,96 @@
+package fetcher
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/singleflight"
+)
+
+type Fetcher interface {
+	Fetch(ctx context.Context, url string) (string, error)
+}
+
+type HTTPFetcher struct {
+	Client *http.Client
+}
+
+func (f *HTTPFetcher) Fetch(ctx context.Context, url string) (string, error) {
+	if f.Client == nil {
+		f.Client = http.DefaultClient
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := f.Client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, url)
+	}
+	return string(body), nil
+}
+
+func FetchAll(ctx context.Context, f Fetcher, urls []string) (map[string]string, error) {
+	g, ctx := errgroup.WithContext(ctx)
+	results := make(map[string]string)
+	var mu sync.Mutex
+
+	for _, url := range urls {
+		url := url
+		g.Go(func() error {
+			body, err := f.Fetch(ctx, url)
+			if err != nil {
+				return err
+			}
+			mu.Lock()
+			results[url] = body
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func FetchDedup(ctx context.Context, f Fetcher, urls []string) (map[string]string, error) {
+	var sf singleflight.Group
+	g, ctx := errgroup.WithContext(ctx)
+	results := make(map[string]string)
+	var mu sync.Mutex
+
+	for _, url := range urls {
+		url := url
+		g.Go(func() error {
+			res, err, _ := sf.Do(url, func() (interface{}, error) {
+				return f.Fetch(ctx, url)
+			})
+			if err != nil {
+				return err
+			}
+			mu.Lock()
+			results[url] = res.(string)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}

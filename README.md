@@ -41,9 +41,9 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全48演習）
+## 演習一覧（全50演習）
 
-### concurrency（12演習）
+### concurrency（13演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -59,6 +59,7 @@ go-practicum solution
 | 40 | pubsub | ★★★★ | チャネルベース publish/subscribe |
 | 45 | context-values | ★★★ | context.WithValue, リクエストスコープデータ |
 | 48 | semaphore | ★★★ | チャネルベース重み付きセマフォ |
+| 50 | errgroup-singleflight | ★★★★ | errgroup, singleflight |
 
 ### language（7演習）
 
@@ -91,7 +92,7 @@ go-practicum solution
 | 26 | io-reader-writer | ★★★ | io.Reader/Writer 実装, ROT13 |
 | 33 | io-multi-pipe | ★★★ | MultiReader, TeeReader, io.Pipe |
 
-### net（4演習）
+### net（5演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -99,6 +100,7 @@ go-practicum solution
 | 12 | http-client | ★★★ | retry with backoff, context timeout |
 | 15 | middleware | ★★★ | HTTP ミドルウェアデコレータパターン |
 | 41 | file-server | ★★ | http.FileServer, 静的ファイル配信 |
+| 49 | grpc-basics | ★★★★ | gRPC, protobuf, UnaryServerInterceptor |
 
 ### encoding（3演習）
 

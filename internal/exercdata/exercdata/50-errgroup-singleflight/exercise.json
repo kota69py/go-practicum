@@ -1,0 +1,15 @@
+{
+  "name": "50-errgroup-singleflight",
+  "title": "errgroup / singleflight — 並行エラー処理と重複抑制",
+  "category": "concurrency",
+  "difficulty": 4,
+  "description": "golang.org/x/sync の errgroup と singleflight を使った並行処理パターンを実践します。FetchAll では複数 URL の並行取得とエラー伝搬を、FetchDedup では同一 URL への重複リクエスト抑制を実装してください。",
+  "hints": [
+    "errgroup.WithContext(ctx) で Group を作り、Go メソッドで goroutine を起動します",
+    "errgroup の g.Wait() は最初に発生したエラーを返します",
+    "singleflight.Group の Do(key, fn) は同一 key の同時呼び出しを 1 つにまとめます",
+    "singleflight の戻り値は (result, error, shared) で、shared が true なら結果が共有されたことを示します",
+    "空の URL リストに対してはエラーにせず空の結果を返すのが自然です"
+  ],
+  "files": ["fetcher.go.txt"]
+}
