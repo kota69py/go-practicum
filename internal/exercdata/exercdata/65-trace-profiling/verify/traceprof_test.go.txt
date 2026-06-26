@@ -1,0 +1,41 @@
+package traceprof
+
+import (
+	"testing"
+)
+
+func TestCollector(t *testing.T) {
+	c := NewCollector()
+	if err := c.Start(); err != nil {
+		t.Fatal(err)
+	}
+	data := c.Stop()
+	if len(data) == 0 {
+		t.Error("expected non-empty trace data")
+	}
+}
+
+func TestRunWithTrace(t *testing.T) {
+	c := NewCollector()
+	called := false
+	data := c.RunWithTrace("test", func() {
+		called = true
+	})
+	if !called {
+		t.Error("expected fn to be called")
+	}
+	if len(data) == 0 {
+		t.Error("expected non-empty trace data")
+	}
+}
+
+func TestTraceDemo(t *testing.T) {
+	data := TraceDemo()
+	if len(data) == 0 {
+		t.Error("expected non-empty trace data")
+	}
+}
+
+func TestGoroutinePattern(t *testing.T) {
+	GoroutinePattern()
+}

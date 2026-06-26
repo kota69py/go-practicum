@@ -1,0 +1,3 @@
+module go-practicum-63-connection-pool
+
+go 1.23

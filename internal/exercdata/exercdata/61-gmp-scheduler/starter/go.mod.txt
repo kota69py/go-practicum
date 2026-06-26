@@ -1,0 +1,3 @@
+module go-practicum-61-gmp-scheduler
+
+go 1.23

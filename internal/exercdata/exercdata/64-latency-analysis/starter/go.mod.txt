@@ -1,0 +1,3 @@
+module go-practicum-64-latency-analysis
+
+go 1.23

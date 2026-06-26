@@ -1,0 +1,92 @@
+package latency
+
+import (
+	"math"
+	"math/rand"
+	"sort"
+	"time"
+)
+
+type Stats struct {
+	Min, Max   time.Duration
+	Avg        time.Duration
+	P50, P90   time.Duration
+	P99, P999  time.Duration
+	Count      int
+}
+
+type Sampler struct {
+	data []time.Duration
+}
+
+func NewSampler() *Sampler {
+	return &Sampler{}
+}
+
+func (s *Sampler) Record(d time.Duration) {
+	s.data = append(s.data, d)
+}
+
+func (s *Sampler) Percentile(pct float64) time.Duration {
+	if len(s.data) == 0 {
+		return 0
+	}
+	sorted := make([]time.Duration, len(s.data))
+	copy(sorted, s.data)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i] < sorted[j]
+	})
+	idx := int(math.Ceil(pct*float64(len(sorted))) - 1)
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(sorted) {
+		idx = len(sorted) - 1
+	}
+	return sorted[idx]
+}
+
+func (s *Sampler) Stats() Stats {
+	if len(s.data) == 0 {
+		return Stats{}
+	}
+	sorted := make([]time.Duration, len(s.data))
+	copy(sorted, s.data)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i] < sorted[j]
+	})
+	min := sorted[0]
+	max := sorted[len(sorted)-1]
+	var sum time.Duration
+	for _, d := range sorted {
+		sum += d
+	}
+	avg := time.Duration(int64(sum) / int64(len(sorted)))
+	return Stats{
+		Min:   min,
+		Max:   max,
+		Avg:   avg,
+		P50:   sorted[int(float64(len(sorted))*0.50)],
+		P90:   sorted[int(float64(len(sorted))*0.90)],
+		P99:   sorted[int(float64(len(sorted))*0.99)],
+		P999:  sorted[int(float64(len(sorted))*0.999)],
+		Count: len(sorted),
+	}
+}
+
+func GenerateNormal(rng *rand.Rand, mean, stddev float64) time.Duration {
+	return time.Duration(rng.NormFloat64()*stddev + mean)
+}
+
+func GenerateWithOutliers(rng *rand.Rand, mean float64, outlierRate float64, outlierLatency float64) time.Duration {
+	if rng.Float64() < outlierRate {
+		return time.Duration(outlierLatency)
+	}
+	return time.Duration(rng.NormFloat64()*mean*0.1 + mean)
+}
+
+func TailAtScale(p999 time.Duration, replicas int) time.Duration {
+	p := float64(p999) / 1e9
+	prob := 1 - math.Pow(1-p, float64(replicas))
+	return time.Duration(prob * 1e9)
+}

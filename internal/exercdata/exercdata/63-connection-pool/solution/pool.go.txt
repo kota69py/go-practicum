@@ -1,0 +1,180 @@
+package pool
+
+import (
+	"context"
+	"errors"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
+type Config struct {
+	MaxOpen     int
+	MaxIdle     int
+	IdleTimeout time.Duration
+	MinIdle     int
+}
+
+type Stats struct {
+	Active    int
+	Idle      int
+	WaitCount int
+}
+
+type conn[T any] struct {
+	value    T
+	created  time.Time
+	lastUsed time.Time
+}
+
+type Pool[T any] struct {
+	factory func() (T, error)
+	config  Config
+
+	mu         sync.Mutex
+	idle       []*conn[T]
+	active     int
+	waitCount  int
+	waitCh     chan chan *conn[T]
+	closed     bool
+	closedCh   chan struct{}
+}
+
+func New[T any](factory func() (T, error), config Config) (*Pool[T], error) {
+	if config.MaxOpen <= 0 {
+		config.MaxOpen = 100
+	}
+	if config.MaxIdle <= 0 {
+		config.MaxIdle = 10
+	}
+	p := &Pool[T]{
+		factory:  factory,
+		config:   config,
+		waitCh:   make(chan chan *conn[T], 2*config.MaxOpen),
+		closedCh: make(chan struct{}),
+	}
+	for i := 0; i < config.MinIdle; i++ {
+		c, err := p.create()
+		if err != nil {
+			return nil, err
+		}
+		p.idle = append(p.idle, c)
+	}
+	return p, nil
+}
+
+func (p *Pool[T]) create() (*conn[T], error) {
+	v, err := p.factory()
+	if err != nil {
+		return nil, err
+	}
+	return &conn[T]{value: v, created: time.Now(), lastUsed: time.Now()}, nil
+}
+
+func (p *Pool[T]) Get(ctx context.Context) (T, error) {
+	for {
+		p.mu.Lock()
+		if p.closed {
+			p.mu.Unlock()
+			var zero T
+			return zero, errors.New("pool is closed")
+		}
+		for len(p.idle) > 0 {
+			c := p.idle[len(p.idle)-1]
+			p.idle = p.idle[:len(p.idle)-1]
+			if p.config.IdleTimeout > 0 && time.Since(c.lastUsed) > p.config.IdleTimeout {
+				p.mu.Unlock()
+				continue
+			}
+			p.active++
+			p.mu.Unlock()
+			return c.value, nil
+		}
+		if p.active < p.config.MaxOpen {
+			c, err := p.create()
+			if err != nil {
+				p.mu.Unlock()
+				var zero T
+				return zero, err
+			}
+			p.active++
+			p.mu.Unlock()
+			return c.value, nil
+		}
+		p.waitCount++
+		ch := make(chan *conn[T], 1)
+		p.waitCh <- ch
+		p.mu.Unlock()
+
+		select {
+		case c := <-ch:
+			p.mu.Lock()
+			p.active++
+			p.mu.Unlock()
+			return c.value, nil
+		case <-ctx.Done():
+			p.mu.Lock()
+			p.waitCount--
+			p.mu.Unlock()
+			var zero T
+			return zero, ctx.Err()
+		case <-p.closedCh:
+			var zero T
+			return zero, errors.New("pool is closed")
+		}
+	}
+}
+
+func (p *Pool[T]) Put(conn T) {
+	now := time.Now()
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.closed {
+		return
+	}
+
+	select {
+	case ch := <-p.waitCh:
+		ch <- &conn[T]{value: conn, lastUsed: now}
+		return
+	default:
+	}
+
+	if p.config.IdleTimeout > 0 {
+		var fresh []*conn[T]
+		for _, c := range p.idle {
+			if time.Since(c.lastUsed) <= p.config.IdleTimeout {
+				fresh = append(fresh, c)
+			}
+		}
+		p.idle = fresh
+	}
+	if len(p.idle) < p.config.MaxIdle {
+		p.idle = append(p.idle, &conn[T]{value: conn, lastUsed: now})
+	}
+	p.active--
+}
+
+func (p *Pool[T]) Stats() Stats {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return Stats{
+		Active:    p.active,
+		Idle:      len(p.idle),
+		WaitCount: p.waitCount,
+	}
+}
+
+func (p *Pool[T]) Close() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.closed {
+		return nil
+	}
+	p.closed = true
+	close(p.closedCh)
+	p.idle = nil
+	p.active = 0
+	return nil
+}

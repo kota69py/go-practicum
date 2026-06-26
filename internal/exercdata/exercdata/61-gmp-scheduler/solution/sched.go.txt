@@ -1,0 +1,77 @@
+package sched
+
+import (
+	"runtime"
+	"sync"
+	"time"
+)
+
+type SchedulerInfo struct {
+	GOMAXPROCS   int
+	NumGoroutine int
+	NumCPU       int
+}
+
+func Info() SchedulerInfo {
+	return SchedulerInfo{
+		GOMAXPROCS:   runtime.GOMAXPROCS(0),
+		NumGoroutine: runtime.NumGoroutine(),
+		NumCPU:       runtime.NumCPU(),
+	}
+}
+
+func SetMaxProcs(n int) int {
+	return runtime.GOMAXPROCS(n)
+}
+
+func CPUBoundTask(duration time.Duration) {
+	deadline := time.Now().Add(duration)
+	for time.Now().Before(deadline) {
+		for i := 0; i < 1000; i++ {
+			_ = i * i
+		}
+	}
+}
+
+func IOBoundTask(duration time.Duration) {
+	time.Sleep(duration)
+}
+
+func MeasureParallelSpeed(n int, fn func()) time.Duration {
+	start := time.Now()
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn()
+		}()
+	}
+	wg.Wait()
+	return time.Since(start)
+}
+
+func CPUSpeedup(goroutines int) float64 {
+	const work = 50 * time.Millisecond
+	sequential := MeasureParallelSpeed(1, func() { CPUBoundTask(work) })
+	parallel := MeasureParallelSpeed(goroutines, func() { CPUBoundTask(work) })
+	return float64(sequential) / float64(parallel)
+}
+
+func GoschedDemo() []int {
+	var mu sync.Mutex
+	var order []int
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			runtime.Gosched()
+			mu.Lock()
+			order = append(order, id)
+			mu.Unlock()
+		}(i)
+	}
+	wg.Wait()
+	return order
+}

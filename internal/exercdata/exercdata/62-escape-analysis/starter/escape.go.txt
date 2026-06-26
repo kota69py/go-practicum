@@ -1,0 +1,53 @@
+package escape
+
+import "testing"
+
+// StackAlloc は値を返します。スタックに割り当てられます。
+func StackAlloc() int {
+	// TODO: 値を返す実装
+	return 0
+}
+
+// HeapAlloc はポインタを返します。ヒープにエスケープします。
+func HeapAlloc() *int {
+	// TODO: ポインタを返す実装
+	return nil
+}
+
+// InterfaceAlloc はインターフェース型で値を返します。ヒープにエスケープします。
+func InterfaceAlloc() interface{} {
+	// TODO: interface{} で値を返す実装
+	return nil
+}
+
+// ClosureAlloc は外部変数をキャプチャするクロージャを返します。変数はヒープにエスケープします。
+func ClosureAlloc() func() {
+	// TODO: 変数をキャプチャするクロージャを返す
+	return nil
+}
+
+// SliceAllocFixed は固定サイズのスライスを作成して返します。
+func SliceAllocFixed() []byte {
+	// TODO: make([]byte, 1024) で作成して返す
+	return nil
+}
+
+// SliceAllocLarge は大容量のスライスを作成して返します。64KB を超えるので必ずヒープに割り当てられます。
+func SliceAllocLarge() []byte {
+	// TODO: make([]byte, 100000) で作成して返す
+	return nil
+}
+
+var global *int
+
+// GlobalAlloc はグローバル変数に割り当てます。ヒープにエスケープします。
+func GlobalAlloc() *int {
+	// TODO: グローバル変数へのポインタを返す
+	return nil
+}
+
+// BenchmarkAlloc は fn のベンチマークを実行し、アロケーション情報を含む結果を返します。
+func BenchmarkAlloc(b *testing.B, fn func()) testing.BenchmarkResult {
+	// TODO: testing.Benchmark を使って fn のアロケーションを計測
+	return testing.BenchmarkResult{}
+}

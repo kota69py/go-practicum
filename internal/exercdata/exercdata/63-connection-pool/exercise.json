@@ -1,0 +1,18 @@
+{
+  "name": "63-connection-pool",
+  "title": "コネクションプール — リソース管理の設計パターン",
+  "category": "design",
+  "difficulty": 4,
+  "description": "Go のジェネリクスを活用した汎用コネクションプールを実装します。チャネルベースの借用/返却、最大オープン数制限、Idle タイムアウト、Health Check など、リソース管理に必要な設計パターンを学びましょう。",
+  "hints": [
+    "Pool はジェネリクス型 Pool[T any] として定義します",
+    "Get はコンテキストを受け取り、キャンセルやタイムアウトに対応します",
+    "MaxOpen に達した場合は ctx がキャンセルされるまで待機します",
+    "Put は接続を idle キューに戻すか、MaxIdle を超える場合はクローズします",
+    "IdleTimeout を超えた接続は Put 時に破棄するか、Get 時に検出します",
+    "MinIdle を下回る場合は定期的にプリ作成するか、Put 時に補充します",
+    "Close は全接続をクローズし、以降の Get をエラーにします",
+    "Stats で現在の Active/Idle/WaitCount を報告します"
+  ],
+  "files": ["pool.go.txt"]
+}

@@ -1,0 +1,51 @@
+package sched
+
+import "time"
+
+// SchedulerInfo はスケジューラの現在の状態を保持します。
+type SchedulerInfo struct {
+	GOMAXPROCS   int
+	NumGoroutine int
+	NumCPU       int
+}
+
+// Info は現在のスケジューラ情報を返します。
+func Info() SchedulerInfo {
+	// TODO: runtime.GOMAXPROCS, runtime.NumGoroutine, runtime.NumCPU を使って情報を取得
+	return SchedulerInfo{}
+}
+
+// SetMaxProcs は GOMAXPROCS を設定し、以前の値を返します。
+func SetMaxProcs(n int) int {
+	// TODO: runtime.GOMAXPROCS で設定
+	return 0
+}
+
+// CPUBoundTask は指定された時間だけ CPU を busy loop で占有します。
+func CPUBoundTask(duration time.Duration) {
+	// TODO: 終了時間まで空ループを回し続ける
+}
+
+// IOBoundTask は time.Sleep で擬似的な I/O 待機をシミュレートします。
+func IOBoundTask(duration time.Duration) {
+	// TODO: time.Sleep で待機
+}
+
+// MeasureParallelSpeed は n 個の goroutine で fn を並列実行し、総経過時間を返します。
+func MeasureParallelSpeed(n int, fn func()) time.Duration {
+	// TODO: n 個の goroutine を起動し、全ての終了を待つ
+	return 0
+}
+
+// CPUSpeedup は逐次実行と並列実行の速度向上比を返します。
+func CPUSpeedup(goroutines int) float64 {
+	// TODO: 1個の goroutine と N 個の goroutine で CPUBoundTask を実行し速度比を計算
+	return 0
+}
+
+// GoschedDemo は Gosched を呼び出した場合と呼び出さない場合の goroutine 実行順序を観察します。
+// 返り値のスライスには、各 goroutine の実行順序を表す整数が格納されます。
+func GoschedDemo() []int {
+	// TODO: 複数の goroutine で Gosched を使ったときと使わないときの挙動の違いを示す
+	return nil
+}

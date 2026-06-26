@@ -1,0 +1,74 @@
+package latency
+
+import (
+	"math/rand"
+	"testing"
+	"time"
+)
+
+func TestPercentile(t *testing.T) {
+	s := NewSampler()
+	for i := 0; i < 100; i++ {
+		s.Record(time.Duration(i+1) * time.Millisecond)
+	}
+	p50 := s.Percentile(0.50)
+	if p50 < 45*time.Millisecond || p50 > 55*time.Millisecond {
+		t.Errorf("P50 expected ~50ms, got %v", p50)
+	}
+	p99 := s.Percentile(0.99)
+	if p99 < 98*time.Millisecond {
+		t.Errorf("P99 expected ~99ms, got %v", p99)
+	}
+}
+
+func TestStats(t *testing.T) {
+	s := NewSampler()
+	for i := 0; i < 10; i++ {
+		s.Record(time.Duration(i+1) * time.Millisecond)
+	}
+	stats := s.Stats()
+	if stats.Min != 1*time.Millisecond {
+		t.Errorf("Min expected 1ms, got %v", stats.Min)
+	}
+	if stats.Max != 10*time.Millisecond {
+		t.Errorf("Max expected 10ms, got %v", stats.Max)
+	}
+	if stats.Count != 10 {
+		t.Errorf("Count expected 10, got %d", stats.Count)
+	}
+}
+
+func TestNormalGeneration(t *testing.T) {
+	rng := rand.New(rand.NewSource(42))
+	mean := 100.0
+	stddev := 10.0
+	for i := 0; i < 1000; i++ {
+		d := GenerateNormal(rng, mean, stddev)
+		if d <= 0 {
+			t.Errorf("expected positive duration, got %v", d)
+		}
+	}
+}
+
+func TestGenerateWithOutliers(t *testing.T) {
+	rng := rand.New(rand.NewSource(42))
+	s := NewSampler()
+	for i := 0; i < 1000; i++ {
+		d := GenerateWithOutliers(rng, 100.0, 0.1, 1000.0)
+		s.Record(d)
+	}
+	stats := s.Stats()
+	if stats.Max > 950*time.Millisecond {
+		t.Errorf("expected max reasonable, got %v", stats.Max)
+	}
+}
+
+func TestTailAtScale(t *testing.T) {
+	result := TailAtScale(10*time.Millisecond, 100)
+	if result <= 0 {
+		t.Error("expected positive probability")
+	}
+	if result > time.Second {
+		t.Errorf("unexpected large value: %v", result)
+	}
+}

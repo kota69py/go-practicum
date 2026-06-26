@@ -1,0 +1,56 @@
+package pool
+
+import (
+	"context"
+	"time"
+)
+
+// Config はコネクションプールの設定を表します。
+type Config struct {
+	MaxOpen     int           // 最大オープン接続数
+	MaxIdle     int           // 最大アイドル接続数
+	IdleTimeout time.Duration // アイドルタイムアウト
+	MinIdle     int           // 最小アイドル接続数
+}
+
+// Stats はプールの統計情報を表します。
+type Stats struct {
+	Active    int
+	Idle      int
+	WaitCount int
+}
+
+// Pool はジェネリックなコネクションプールです。
+type Pool[T any] struct {
+	// TODO: 必要なフィールドを追加
+}
+
+// New は新しい Pool を作成します。
+func New[T any](factory func() (T, error), config Config) (*Pool[T], error) {
+	// TODO: プールを初期化し、MinIdle 分の接続をプリ作成
+	return nil, nil
+}
+
+// Get はプールから接続を借用します。ctx がキャンセルされた場合はエラーを返します。
+func (p *Pool[T]) Get(ctx context.Context) (T, error) {
+	// TODO: idle キューから接続を取得、なければ新規作成（MaxOpen 制限あり）
+	var zero T
+	return zero, nil
+}
+
+// Put は接続をプールに返却します。
+func (p *Pool[T]) Put(conn T) {
+	// TODO: アイドルキューに戻す。MaxIdle 超過や IdleTimeout 超過の場合はクローズ
+}
+
+// Stats は現在のプール統計を返します。
+func (p *Pool[T]) Stats() Stats {
+	// TODO: 統計情報を返す
+	return Stats{}
+}
+
+// Close はプール内の全接続をクローズします。
+func (p *Pool[T]) Close() error {
+	// TODO: 全接続をクローズ
+	return nil
+}

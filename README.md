@@ -41,7 +41,7 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全60演習）
+## 演習一覧（全65演習）
 
 ### concurrency（14演習）
 
@@ -134,13 +134,17 @@ go-practicum solution
 | 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
 | 43 | file-watch | ★★★ | ポーリングベースファイル変更検知 |
 
-### performance（3演習）
+### performance（7演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 51 | gc-profiling | ★★★★ | runtime.ReadMemStats, pprof, GCトレース, アロケーション最適化 |
 | 52 | sync-pool-zero-alloc | ★★★★ | sync.Pool, testing.B, -benchmem, バッファ再利用 |
 | 57 | advanced-benchmark | ★★★★ | testing.Benchmark, 比較計測, ウォームアップ, alloc分析 |
+| 61 | gmp-scheduler | ★★★★★ | G/M/P モデル, GOMAXPROCS, Gosched, プリエンプション |
+| 62 | escape-analysis | ★★★★★ | エスケープ分析, スタック/ヒープ, -gcflags=-m |
+| 64 | latency-analysis | ★★★★ | パーセンタイル, Tail Latency, 負荷テスト, outlier検出 |
+| 65 | trace-profiling | ★★★★★ | runtime/trace, 実行トレース, goroutine可視化 |
 
 ### security（2演習）
 
@@ -149,7 +153,7 @@ go-practicum solution
 | 56 | constant-time-comparison | ★★★★ | crypto/subtle, HMAC, タイミング攻撃対策, 定数時間比較 |
 | 59 | secure-memory | ★★★★ | crypto/rand, メモリゼロ化, パスワードハッシュ, 機密情報保護 |
 
-### design（4演習）
+### design（5演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -157,6 +161,7 @@ go-practicum solution
 | 44 | command-pattern | ★★★ | Command インターフェース, Execute/Undo |
 | 54 | circuit-breaker | ★★★★ | サーキットブレーカー, 障害分離, 自動回復 |
 | 60 | hook-pattern | ★★★★ | Hook/インターセプターチェーン, パイプライン, Recovery |
+| 63 | connection-pool | ★★★★ | 汎用Pool[T], 借用/返却, idle管理, リソース制御 |
 
 ### database（1演習）
 

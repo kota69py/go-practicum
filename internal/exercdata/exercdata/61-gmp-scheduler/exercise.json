@@ -1,0 +1,18 @@
+{
+  "name": "61-gmp-scheduler",
+  "title": "Goroutine スケジューリング — G/M/P モデルの理解",
+  "category": "performance",
+  "difficulty": 5,
+  "description": "Go ランタイムの G/M/P スケジューリングモデルを理解し、runtime パッケージを使って実機の挙動を観察します。GOMAXPROCS の変更、Gosched による協力的スケジューリング、CPU バウンド／IO バウンドタスクの違いを体験しましょう。",
+  "hints": [
+    "runtime.GOMAXPROCS(0) で現在の設定値を取得できます",
+    "runtime.NumGoroutine() で実行中の goroutine 数を取得できます",
+    "runtime.NumCPU() で CPU コア数が取得できます",
+    "runtime.Gosched() で他の goroutine に実行機会を譲ります",
+    "CPUBoundTask はループで演算を回し続ける busy loop として実装します",
+    "IOBoundTask は time.Sleep で擬似的な I/O 待機をシミュレートします",
+    "MeasureParallelSpeed は n 個の goroutine を起動し、並列実行時間を計測します",
+    "CPUSpeedup は逐次実行時間 / 並列実行時間で計算します"
+  ],
+  "files": ["sched.go.txt"]
+}

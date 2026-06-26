@@ -1,0 +1,18 @@
+{
+  "name": "64-latency-analysis",
+  "title": "レイテンシ分析 — パーセンタイルとTail Latency",
+  "category": "performance",
+  "difficulty": 4,
+  "description": "分散システムにおけるレイテンシ分析の基礎を学びます。パーセンタイル（p50/p90/p99/p999）の計算、正規分布に従うレイテンシデータの生成、Tail Latency の確率モデル化を実装しましょう。",
+  "hints": [
+    "パーセンタイルはソート済みスライスに対して二分探索で計算します",
+    "p99 は 99% のリクエストがこの値以下になるレイテンシです",
+    "正規分布の生成には rng.NormFloat64() * stddev + mean を使います",
+    "GenerateWithOutliers は確率 outlierRate で outlierLatency を返します",
+    "TailAtScale(p999, replicas) = 1 - (1-p999)^replicas で計算します",
+    "N レプリカあれば少なくとも1つが遅い確率は急速に増加します",
+    "p999=10ms, 100 replicas の場合の TailAtScale を考えてみましょう",
+    "Sampler はスレッドセーフである必要はありません"
+  ],
+  "files": ["latency.go.txt"]
+}

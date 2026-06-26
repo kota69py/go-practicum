@@ -1,0 +1,67 @@
+package sched
+
+import (
+	"runtime"
+	"testing"
+	"time"
+)
+
+func TestInfo(t *testing.T) {
+	info := Info()
+	if info.NumCPU == 0 {
+		t.Error("NumCPU should be > 0")
+	}
+	if info.GOMAXPROCS == 0 {
+		t.Error("GOMAXPROCS should be > 0")
+	}
+}
+
+func TestSetMaxProcs(t *testing.T) {
+	prev := SetMaxProcs(2)
+	cur := SetMaxProcs(prev)
+	if cur != 2 {
+		t.Errorf("expected 2, got %d", cur)
+	}
+}
+
+func TestCPUBound(t *testing.T) {
+	start := time.Now()
+	CPUBoundTask(50 * time.Millisecond)
+	elapsed := time.Since(start)
+	if elapsed < 40*time.Millisecond {
+		t.Errorf("expected at least 40ms, got %v", elapsed)
+	}
+}
+
+func TestIOBound(t *testing.T) {
+	start := time.Now()
+	IOBoundTask(50 * time.Millisecond)
+	elapsed := time.Since(start)
+	if elapsed < 40*time.Millisecond {
+		t.Errorf("expected at least 40ms, got %v", elapsed)
+	}
+}
+
+func TestGoschedDemo(t *testing.T) {
+	order := GoschedDemo()
+	if len(order) != 3 {
+		t.Errorf("expected 3 items, got %d", len(order))
+	}
+}
+
+func TestMeasureParallelSpeed(t *testing.T) {
+	d := MeasureParallelSpeed(2, func() {
+		CPUBoundTask(30 * time.Millisecond)
+	})
+	if d <= 0 {
+		t.Error("duration should be positive")
+	}
+}
+
+func TestCPUSpeedup(t *testing.T) {
+	runtime.GOMAXPROCS(2)
+	factor := CPUSpeedup(2)
+	if factor < 0 {
+		t.Error("speedup should be non-negative")
+	}
+}

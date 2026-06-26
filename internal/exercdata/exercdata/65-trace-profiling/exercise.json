@@ -1,0 +1,18 @@
+{
+  "name": "65-trace-profiling",
+  "title": "runtime/trace — 実行トレースによる可視化",
+  "category": "performance",
+  "difficulty": 5,
+  "description": "runtime/trace パッケージを使って Go プログラムの実行トレースを取得・解析します。goroutine の生成とスケジューリング、チャネル通信、GC の動作などをトレースで可視化し、並行処理の理解を深めましょう。",
+  "hints": [
+    "trace.Start(w) でトレースを開始、trace.Stop() で停止します",
+    "出力先には bytes.Buffer が使えます",
+    "go tool trace trace.out でトレースを可視化できます",
+    "TraceDemo では複数の goroutine パターンを含めます",
+    "GoroutinePattern では ping-pong、worker pool、fan-in を含めると良いでしょう",
+    "チャネル通信はトレース上で goroutine 間の相互作用として可視化されます",
+    "runtime.GC() を呼ぶと GC のトレースイベントが記録されます",
+    "time.Sleep は goroutine がブロックされる様子を観察できます"
+  ],
+  "files": ["traceprof.go.txt"]
+}

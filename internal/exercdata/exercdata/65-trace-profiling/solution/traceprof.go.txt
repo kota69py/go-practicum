@@ -1,0 +1,142 @@
+package traceprof
+
+import (
+	"bytes"
+	"runtime"
+	"runtime/trace"
+	"sync"
+)
+
+type TraceCollector struct {
+	buf bytes.Buffer
+}
+
+func NewCollector() *TraceCollector {
+	return &TraceCollector{}
+}
+
+func (c *TraceCollector) Start() error {
+	c.buf.Reset()
+	return trace.Start(&c.buf)
+}
+
+func (c *TraceCollector) Stop() []byte {
+	trace.Stop()
+	return c.buf.Bytes()
+}
+
+func (c *TraceCollector) RunWithTrace(name string, fn func()) []byte {
+	c.Start()
+	fn()
+	return c.Stop()
+}
+
+func TraceDemo() []byte {
+	c := NewCollector()
+	c.Start()
+
+	var wg sync.WaitGroup
+	ch := make(chan int, 10)
+
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				ch <- id*100 + j
+			}
+		}(i)
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	var sum int
+	for v := range ch {
+		sum += v
+	}
+	_ = sum
+
+	runtime.GC()
+
+	return c.Stop()
+}
+
+func GoroutinePattern() {
+	pingPong()
+	workerPool()
+	fanIn()
+}
+
+func pingPong() {
+	ch := make(chan int)
+	done := make(chan struct{})
+	go func() {
+		for msg := range ch {
+			ch <- msg + 1
+		}
+	}()
+	go func() {
+		ch <- 0
+		for i := 0; i < 10; i++ {
+			<-ch
+			ch <- i + 1
+		}
+		close(ch)
+		close(done)
+	}()
+	<-done
+}
+
+func workerPool() {
+	jobs := make(chan int, 20)
+	var wg sync.WaitGroup
+	for w := 0; w < 3; w++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := range jobs {
+				_ = j * j
+			}
+		}(w)
+	}
+	for j := 0; j < 20; j++ {
+		jobs <- j
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func fanIn() {
+	producers := make([]chan int, 3)
+	for i := range producers {
+		producers[i] = make(chan int)
+	}
+	out := make(chan int)
+	var wg sync.WaitGroup
+	for _, ch := range producers {
+		wg.Add(1)
+		go func(c chan int) {
+			defer wg.Done()
+			for v := range c {
+				out <- v
+			}
+		}(ch)
+	}
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	for i, ch := range producers {
+		go func(c chan int, n int) {
+			for j := 0; j < 5; j++ {
+				c <- n*100 + j
+			}
+			close(c)
+		}(ch, i)
+	}
+	for range out {
+	}
+}

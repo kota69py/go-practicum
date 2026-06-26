@@ -1,0 +1,61 @@
+package latency
+
+import (
+	"math/rand"
+	"time"
+)
+
+// Stats はレイテンシデータの統計情報を表します。
+type Stats struct {
+	Min, Max   time.Duration
+	Avg        time.Duration
+	P50, P90   time.Duration
+	P99, P999  time.Duration
+	Count      int
+}
+
+// Sampler はレイテンシを記録し、パーセンタイル統計を計算します。
+type Sampler struct {
+	// TODO: 記録用フィールド
+}
+
+// NewSampler は新しい Sampler を作成します。
+func NewSampler() *Sampler {
+	return &Sampler{}
+}
+
+// Record はレイテンシを記録します。
+func (s *Sampler) Record(d time.Duration) {
+	// TODO: データを記録
+}
+
+// Percentile は指定されたパーセンタイル値を計算します（0.0〜1.0）。
+func (s *Sampler) Percentile(pct float64) time.Duration {
+	// TODO: ソート済みデータに対してパーセンタイルを計算
+	return 0
+}
+
+// Stats は全統計情報を返します。
+func (s *Sampler) Stats() Stats {
+	// TODO: Min, Max, Avg, P50, P90, P99, P999, Count を計算
+	return Stats{}
+}
+
+// GenerateNormal は正規分布に従うレイテンシを生成します。
+func GenerateNormal(rng *rand.Rand, mean, stddev float64) time.Duration {
+	// TODO: rng.NormFloat64() を使って正規分布のレイテンシを生成
+	return 0
+}
+
+// GenerateWithOutliers は外れ値を含むレイテンシを生成します。
+// 確率 outlierRate で outlierLatency、それ以外は正規分布に従います。
+func GenerateWithOutliers(rng *rand.Rand, mean float64, outlierRate float64, outlierLatency float64) time.Duration {
+	// TODO: 外れ値と正規分布を確率的に切り替え
+	return 0
+}
+
+// TailAtScale は N レプリカあるシステムで、少なくとも1つが p999 を超える確率を返します。
+func TailAtScale(p999 time.Duration, replicas int) time.Duration {
+	// TODO: 1 - (1-p999)^replicas を計算
+	return 0
+}

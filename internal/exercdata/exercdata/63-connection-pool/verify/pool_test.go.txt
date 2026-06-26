@@ -1,0 +1,147 @@
+package pool
+
+import (
+	"context"
+	"sync"
+	"testing"
+	"time"
+)
+
+type mockConn struct {
+	id int
+}
+
+func connFactory(id *int) func() (mockConn, error) {
+	return func() (mockConn, error) {
+		*id++
+		return mockConn{id: *id}, nil
+	}
+}
+
+func TestBorrowReturn(t *testing.T) {
+	var id int
+	p, err := New(connFactory(&id), Config{MaxOpen: 5, MaxIdle: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+
+	ctx := context.Background()
+	c, err := p.Get(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.id == 0 {
+		t.Error("expected non-zero connection id")
+	}
+
+	stats := p.Stats()
+	if stats.Active != 1 {
+		t.Errorf("expected 1 active, got %d", stats.Active)
+	}
+
+	p.Put(c)
+	stats = p.Stats()
+	if stats.Active != 0 {
+		t.Errorf("expected 0 active after Put, got %d", stats.Active)
+	}
+}
+
+func TestMaxOpen(t *testing.T) {
+	var id int
+	p, err := New(connFactory(&id), Config{MaxOpen: 2, MaxIdle: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+
+	ctx := context.Background()
+	c1, _ := p.Get(ctx)
+	c2, _ := p.Get(ctx)
+
+	ctxShort, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
+	defer cancel()
+
+	_, err = p.Get(ctxShort)
+	if err == nil {
+		t.Error("expected error when MaxOpen exceeded")
+	}
+
+	p.Put(c1)
+	p.Put(c2)
+}
+
+func TestIdleTimeout(t *testing.T) {
+	var id int
+	p, err := New(connFactory(&id), Config{
+		MaxOpen:     5,
+		MaxIdle:     5,
+		IdleTimeout: 50 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+
+	ctx := context.Background()
+	c, _ := p.Get(ctx)
+	p.Put(c)
+
+	time.Sleep(100 * time.Millisecond)
+
+	c2, err := p.Get(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = c2
+	p.Put(c2)
+}
+
+func TestClose(t *testing.T) {
+	var id int
+	p, err := New(connFactory(&id), Config{MaxOpen: 5, MaxIdle: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	c, _ := p.Get(ctx)
+	p.Put(c)
+
+	p.Close()
+
+	_, err = p.Get(ctx)
+	if err == nil {
+		t.Error("expected error after Close")
+	}
+}
+
+func TestConcurrent(t *testing.T) {
+	var id int
+	p, err := New(connFactory(&id), Config{MaxOpen: 10, MaxIdle: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ctx := context.Background()
+			c, err := p.Get(ctx)
+			if err != nil {
+				return
+			}
+			time.Sleep(5 * time.Millisecond)
+			p.Put(c)
+		}()
+	}
+	wg.Wait()
+
+	stats := p.Stats()
+	if stats.Active != 0 {
+		t.Errorf("expected 0 active after concurrent test, got %d", stats.Active)
+	}
+}

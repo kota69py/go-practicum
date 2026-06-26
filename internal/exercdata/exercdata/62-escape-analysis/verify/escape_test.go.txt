@@ -1,0 +1,70 @@
+package escape
+
+import (
+	"testing"
+)
+
+func TestStackAlloc(t *testing.T) {
+	v := StackAlloc()
+	if v != 42 {
+		t.Errorf("expected 42, got %d", v)
+	}
+}
+
+func TestHeapAlloc(t *testing.T) {
+	v := HeapAlloc()
+	if v == nil {
+		t.Fatal("expected non-nil pointer")
+	}
+	if *v != 42 {
+		t.Errorf("expected 42, got %d", *v)
+	}
+}
+
+func TestInterfaceAlloc(t *testing.T) {
+	v := InterfaceAlloc()
+	if v == nil {
+		t.Error("expected non-nil value")
+	}
+}
+
+func TestClosureAlloc(t *testing.T) {
+	fn := ClosureAlloc()
+	if fn == nil {
+		t.Fatal("expected non-nil function")
+	}
+	fn()
+}
+
+func TestSliceAllocFixed(t *testing.T) {
+	s := SliceAllocFixed()
+	if len(s) != 1024 {
+		t.Errorf("expected 1024, got %d", len(s))
+	}
+}
+
+func TestSliceAllocLarge(t *testing.T) {
+	s := SliceAllocLarge()
+	if len(s) != 100000 {
+		t.Errorf("expected 100000, got %d", len(s))
+	}
+}
+
+func TestGlobalAlloc(t *testing.T) {
+	v := GlobalAlloc()
+	if v == nil {
+		t.Fatal("expected non-nil pointer")
+	}
+	if *v != 42 {
+		t.Errorf("expected 42, got %d", *v)
+	}
+}
+
+func TestBenchmarkAlloc(t *testing.T) {
+	result := BenchmarkAlloc(t, func() {
+		_ = make([]byte, 1024)
+	})
+	if result.N <= 0 {
+		t.Error("expected at least 1 iteration")
+	}
+}

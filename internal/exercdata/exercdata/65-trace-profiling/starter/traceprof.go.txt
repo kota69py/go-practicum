@@ -1,0 +1,43 @@
+package traceprof
+
+// TraceCollector は bytes.Buffer にトレースを収集します。
+type TraceCollector struct {
+	// TODO: 必要なフィールド
+}
+
+// NewCollector は新しい TraceCollector を作成します。
+func NewCollector() *TraceCollector {
+	return &TraceCollector{}
+}
+
+// Start はトレースを開始します。
+func (c *TraceCollector) Start() error {
+	// TODO: trace.Start を bytes.Buffer に対して呼び出す
+	return nil
+}
+
+// Stop はトレースを停止し、収集したバイトデータを返します。
+func (c *TraceCollector) Stop() []byte {
+	// TODO: trace.Stop を呼び出しバッファの内容を返す
+	return nil
+}
+
+// RunWithTrace は fn をトレース付きで実行し、トレースデータを返します。
+func (c *TraceCollector) RunWithTrace(name string, fn func()) []byte {
+	// TODO: Start, fn, Stop を順に実行
+	return nil
+}
+
+// TraceDemo は複数の goroutine パターンを含むワークロードをトレースします。
+func TraceDemo() []byte {
+	// TODO: ゴルーチン生成、チャネル通信、ワーカープール、fan-in などを含む複雑なワークロードをトレース
+	return nil
+}
+
+// GoroutinePattern はトレース観察用に様々な goroutine パターンを作成します。
+// ping-pong（チャネル経由の双方向通信）、worker pool、fan-in を含めます。
+func GoroutinePattern() {
+	// TODO: 1. ping-pong: 2つのgoroutineでチャネルを介してメッセージを送受信
+	// TODO: 2. worker pool: 3つのワーカーにタスクを分配
+	// TODO: 3. fan-in: 複数のジェネレータから1つのチャネルに集約
+}
