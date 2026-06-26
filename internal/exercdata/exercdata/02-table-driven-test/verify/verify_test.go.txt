@@ -1,0 +1,50 @@
+package calc
+
+import "testing"
+
+func TestMax_Empty(t *testing.T) {
+	_, err := Max([]int{})
+	if err == nil {
+		t.Error("expected error for empty slice")
+	}
+}
+
+func TestMax_Single(t *testing.T) {
+	got, err := Max([]int{42})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != 42 {
+		t.Errorf("Max() = %d, want 42", got)
+	}
+}
+
+func TestMax_Ascending(t *testing.T) {
+	got, err := Max([]int{1, 2, 3, 4, 5})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != 5 {
+		t.Errorf("Max() = %d, want 5", got)
+	}
+}
+
+func TestMax_Descending(t *testing.T) {
+	got, err := Max([]int{9, 7, 5, 3, 1})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != 9 {
+		t.Errorf("Max() = %d, want 9", got)
+	}
+}
+
+func TestMax_Negative(t *testing.T) {
+	got, err := Max([]int{-5, -2, -8, -1})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != -1 {
+		t.Errorf("Max() = %d, want -1", got)
+	}
+}
