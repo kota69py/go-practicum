@@ -1,0 +1,7 @@
+//go:build !debug
+
+package buildtag
+
+func DebugLog(msg string) {
+	// TODO: 空の実装（何もしない）
+}

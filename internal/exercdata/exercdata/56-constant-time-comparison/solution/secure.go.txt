@@ -1,0 +1,42 @@
+package secure
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/subtle"
+)
+
+type SafeString struct {
+	data string
+}
+
+func NewSafeString(s string) *SafeString {
+	return &SafeString{data: s}
+}
+
+func (s *SafeString) Equals(other *SafeString) bool {
+	return subtle.ConstantTimeCompare([]byte(s.data), []byte(other.data)) == 1
+}
+
+func (s *SafeString) String() string {
+	return s.data
+}
+
+func VerifyMAC(message, mac, key []byte) bool {
+	h := hmac.New(sha256.New, key)
+	h.Write(message)
+	expected := h.Sum(nil)
+	return hmac.Equal(mac, expected)
+}
+
+func InsecureEquals(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

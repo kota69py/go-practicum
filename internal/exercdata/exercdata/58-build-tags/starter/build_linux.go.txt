@@ -1,0 +1,8 @@
+//go:build linux
+
+package buildtag
+
+func PlatformInfo() Info {
+	// TODO: "linux" をプラットフォームとして返す
+	return Info{}
+}

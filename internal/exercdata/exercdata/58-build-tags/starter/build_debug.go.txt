@@ -1,0 +1,7 @@
+//go:build debug
+
+package buildtag
+
+func DebugLog(msg string) {
+	// TODO: os.Stderr に "[debug] " + msg を書き込む
+}

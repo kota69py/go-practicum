@@ -1,0 +1,16 @@
+{
+  "name": "56-constant-time-comparison",
+  "title": "定数時間比較 & HMAC — タイミング攻撃対策",
+  "category": "security",
+  "difficulty": 4,
+  "description": "crypto/subtle と crypto/hmac を使った定数時間比較とHMAC認証を実践します。タイミング攻撃への対策として、機密情報の比較は常に定数時間で行う必要があります。",
+  "hints": [
+    "crypto/subtle.ConstantTimeCompare は byte スライスの比較を定数時間で行います",
+    "HMAC-SHA256 は crypto/hmac.New(sha256.New, key) で作成します",
+    "InsecureEquals は早期リターンするため、文字列長の違いで処理時間が異なります",
+    "SafeString.Equals は内部で subtle.ConstantTimeCompare を使用してください",
+    "VerifyMAC は hmac.Equal を使用してタイミング攻撃を防ぎます",
+    "ベンチマーク比較で定数時間 vs 非定数時間の差を実感できます"
+  ],
+  "files": ["secure.go.txt"]
+}

@@ -1,0 +1,7 @@
+//go:build windows
+
+package buildtag
+
+func PlatformInfo() Info {
+	return Info{Platform: "windows"}
+}

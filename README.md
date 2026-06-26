@@ -41,7 +41,7 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全55演習）
+## 演習一覧（全60演習）
 
 ### concurrency（14演習）
 
@@ -62,7 +62,7 @@ go-practicum solution
 | 50 | errgroup-singleflight | ★★★★ | errgroup, singleflight |
 | 53 | lockfree-ringbuffer | ★★★★★ | lock-free SPSC, sync/atomic, memory ordering |
 
-### language（8演習）
+### language（9演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -74,6 +74,7 @@ go-practicum solution
 | 31 | strings | ★★ | WordCount, Capitalize, strings.Builder |
 | 47 | enum | ★★★ | 型安全 enum, Stringer, JSON 対応 |
 | 55 | unsafe-memory | ★★★★★ | unsafe.Pointer, struct padding, メモリアライメント |
+| 58 | build-tags | ★★★★ | //go:build, 条件付きビルド, プラットフォーム分岐 |
 
 ### testing（5演習）
 
@@ -133,20 +134,29 @@ go-practicum solution
 | 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
 | 43 | file-watch | ★★★ | ポーリングベースファイル変更検知 |
 
-### performance（2演習）
+### performance（3演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 51 | gc-profiling | ★★★★ | runtime.ReadMemStats, pprof, GCトレース, アロケーション最適化 |
 | 52 | sync-pool-zero-alloc | ★★★★ | sync.Pool, testing.B, -benchmem, バッファ再利用 |
+| 57 | advanced-benchmark | ★★★★ | testing.Benchmark, 比較計測, ウォームアップ, alloc分析 |
 
-### design（3演習）
+### security（2演習）
+
+| # | 演習 | 難易度 | トピック |
+|---|------|--------|----------|
+| 56 | constant-time-comparison | ★★★★ | crypto/subtle, HMAC, タイミング攻撃対策, 定数時間比較 |
+| 59 | secure-memory | ★★★★ | crypto/rand, メモリゼロ化, パスワードハッシュ, 機密情報保護 |
+
+### design（4演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 01 | interface-design | ★★ | Store インターフェース, 依存性注入 |
 | 44 | command-pattern | ★★★ | Command インターフェース, Execute/Undo |
 | 54 | circuit-breaker | ★★★★ | サーキットブレーカー, 障害分離, 自動回復 |
+| 60 | hook-pattern | ★★★★ | Hook/インターセプターチェーン, パイプライン, Recovery |
 
 ### database（1演習）
 

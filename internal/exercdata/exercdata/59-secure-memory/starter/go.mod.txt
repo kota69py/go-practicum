@@ -1,0 +1,3 @@
+module go-practicum-59-secure-memory
+
+go 1.23

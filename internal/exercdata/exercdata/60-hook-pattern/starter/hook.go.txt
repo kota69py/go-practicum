@@ -1,0 +1,62 @@
+package hook
+
+type Context struct {
+	Key   string
+	Value interface{}
+}
+
+type Handler func(ctx *Context)
+
+type Hook func(next Handler) Handler
+
+type Pipeline struct {
+	hooks []Hook
+	final Handler
+}
+
+func NewPipeline() *Pipeline {
+	return &Pipeline{}
+}
+
+func (p *Pipeline) Use(hooks ...Hook) {
+	// TODO: hooks を p.hooks に追加
+}
+
+func (p *Pipeline) Run(ctx *Context) {
+	// TODO: フックチェーンを構築し、最終ハンドラを実行
+}
+
+func (p *Pipeline) Then(handler Handler) {
+	p.final = handler
+}
+
+func LoggingHook() Hook {
+	return func(next Handler) Handler {
+		return func(ctx *Context) {
+			// TODO: 実行前にログ出力、next を呼び出し、実行後にログ出力
+		}
+	}
+}
+
+func RecoveryHook() Hook {
+	return func(next Handler) Handler {
+		return func(ctx *Context) {
+			// TODO: defer/recover でパニックをハンドリング
+		}
+	}
+}
+
+func TimingHook() Hook {
+	return func(next Handler) Handler {
+		return func(ctx *Context) {
+			// TODO: 時間を計測し、経過時間を ctx.Value にセット
+		}
+	}
+}
+
+func Chain(hooks ...Hook) Hook {
+	// TODO: 複数のフックを合成した1つのフックを返す
+	return func(next Handler) Handler {
+		return next
+	}
+}

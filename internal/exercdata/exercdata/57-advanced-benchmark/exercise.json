@@ -1,0 +1,16 @@
+{
+  "name": "57-advanced-benchmark",
+  "title": "ベンチマーク設計 — 比較計測・ウォームアップ・分析",
+  "category": "performance",
+  "difficulty": 4,
+  "description": "testing.Benchmark をプログラムから呼び出し、比較計測・ウォームアップ・アロケーション追跡を行うベンチマーク設計を実践します。",
+  "hints": [
+    "testing.Benchmark をプログラムから呼び出すと testing.BenchmarkResult が得られます",
+    "BenchmarkResult の N は実際に実行されたイテレーション数です",
+    "AllocsPerOp と AllocedBytesPerOp でメモリ割り当てを追跡できます",
+    "strings.Builder は += よりメモリ効率が良いことをベンチマークで確認できます",
+    "ウォームアップは測定前に関数を数回実行して JIT/キャッシュを安定させます",
+    "Compare は同じ入力を複数の実装でベンチマークし、結果を比較します"
+  ],
+  "files": ["bench.go.txt"]
+}

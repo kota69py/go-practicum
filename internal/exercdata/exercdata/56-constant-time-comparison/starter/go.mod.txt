@@ -1,0 +1,3 @@
+module go-practicum-56-constant-time-comparison
+
+go 1.23

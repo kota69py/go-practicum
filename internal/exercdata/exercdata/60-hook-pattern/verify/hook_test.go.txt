@@ -1,0 +1,97 @@
+package hook
+
+import (
+	"testing"
+)
+
+func TestPipeline(t *testing.T) {
+	var order []string
+	p := NewPipeline()
+	p.Use(
+		func(next Handler) Handler {
+			return func(ctx *Context) {
+				order = append(order, "first")
+				next(ctx)
+			}
+		},
+		func(next Handler) Handler {
+			return func(ctx *Context) {
+				order = append(order, "second")
+				next(ctx)
+			}
+		},
+	)
+	p.Then(func(ctx *Context) {
+		order = append(order, "handler")
+	})
+	p.Run(&Context{Key: "test"})
+	if len(order) != 3 {
+		t.Fatalf("expected 3 calls, got %d: %v", len(order), order)
+	}
+	if order[0] != "first" || order[1] != "second" || order[2] != "handler" {
+		t.Errorf("unexpected order: %v", order)
+	}
+}
+
+func TestLoggingHook(t *testing.T) {
+	p := NewPipeline()
+	p.Use(LoggingHook())
+	called := false
+	p.Then(func(ctx *Context) {
+		called = true
+	})
+	p.Run(&Context{Key: "test-log"})
+	if !called {
+		t.Error("handler should have been called")
+	}
+}
+
+func TestRecoveryHook(t *testing.T) {
+	p := NewPipeline()
+	p.Use(RecoveryHook())
+	p.Then(func(ctx *Context) {
+		panic("test panic")
+	})
+	p.Run(&Context{Key: "test-panic"})
+}
+
+func TestTimingHook(t *testing.T) {
+	p := NewPipeline()
+	p.Use(TimingHook())
+	p.Then(func(ctx *Context) {})
+	ctx := &Context{Key: "test-timing"}
+	p.Run(ctx)
+	if ctx.Value == nil {
+		t.Error("TimingHook should set duration in ctx.Value")
+	}
+}
+
+func TestChain(t *testing.T) {
+	var order []string
+	combined := Chain(
+		func(next Handler) Handler {
+			return func(ctx *Context) {
+				order = append(order, "a")
+				next(ctx)
+			}
+		},
+		func(next Handler) Handler {
+			return func(ctx *Context) {
+				order = append(order, "b")
+				next(ctx)
+			}
+		},
+	)
+	p := NewPipeline()
+	p.Use(combined)
+	p.Then(func(ctx *Context) {
+		order = append(order, "handler")
+	})
+	p.Run(&Context{Key: "test-chain"})
+	if len(order) != 3 {
+		t.Fatalf("expected 3 calls, got %d: %v", len(order), order)
+	}
+	if order[0] != "a" || order[1] != "b" || order[2] != "handler" {
+		t.Errorf("unexpected order: %v", order)
+	}
+}

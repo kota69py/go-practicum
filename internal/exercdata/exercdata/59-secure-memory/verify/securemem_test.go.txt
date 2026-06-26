@@ -1,0 +1,81 @@
+package securemem
+
+import (
+	"testing"
+)
+
+func TestNewSecret(t *testing.T) {
+	data := []byte("secret-data")
+	s := NewSecret(data)
+	got := s.Bytes()
+	if string(got) != string(data) {
+		t.Errorf("Bytes = %q, want %q", got, data)
+	}
+}
+
+func TestDestroy(t *testing.T) {
+	data := []byte("secret-data")
+	s := NewSecret(data)
+	s.Destroy()
+	got := s.Bytes()
+	for _, b := range got {
+		if b != 0 {
+			t.Error("data should be zeroed after Destroy")
+			break
+		}
+	}
+}
+
+func TestGenerateSecret(t *testing.T) {
+	s, err := GenerateSecret(32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := s.Bytes()
+	if len(got) != 32 {
+		t.Errorf("length = %d, want 32", len(got))
+	}
+}
+
+func TestEquals(t *testing.T) {
+	a := NewSecret([]byte("hello"))
+	b := NewSecret([]byte("hello"))
+	c := NewSecret([]byte("world"))
+	if !a.Equals(b) {
+		t.Error("equal secrets should return true")
+	}
+	if a.Equals(c) {
+		t.Error("different secrets should return false")
+	}
+}
+
+func TestHashPassword(t *testing.T) {
+	hash, err := HashPassword("mypassword")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hash) == 0 {
+		t.Error("hash should not be empty")
+	}
+}
+
+func TestVerifyPassword(t *testing.T) {
+	password := "securepass123"
+	hash, err := HashPassword(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !VerifyPassword(password, hash) {
+		t.Error("VerifyPassword should succeed with correct password")
+	}
+}
+
+func TestVerifyPasswordWrong(t *testing.T) {
+	hash, err := HashPassword("correct-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if VerifyPassword("wrong-password", hash) {
+		t.Error("VerifyPassword should fail with wrong password")
+	}
+}

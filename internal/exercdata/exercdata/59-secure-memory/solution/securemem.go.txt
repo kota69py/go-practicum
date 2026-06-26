@@ -1,0 +1,84 @@
+package securemem
+
+import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
+	"fmt"
+)
+
+type Secret struct {
+	data []byte
+}
+
+func NewSecret(data []byte) *Secret {
+	cp := make([]byte, len(data))
+	copy(cp, data)
+	return &Secret{data: cp}
+}
+
+func GenerateSecret(size int) (*Secret, error) {
+	buf := make([]byte, size)
+	_, err := rand.Read(buf)
+	if err != nil {
+		return nil, err
+	}
+	return &Secret{data: buf}, nil
+}
+
+func (s *Secret) Bytes() []byte {
+	cp := make([]byte, len(s.data))
+	copy(cp, s.data)
+	return cp
+}
+
+func (s *Secret) Destroy() {
+	for i := range s.data {
+		s.data[i] = 0
+	}
+}
+
+func (s *Secret) Equals(other *Secret) bool {
+	return subtle.ConstantTimeCompare(s.data, other.data) == 1
+}
+
+func HashPassword(password string) (string, error) {
+	salt := make([]byte, 16)
+	_, err := rand.Read(salt)
+	if err != nil {
+		return "", err
+	}
+	h := sha256.New()
+	h.Write([]byte(password))
+	h.Write(salt)
+	hash := h.Sum(nil)
+	return fmt.Sprintf("%s$%s", hex.EncodeToString(salt), hex.EncodeToString(hash)), nil
+}
+
+func VerifyPassword(password, hash string) bool {
+	parts := []byte(hash)
+	saltEnd := -1
+	for i, b := range parts {
+		if b == '$' {
+			saltEnd = i
+			break
+		}
+	}
+	if saltEnd < 0 {
+		return false
+	}
+	salt, err := hex.DecodeString(string(parts[:saltEnd]))
+	if err != nil {
+		return false
+	}
+	storedHash, err := hex.DecodeString(string(parts[saltEnd+1:]))
+	if err != nil {
+		return false
+	}
+	h := sha256.New()
+	h.Write([]byte(password))
+	h.Write(salt)
+	computed := h.Sum(nil)
+	return subtle.ConstantTimeCompare(computed, storedHash) == 1
+}

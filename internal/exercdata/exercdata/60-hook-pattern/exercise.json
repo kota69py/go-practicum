@@ -1,0 +1,17 @@
+{
+  "name": "60-hook-pattern",
+  "title": "Hook / インターセプターチェーン — パイプライン処理とミドルウェア",
+  "category": "design",
+  "difficulty": 4,
+  "description": "フック（Hook）パターンとインターセプターチェーンを実装します。パイプライン処理、ミドルウェア構成、エラーハンドリングの設計パターンを学びます。",
+  "hints": [
+    "Hook は func(next Handler) Handler の型です",
+    "Pipeline は Hook のチェーンを保持し、Run で最終ハンドラをラップします",
+    "チェーンは最後の Hook から順にラップします（LIFO）",
+    "LoggingHook では next の前後でログを出力することで before/after を実現します",
+    "RecoveryHook では defer/recover でパニックをキャッチします",
+    "TimingHook では time.Now と time.Since で経過時間を計測します",
+    "Chain は複数の Hook を1つに合成するヘルパーです"
+  ],
+  "files": ["hook.go.txt"]
+}

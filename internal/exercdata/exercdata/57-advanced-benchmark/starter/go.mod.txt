@@ -1,0 +1,3 @@
+module go-practicum-57-advanced-benchmark
+
+go 1.23

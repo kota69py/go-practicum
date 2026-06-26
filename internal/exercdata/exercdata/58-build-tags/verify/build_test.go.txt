@@ -1,0 +1,17 @@
+package buildtag
+
+import (
+	"runtime"
+	"testing"
+)
+
+func TestPlatformInfo(t *testing.T) {
+	info := PlatformInfo()
+	if info.Platform != runtime.GOOS {
+		t.Errorf("Platform = %q, want %q", info.Platform, runtime.GOOS)
+	}
+}
+
+func TestDebugLogNoCrash(t *testing.T) {
+	DebugLog("test message")
+}

@@ -1,0 +1,86 @@
+package hook
+
+import (
+	"fmt"
+	"time"
+)
+
+type Context struct {
+	Key   string
+	Value interface{}
+}
+
+type Handler func(ctx *Context)
+
+type Hook func(next Handler) Handler
+
+type Pipeline struct {
+	hooks []Hook
+	final Handler
+}
+
+func NewPipeline() *Pipeline {
+	return &Pipeline{}
+}
+
+func (p *Pipeline) Use(hooks ...Hook) {
+	p.hooks = append(p.hooks, hooks...)
+}
+
+func (p *Pipeline) Run(ctx *Context) {
+	chain := p.final
+	if chain == nil {
+		return
+	}
+	for i := len(p.hooks) - 1; i >= 0; i-- {
+		chain = p.hooks[i](chain)
+	}
+	chain(ctx)
+}
+
+func (p *Pipeline) Then(handler Handler) {
+	p.final = handler
+}
+
+func LoggingHook() Hook {
+	return func(next Handler) Handler {
+		return func(ctx *Context) {
+			fmt.Println("[log] before:", ctx.Key)
+			next(ctx)
+			fmt.Println("[log] after:", ctx.Key)
+		}
+	}
+}
+
+func RecoveryHook() Hook {
+	return func(next Handler) Handler {
+		return func(ctx *Context) {
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Println("[recovery] recovered:", r)
+				}
+			}()
+			next(ctx)
+		}
+	}
+}
+
+func TimingHook() Hook {
+	return func(next Handler) Handler {
+		return func(ctx *Context) {
+			start := time.Now()
+			next(ctx)
+			ctx.Value = time.Since(start)
+		}
+	}
+}
+
+func Chain(hooks ...Hook) Hook {
+	return func(next Handler) Handler {
+		chain := next
+		for i := len(hooks) - 1; i >= 0; i-- {
+			chain = hooks[i](chain)
+		}
+		return chain
+	}
+}

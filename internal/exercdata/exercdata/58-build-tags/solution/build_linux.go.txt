@@ -1,0 +1,7 @@
+//go:build linux
+
+package buildtag
+
+func PlatformInfo() Info {
+	return Info{Platform: "linux"}
+}

@@ -1,0 +1,35 @@
+package secure
+
+type SafeString struct {
+	data string
+}
+
+func NewSafeString(s string) *SafeString {
+	return &SafeString{data: s}
+}
+
+func (s *SafeString) Equals(other *SafeString) bool {
+	// TODO: crypto/subtle.ConstantTimeCompare を使って実装
+	return false
+}
+
+func (s *SafeString) String() string {
+	return s.data
+}
+
+func VerifyMAC(message, mac, key []byte) bool {
+	// TODO: crypto/hmac で HMAC-SHA256 を計算し、hmac.Equal で比較
+	return false
+}
+
+func InsecureEquals(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

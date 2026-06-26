@@ -1,0 +1,50 @@
+package bench
+
+import (
+	"testing"
+)
+
+func TestConcat(t *testing.T) {
+	parts := []string{"a", "b", "c", "d", "e"}
+	a := ConcatAppend(parts)
+	b := ConcatBuilder(parts)
+	if a != b {
+		t.Errorf("ConcatAppend = %q, ConcatBuilder = %q", a, b)
+	}
+}
+
+func TestCompare(t *testing.T) {
+	parts := []string{"hello", " ", "world", " ", "test"}
+	results := Compare(
+		[]string{"append", "builder"},
+		[]func(){func() { ConcatAppend(parts) }, func() { ConcatBuilder(parts) }},
+	)
+	if len(results) != 2 {
+		t.Fatal("expected 2 results")
+	}
+	if results[0].N == 0 || results[1].N == 0 {
+		t.Error("N should be > 0")
+	}
+	if results[1].T == 0 || results[0].T == 0 {
+		t.Error("T should be > 0")
+	}
+}
+
+func TestWarmup(t *testing.T) {
+	count := 0
+	fn := func() { count++ }
+	Warmup(fn, 10)
+	if count != 10 {
+		t.Errorf("expected count=10, got %d", count)
+	}
+}
+
+func TestRun(t *testing.T) {
+	result := Run("test", func() {})
+	if result.N == 0 {
+		t.Error("N should be > 0")
+	}
+	if result.Label != "test" {
+		t.Errorf("Label = %q, want %q", result.Label, "test")
+	}
+}

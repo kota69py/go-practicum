@@ -1,0 +1,56 @@
+package secure
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"testing"
+)
+
+func TestConstantTimeEqual(t *testing.T) {
+	a := NewSafeString("hello")
+	b := NewSafeString("hello")
+	c := NewSafeString("world")
+	if !a.Equals(b) {
+		t.Error("equal strings should return true")
+	}
+	if a.Equals(c) {
+		t.Error("different strings should return false")
+	}
+}
+
+func TestConstantTimeDiffLength(t *testing.T) {
+	a := NewSafeString("short")
+	b := NewSafeString("longer")
+	if a.Equals(b) {
+		t.Error("different length strings should return false")
+	}
+}
+
+func TestHMAC(t *testing.T) {
+	key := []byte("secret-key")
+	message := []byte("hello world")
+	h := hmac.New(sha256.New, key)
+	h.Write(message)
+	mac := h.Sum(nil)
+	if !VerifyMAC(message, mac, key) {
+		t.Error("valid MAC should return true")
+	}
+}
+
+func TestHMACTampered(t *testing.T) {
+	key := []byte("secret-key")
+	message := []byte("hello world")
+	tampered := []byte("tampered")
+	if VerifyMAC(message, tampered, key) {
+		t.Error("tampered MAC should return false")
+	}
+}
+
+func TestInsecureEquals(t *testing.T) {
+	if !InsecureEquals("hello", "hello") {
+		t.Error("equal strings should return true")
+	}
+	if InsecureEquals("hello", "world") {
+		t.Error("different strings should return false")
+	}
+}

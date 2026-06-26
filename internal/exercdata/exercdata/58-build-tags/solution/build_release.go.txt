@@ -1,0 +1,6 @@
+//go:build !debug
+
+package buildtag
+
+func DebugLog(msg string) {
+}

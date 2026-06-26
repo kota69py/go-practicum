@@ -1,0 +1,45 @@
+package bench
+
+import (
+	"strings"
+	"time"
+)
+
+type BenchmarkResult struct {
+	Label      string
+	N          int
+	T          time.Duration
+	Bytes      int64
+	Allocs     int64
+	AllocBytes int64
+}
+
+func Run(label string, fn func()) BenchmarkResult {
+	// TODO: testing.Benchmark をプログラムから呼び出す
+	return BenchmarkResult{}
+}
+
+func Compare(labels []string, fns []func()) []BenchmarkResult {
+	// TODO: 各関数を Run でベンチマーク
+	return nil
+}
+
+func ConcatAppend(parts []string) string {
+	result := ""
+	for _, p := range parts {
+		result += p
+	}
+	return result
+}
+
+func ConcatBuilder(parts []string) string {
+	var b strings.Builder
+	for _, p := range parts {
+		b.WriteString(p)
+	}
+	return b.String()
+}
+
+func Warmup(fn func(), n int) {
+	// TODO: fn を n 回実行
+}

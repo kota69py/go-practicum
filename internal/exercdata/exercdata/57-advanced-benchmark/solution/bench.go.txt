@@ -1,0 +1,62 @@
+package bench
+
+import (
+	"strings"
+	"testing"
+	"time"
+)
+
+type BenchmarkResult struct {
+	Label      string
+	N          int
+	T          time.Duration
+	Bytes      int64
+	Allocs     int64
+	AllocBytes int64
+}
+
+func Run(label string, fn func()) BenchmarkResult {
+	r := testing.Benchmark(func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fn()
+		}
+	})
+	return BenchmarkResult{
+		Label:      label,
+		N:          r.N,
+		T:          r.T,
+		Bytes:      r.Bytes,
+		Allocs:     int64(r.AllocsPerOp()),
+		AllocBytes: int64(r.AllocedBytesPerOp()),
+	}
+}
+
+func Compare(labels []string, fns []func()) []BenchmarkResult {
+	results := make([]BenchmarkResult, len(labels))
+	for i := range labels {
+		results[i] = Run(labels[i], fns[i])
+	}
+	return results
+}
+
+func ConcatAppend(parts []string) string {
+	result := ""
+	for _, p := range parts {
+		result += p
+	}
+	return result
+}
+
+func ConcatBuilder(parts []string) string {
+	var b strings.Builder
+	for _, p := range parts {
+		b.WriteString(p)
+	}
+	return b.String()
+}
+
+func Warmup(fn func(), n int) {
+	for i := 0; i < n; i++ {
+		fn()
+	}
+}

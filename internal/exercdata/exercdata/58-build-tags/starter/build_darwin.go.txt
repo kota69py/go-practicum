@@ -1,0 +1,8 @@
+//go:build darwin
+
+package buildtag
+
+func PlatformInfo() Info {
+	// TODO: "darwin" をプラットフォームとして返す
+	return Info{}
+}

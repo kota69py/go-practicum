@@ -1,0 +1,9 @@
+//go:build debug
+
+package buildtag
+
+import "os"
+
+func DebugLog(msg string) {
+	os.Stderr.WriteString("[debug] " + msg + "\n")
+}

@@ -1,0 +1,6 @@
+package buildtag
+
+type Info struct {
+	Platform string
+	Debug    bool
+}

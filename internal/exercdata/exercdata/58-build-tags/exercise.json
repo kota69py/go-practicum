@@ -1,0 +1,16 @@
+{
+  "name": "58-build-tags",
+  "title": "Build Tags & 条件付きビルド — プラットフォーム分岐とデバッグビルド",
+  "category": "language",
+  "difficulty": 4,
+  "description": "Goのビルドタグ（//go:build）を使った条件付きコンパイルを実践します。プラットフォーム固有の実装とデバッグモードの切り替えをビルドタグで制御します。",
+  "hints": [
+    "//go:build ディレクティブで条件付きコンパイルを制御します",
+    "runtime.GOOS ではなくビルドタグでプラットフォーム分岐を行うと不要なコードがビルド対象から除外されます",
+    "debug タグは go test -tags=debug で有効になります",
+    "//go:build !debug でデバッグ無効時の実装を提供します",
+    "プラットフォームタグは Go に組み込み済み: linux, windows, darwin など",
+    "1つのファイルに複数のビルドタグを && や || で組み合わせられます"
+  ],
+  "files": ["build.go.txt", "build_debug.go.txt", "build_release.go.txt", "build_linux.go.txt", "build_windows.go.txt", "build_darwin.go.txt"]
+}

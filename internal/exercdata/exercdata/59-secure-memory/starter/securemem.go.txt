@@ -1,0 +1,32 @@
+package securemem
+
+type Secret struct {
+	data []byte
+}
+
+func NewSecret(data []byte) *Secret {
+	return &Secret{}
+}
+
+func GenerateSecret(size int) (*Secret, error) {
+	return nil, nil
+}
+
+func (s *Secret) Bytes() []byte {
+	return nil
+}
+
+func (s *Secret) Destroy() {
+}
+
+func (s *Secret) Equals(other *Secret) bool {
+	return false
+}
+
+func HashPassword(password string) (string, error) {
+	return "", nil
+}
+
+func VerifyPassword(password, hash string) bool {
+	return false
+}

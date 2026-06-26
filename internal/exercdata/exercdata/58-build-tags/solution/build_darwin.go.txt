@@ -1,0 +1,7 @@
+//go:build darwin
+
+package buildtag
+
+func PlatformInfo() Info {
+	return Info{Platform: "darwin"}
+}

@@ -1,0 +1,16 @@
+{
+  "name": "59-secure-memory",
+  "title": "セキュアメモリ管理 — 機密情報の安全な取り扱い",
+  "category": "security",
+  "difficulty": 4,
+  "description": "パスワードや暗号鍵などの機密情報を安全に管理する方法を実践します。メモリゼロ化、定数時間比較、安全な乱数生成、パスワードハッシュ化を学びます。",
+  "hints": [
+    "crypto/rand.Read で暗号論的乱数を生成します",
+    "Secret.Destroy では保持している byte スライスを zeroing してから GC に解放させます",
+    "runtime.KeepAlive でゼロ化前に変数が GC されるのを防ぎます",
+    "Equals は crypto/subtle.ConstantTimeCompare を使用します",
+    "パスワードハッシュは 16 バイトの random salt + SHA256(password + salt) を salt$hex 形式で保存します",
+    "VerifyPassword は保存された salt を取り出して同じ計算を行います"
+  ],
+  "files": ["securemem.go.txt"]
+}
