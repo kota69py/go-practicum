@@ -14,31 +14,27 @@ import (
 
 var startForce bool
 
-func init() {
-	startCmd.Flags().BoolVarP(&startForce, "force", "f", false, "進行中の演習を上書きして開始")
-	rootCmd.AddCommand(startCmd)
-}
-
 var validName = regexp.MustCompile(`^\d{2}-[a-z0-9](?:-?[a-z0-9])*$`)
 
-var startCmd = &cobra.Command{
-	Use:   "start <name>",
-	Short: "演習を開始（カレントディレクトリに展開）",
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
+func (r *Runner) newStartCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start <name>",
+		Short: "演習を開始（カレントディレクトリに展開）",
+		Args:  cobra.ExactArgs(1),
+		Run: func(c *cobra.Command, args []string) {
+			name := args[0]
 
-		if !validName.MatchString(name) {
-			fmt.Fprintf(os.Stderr, "エラー: 演習名 %q の形式が正しくありません (例: 01-interface-design)\n", name)
-			os.Exit(1)
-		}
+			if !validName.MatchString(name) {
+				fmt.Fprintf(os.Stderr, "エラー: 演習名 %q の形式が正しくありません (例: 01-interface-design)\n", name)
+				os.Exit(1)
+			}
 
-		if exercFS == nil {
-			fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-			os.Exit(1)
-		}
+			if r.exercFS == nil {
+				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
+				os.Exit(1)
+			}
 
-		ex, err := exercise.LoadFromFS(exercFS, name)
+			ex, err := exercise.LoadFromFS(r.exercFS, name)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "エラー: 演習 %q が見つかりません\n", name)
 			os.Exit(1)
@@ -58,13 +54,13 @@ var startCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := exercise.CopyFromFS(exercFS, name+"/starter", target); err != nil {
+			if err := exercise.CopyFromFS(r.exercFS, name+"/starter", target); err != nil {
 			fmt.Fprintf(os.Stderr, "エラー: 展開失敗: %v\n", err)
 			os.Exit(1)
 		}
 		// verify ディレクトリが存在する場合のみコピー
-		if _, err := fs.Stat(exercFS, name+"/verify"); err == nil {
-			if err := exercise.CopyFromFS(exercFS, name+"/verify", target); err != nil {
+			if _, err := fs.Stat(r.exercFS, name+"/verify"); err == nil {
+			if err := exercise.CopyFromFS(r.exercFS, name+"/verify", target); err != nil {
 				fmt.Fprintf(os.Stderr, "エラー: テスト展開失敗: %v\n", err)
 				os.Exit(1)
 			}
@@ -86,4 +82,7 @@ var startCmd = &cobra.Command{
 		fmt.Printf("  編集後: %s\n", colorCyan("go-practicum verify"))
 		fmt.Printf("  ヒント:  %s\n", colorCyan("go-practicum hint"))
 	},
+	}
+	cmd.Flags().BoolVarP(&startForce, "force", "f", false, "進行中の演習を上書きして開始")
+	return cmd
 }

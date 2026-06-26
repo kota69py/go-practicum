@@ -9,8 +9,3 @@ type Exercise struct {
 	Hints      []string `json:"hints"`
 	Files      []string `json:"files"`
 }
-
-type Progress struct {
-	Completed  []string `json:"completed"`
-	InProgress string   `json:"in_progress,omitempty"`
-}

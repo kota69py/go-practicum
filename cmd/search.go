@@ -12,54 +12,53 @@ import (
 
 var searchCategory string
 
-func init() {
-	searchCmd.Flags().StringVarP(&searchCategory, "category", "c", "", "カテゴリで絞り込み")
-	rootCmd.AddCommand(searchCmd)
-}
-
-var searchCmd = &cobra.Command{
-	Use:   "search <query>",
-	Short: "演習を検索（名前・タイトル・トピック）",
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		if exercFS == nil {
-			fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-			os.Exit(1)
-		}
-		all, err := exercise.ListFromFS(exercFS)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
-			os.Exit(1)
-		}
-
-		query := strings.ToLower(args[0])
-		prog, _ := progress.Load()
-		var matched []exercise.Exercise
-
-		for _, ex := range all {
-			if searchCategory != "" && !strings.EqualFold(ex.Category, searchCategory) {
-				continue
+func (r *Runner) newSearchCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "search <query>",
+		Short: "演習を検索（名前・タイトル・トピック）",
+		Args:  cobra.ExactArgs(1),
+		Run: func(c *cobra.Command, args []string) {
+			if r.exercFS == nil {
+				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
+				os.Exit(1)
 			}
-			if matchExercise(ex, query) {
-				matched = append(matched, ex)
+			all, err := exercise.ListFromFS(r.exercFS)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
+				os.Exit(1)
 			}
-		}
 
-		if len(matched) == 0 {
-			fmt.Printf("「%s」に一致する演習は見つかりませんでした。\n", args[0])
-			return
-		}
+			query := strings.ToLower(args[0])
+			prog, _ := progress.Load()
+			var matched []exercise.Exercise
 
-		fmt.Printf("「%s」の検索結果: %d 件\n\n", args[0], len(matched))
-		for _, ex := range matched {
-			status := " "
-			if prog.IsCompleted(ex.Name) {
-				status = "✅"
+			for _, ex := range all {
+				if searchCategory != "" && !strings.EqualFold(ex.Category, searchCategory) {
+					continue
+				}
+				if matchExercise(ex, query) {
+					matched = append(matched, ex)
+				}
 			}
-			fmt.Printf("  %s %s [%s] %s\n", status, stars(ex.Difficulty), ex.Category, ex.Title)
-			fmt.Printf("        → %s\n", colorCyan("go-practicum start "+ex.Name))
-		}
-	},
+
+			if len(matched) == 0 {
+				fmt.Printf("「%s」に一致する演習は見つかりませんでした。\n", args[0])
+				return
+			}
+
+			fmt.Printf("「%s」の検索結果: %d 件\n\n", args[0], len(matched))
+			for _, ex := range matched {
+				status := " "
+				if prog.IsCompleted(ex.Name) {
+					status = "✅"
+				}
+				fmt.Printf("  %s %s [%s] %s\n", status, stars(ex.Difficulty), ex.Category, ex.Title)
+				fmt.Printf("        → %s\n", colorCyan("go-practicum start "+ex.Name))
+			}
+		},
+	}
+	cmd.Flags().StringVarP(&searchCategory, "category", "c", "", "カテゴリで絞り込み")
+	return cmd
 }
 
 func matchExercise(ex exercise.Exercise, query string) bool {

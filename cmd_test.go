@@ -252,3 +252,18 @@ func TestBinarySolutionNoProgress(t *testing.T) {
 		t.Errorf("expected '進行中' error, got:\n%s", output)
 	}
 }
+
+func TestBinaryVersion(t *testing.T) {
+	bin := buildTestBinary(t)
+	out, err := exec.Command(bin, "version").CombinedOutput()
+	if err != nil {
+		t.Fatalf("version failed: %v\n%s", err, out)
+	}
+	output := string(out)
+	if !strings.Contains(output, "go-practicum") {
+		t.Errorf("output missing 'go-practicum':\n%s", output)
+	}
+	if !strings.Contains(output, "go version") {
+		t.Errorf("output missing 'go version':\n%s", output)
+	}
+}

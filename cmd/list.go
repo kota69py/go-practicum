@@ -15,21 +15,16 @@ var (
 	listDifficulty int
 )
 
-func init() {
-	listCmd.Flags().StringVarP(&listCategory, "category", "c", "", "カテゴリでフィルタ (例: concurrency, testing)")
-	listCmd.Flags().IntVarP(&listDifficulty, "difficulty", "d", 0, "難易度でフィルタ (1-5)")
-	rootCmd.AddCommand(listCmd)
-}
-
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "演習一覧を表示",
-	Run: func(cmd *cobra.Command, args []string) {
-		if exercFS == nil {
+func (r *Runner) newListCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "演習一覧を表示",
+		Run: func(c *cobra.Command, args []string) {
+		if r.exercFS == nil {
 			fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
 			os.Exit(1)
 		}
-		all, err := exercise.ListFromFS(exercFS)
+		all, err := exercise.ListFromFS(r.exercFS)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
 			os.Exit(1)
@@ -80,6 +75,10 @@ var listCmd = &cobra.Command{
 			fmt.Printf("       %s\n", colorCyan("go-practicum start "+ex.Name))
 		}
 	},
+	}
+	cmd.Flags().StringVarP(&listCategory, "category", "c", "", "カテゴリでフィルタ (例: concurrency, testing)")
+	cmd.Flags().IntVarP(&listDifficulty, "difficulty", "d", 0, "難易度でフィルタ (1-5)")
+	return cmd
 }
 
 func countCategories(exs []exercise.Exercise) int {

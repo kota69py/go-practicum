@@ -14,40 +14,38 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	rootCmd.AddCommand(exportCmd)
-}
+func (r *Runner) newExportCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "export [format]",
+		Short: "学習進捗をエクスポート (json / html)",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			format := "json"
+			if len(args) > 0 {
+				format = args[0]
+			}
+			if r.exercFS == nil {
+				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
+				os.Exit(1)
+			}
+			all, err := exercise.ListFromFS(r.exercFS)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
+				os.Exit(1)
+			}
+			prog, _ := progress.Load()
 
-var exportCmd = &cobra.Command{
-	Use:   "export [format]",
-	Short: "学習進捗をエクスポート (json / html)",
-	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		format := "json"
-		if len(args) > 0 {
-			format = args[0]
-		}
-		if exercFS == nil {
-			fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-			os.Exit(1)
-		}
-		all, err := exercise.ListFromFS(exercFS)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
-			os.Exit(1)
-		}
-		prog, _ := progress.Load()
-
-		switch format {
-		case "json":
-			exportJSON(all, prog)
-		case "html":
-			exportHTML(all, prog)
-		default:
-			fmt.Fprintf(os.Stderr, "エラー: 未対応の形式 %q (json / html)\n", format)
-			os.Exit(1)
-		}
-	},
+			switch format {
+			case "json":
+				exportJSON(all, prog)
+			case "html":
+				exportHTML(all, prog)
+			default:
+				fmt.Fprintf(os.Stderr, "エラー: 未対応の形式 %q (json / html)\n", format)
+				os.Exit(1)
+			}
+		},
+	}
 }
 
 type exportExercise struct {

@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	cmd.SetExercFS(exercdata.FS())
-	cmd.Execute()
+	r := cmd.NewRunner(exercdata.FS())
+	r.Execute()
 }

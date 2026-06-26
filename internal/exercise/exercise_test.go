@@ -1,6 +1,7 @@
 package exercise
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -136,23 +137,23 @@ func TestVerifyPass(t *testing.T) {
 import "testing"
 func TestPass(t *testing.T) {}`), 0644)
 
-	result, err := Verify(dir)
-	if err != nil {
-		t.Fatalf("Verify error: %v", err)
-	}
-	if !result.Passed {
-		t.Errorf("Passed = false, want true. Output: %s", result.Output)
-	}
-}
+ 	result, err := Verify(context.Background(), dir)
+ 	if err != nil {
+ 		t.Fatalf("Verify error: %v", err)
+ 	}
+ 	if !result.Passed {
+ 		t.Errorf("Passed = false, want true. Output: %s", result.Output)
+ 	}
+ }
 
-func TestVerifyFail(t *testing.T) {
-	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module test"), 0644)
-	os.WriteFile(filepath.Join(dir, "main_test.go"), []byte(`package main
-import "testing"
-func TestFail(t *testing.T) { t.Error("boom") }`), 0644)
+ func TestVerifyFail(t *testing.T) {
+ 	dir := t.TempDir()
+ 	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module test"), 0644)
+ 	os.WriteFile(filepath.Join(dir, "main_test.go"), []byte(`package main
+ import "testing"
+ func TestFail(t *testing.T) { t.Error("boom") }`), 0644)
 
-	result, err := Verify(dir)
+ 	result, err := Verify(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Verify error: %v", err)
 	}

@@ -2,6 +2,7 @@ package exercise
 
 import (
 	"bytes"
+	"context"
 	"os/exec"
 )
 
@@ -11,14 +12,21 @@ type VerifyResult struct {
 	Errors string
 }
 
-func Verify(workDir string) (*VerifyResult, error) {
+func Verify(ctx context.Context, workDir string) (*VerifyResult, error) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("go", "test", "-v", "./...")
+	cmd := exec.CommandContext(ctx, "go", "test", "-v", "./...")
 	cmd.Dir = workDir
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
+	if ctx.Err() != nil {
+		return &VerifyResult{
+			Passed: false,
+			Output: stdout.String(),
+			Errors: "検証がタイムアウトしました（制限時間: 60秒）",
+		}, ctx.Err()
+	}
 	return &VerifyResult{
 		Passed: err == nil,
 		Output: stdout.String(),
