@@ -38,11 +38,46 @@ func TestBinaryList(t *testing.T) {
 
 func TestBinaryStartUnknown(t *testing.T) {
 	bin := buildTestBinary(t)
-	cmd := exec.Command(bin, "start", "nonexistent")
+	cmd := exec.Command(bin, "start", "99-nonexistent")
 	out, _ := cmd.CombinedOutput()
 	output := string(out)
 	if !strings.Contains(output, "見つかりません") {
 		t.Errorf("expected error message, got:\n%s", output)
+	}
+}
+
+func TestBinaryStartInvalidName(t *testing.T) {
+	bin := buildTestBinary(t)
+	cmd := exec.Command(bin, "start", "invalid name!")
+	out, _ := cmd.CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "形式が正しくありません") {
+		t.Errorf("expected name format error, got:\n%s", output)
+	}
+}
+
+func TestBinaryStartInProgress(t *testing.T) {
+	bin := buildTestBinary(t)
+	dir := t.TempDir()
+	homeDir := t.TempDir()
+
+	// start first exercise
+	cmd := exec.Command(bin, "start", "01-interface-design")
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "USERPROFILE="+homeDir)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("first start failed: %v\n%s", err, out)
+	}
+
+	// try starting another without --force
+	cmd = exec.Command(bin, "start", "03-http-handler")
+	cmd.Dir = t.TempDir()
+	cmd.Env = append(os.Environ(), "USERPROFILE="+homeDir)
+	out, _ = cmd.CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "進行中") {
+		t.Errorf("expected in-progress error, got:\n%s", output)
 	}
 }
 
@@ -104,6 +139,105 @@ func TestBinaryHintNoProgress(t *testing.T) {
 	output := string(out)
 	if !strings.Contains(output, "進行中") {
 		t.Errorf("expected '進行中' error, got:\n%s", output)
+	}
+}
+
+func TestBinarySearch(t *testing.T) {
+	bin := buildTestBinary(t)
+	out, err := exec.Command(bin, "search", "interface").CombinedOutput()
+	if err != nil {
+		t.Fatalf("search failed: %v\n%s", err, out)
+	}
+	output := string(out)
+	if !strings.Contains(output, "01-interface-design") {
+		t.Errorf("output missing exercise name:\n%s", output)
+	}
+	if !strings.Contains(output, "検索結果") {
+		t.Errorf("output missing '検索結果':\n%s", output)
+	}
+}
+
+func TestBinarySearchNoMatch(t *testing.T) {
+	bin := buildTestBinary(t)
+	out, _ := exec.Command(bin, "search", "zzznotexist").CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "一致する演習は見つかりません") {
+		t.Errorf("expected no-match message, got:\n%s", output)
+	}
+}
+
+func TestBinaryGraph(t *testing.T) {
+	bin := buildTestBinary(t)
+	out, err := exec.Command(bin, "graph").CombinedOutput()
+	if err != nil {
+		t.Fatalf("graph failed: %v\n%s", err, out)
+	}
+	output := string(out)
+	if !strings.Contains(output, "学習マップ") {
+		t.Errorf("output missing '学習マップ':\n%s", output)
+	}
+	if !strings.Contains(output, "concurrency") {
+		t.Errorf("output missing 'concurrency':\n%s", output)
+	}
+}
+
+func TestBinaryCheckNoProgress(t *testing.T) {
+	bin := buildTestBinary(t)
+	dir := t.TempDir()
+	cmd := exec.Command(bin, "check")
+	cmd.Env = append(os.Environ(), "USERPROFILE="+dir)
+	out, _ := cmd.CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "進行中") {
+		t.Errorf("expected '進行中' error, got:\n%s", output)
+	}
+}
+
+func TestBinaryExportJSON(t *testing.T) {
+	bin := buildTestBinary(t)
+	out, err := exec.Command(bin, "export", "json").CombinedOutput()
+	if err != nil {
+		t.Fatalf("export json failed: %v\n%s", err, out)
+	}
+	output := string(out)
+	if !strings.Contains(output, `"total"`) {
+		t.Errorf("output missing 'total':\n%s", output)
+	}
+	if !strings.Contains(output, `"exported_at"`) {
+		t.Errorf("output missing 'exported_at':\n%s", output)
+	}
+}
+
+func TestBinaryExportInvalidFormat(t *testing.T) {
+	bin := buildTestBinary(t)
+	out, _ := exec.Command(bin, "export", "csv").CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "未対応") {
+		t.Errorf("expected '未対応' error, got:\n%s", output)
+	}
+}
+
+func TestBinaryResetNoProgress(t *testing.T) {
+	bin := buildTestBinary(t)
+	dir := t.TempDir()
+	cmd := exec.Command(bin, "reset")
+	cmd.Env = append(os.Environ(), "USERPROFILE="+dir)
+	out, _ := cmd.CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "リセットするデータがありません") {
+		t.Errorf("expected 'no data' message, got:\n%s", output)
+	}
+}
+
+func TestBinaryResetUnknown(t *testing.T) {
+	bin := buildTestBinary(t)
+	dir := t.TempDir()
+	cmd := exec.Command(bin, "reset", "nonexistent")
+	cmd.Env = append(os.Environ(), "USERPROFILE="+dir)
+	out, _ := cmd.CombinedOutput()
+	output := string(out)
+	if !strings.Contains(output, "見つかりません") {
+		t.Errorf("expected 'not found' error, got:\n%s", output)
 	}
 }
 

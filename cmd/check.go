@@ -27,13 +27,20 @@ var checkCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cwd, _ := os.Getwd()
-		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err != nil {
-			fmt.Fprintln(os.Stderr, "エラー: カレントディレクトリに go.mod が見つかりません")
+		ex, err := exercise.LoadFromFS(exercFS, prog.InProgress)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "エラー: 演習 %q のデータが見つかりません\n", prog.InProgress)
 			os.Exit(1)
 		}
 
-		ex, _ := exercise.LoadFromFS(exercFS, prog.InProgress)
+		cwd, _ := os.Getwd()
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err != nil {
+			fmt.Fprintf(os.Stderr, "エラー: カレントディレクトリに go.mod が見つかりません。\n")
+			fmt.Fprintf(os.Stderr, "ヒント: 演習 %q のディレクトリで実行していますか？\n", ex.Title)
+			os.Exit(1)
+		}
+
+		fmt.Printf("🔍 %s をチェック中...\n\n", colorCyan(ex.Title))
 		hasIssues := false
 
 		// gofmt check
@@ -43,7 +50,8 @@ var checkCmd = &cobra.Command{
 		fmtCmd.Dir = cwd
 		fmtCmd.Stdout = &fmtOut
 		fmtCmd.Stderr = &fmtOut
-		if err := fmtCmd.Run(); err == nil && strings.TrimSpace(fmtOut.String()) != "" {
+		fmtCmd.Run()
+		if strings.TrimSpace(fmtOut.String()) != "" {
 			fmt.Printf("  ❌ フォーマットが必要なファイル:\n")
 			for _, f := range strings.Split(strings.TrimSpace(fmtOut.String()), "\n") {
 				fmt.Printf("    - %s\n", f)
@@ -77,9 +85,7 @@ var checkCmd = &cobra.Command{
 		// Summary
 		fmt.Println()
 		if hasIssues {
-			if ex != nil {
-				fmt.Printf("❌ %s に修正が必要です\n", colorRed(ex.Title))
-			}
+			fmt.Printf("❌ %s に修正が必要です\n", colorRed(ex.Title))
 			os.Exit(1)
 		} else {
 			fmt.Println("✅ " + colorGreen("すべてのチェックを通過しました"))

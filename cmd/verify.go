@@ -24,10 +24,22 @@ var verifyCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		ex, _ := exercise.LoadFromFS(exercFS, prog.InProgress)
+
 		cwd, _ := os.Getwd()
 		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err != nil {
-			fmt.Fprintln(os.Stderr, "エラー: カレントディレクトリに go.mod が見つかりません。演習ディレクトリで実行してください。")
+			fmt.Fprintf(os.Stderr, "エラー: カレントディレクトリに go.mod が見つかりません。\n")
+			if ex != nil {
+				fmt.Fprintf(os.Stderr, "ヒント: 演習 %q のディレクトリで実行していますか？\n", ex.Title)
+			}
+			fmt.Fprintln(os.Stderr, "ヒント: go-practicum start で展開されたディレクトリで実行してください。")
 			os.Exit(1)
+		}
+
+		if ex != nil {
+			fmt.Printf("🔍 %s を検証中...\n", colorCyan(ex.Title))
+		} else {
+			fmt.Printf("🔍 %s を検証中...\n", colorCyan(prog.InProgress))
 		}
 
 		result, err := exercise.Verify(cwd)

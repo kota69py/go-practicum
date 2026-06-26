@@ -42,6 +42,9 @@ func colorCyan(s string) string {
 }
 
 func stars(n int) string {
+	if n < 0 {
+		n = 0
+	}
 	if n > 5 {
 		n = 5
 	}
