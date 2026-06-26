@@ -1,0 +1,57 @@
+package circuit
+
+import (
+	"errors"
+	"sync"
+	"time"
+)
+
+// State はサーキットブレーカーの状態を表します。
+type State int
+
+const (
+	StateClosed   State = iota
+	StateOpen
+	StateHalfOpen
+)
+
+func (s State) String() string {
+	// TODO
+	return ""
+}
+
+// ErrOpen はサーキットが Open 状態のときに Execute が返すエラーです。
+var ErrOpen = errors.New("circuit breaker is open")
+
+// Options は CircuitBreaker の設定です。
+type Options struct {
+	FailureThreshold  int
+	Timeout           time.Duration
+	HalfOpenMaxRetries int
+}
+
+// CircuitBreaker は障害分離のためのサーキットブレーカーです。
+type CircuitBreaker struct {
+	mu         sync.Mutex
+	state      State
+	failures   int
+	lastError  time.Time
+	opts       Options
+}
+
+// NewCircuitBreaker は CircuitBreaker を作成します。
+func NewCircuitBreaker(opts Options) *CircuitBreaker {
+	return &CircuitBreaker{
+		state: StateClosed,
+		opts:  opts,
+	}
+}
+
+// Execute は関数 fn を実行します。サーキットが Open の場合は ErrOpen を返します。
+func (cb *CircuitBreaker) Execute(fn func() error) error {
+	// TODO: 状態に応じた処理
+	// Closed: 実行 → 失敗カウント → 閾値超えたら Open
+	// Open: 即座に ErrOpen、ただし Timeout 経過で HalfOpen
+	// HalfOpen: 1回だけ実行 → 成功で Closed、失敗で Open
+	return fn()
+}

@@ -1,0 +1,18 @@
+{
+  "name": "53-lockfree-ringbuffer",
+  "title": "ロックフリーリングバッファ — atomic とメモリオーダリング",
+  "category": "concurrency",
+  "difficulty": 5,
+  "description": "sync/atomic を使ったロックフリーな Single-Producer Single-Consumer (SPSC) リングバッファを実装します。CAS やメモリオーダリング、power-of-2 マスクテクニックを学びます。",
+  "hints": [
+    "SPSC リングバッファでは head (書き込み位置) と tail (読み取り位置) を atomic で管理します",
+    "エンキュー: head をインクリメントし、tail+capacity と比較して満杯を検出します",
+    "デキュー: tail をインクリメントし、head と比較して空を検出します",
+    "capacity は power of 2 にすることで、index & (cap-1) のマスク演算でラップできます",
+    "Enqueue は head に書き込んだ後に Store(head) します (store-store 順序)",
+    "Dequeue は tail を Load してから要素を読み取ります (load-load 順序)",
+    "atomic.AddUint64 の戻り値は加算後の値です。これを使って排他制御します",
+    "競合状態を避けるため、 producer は head のみ、consumer は tail のみを更新します"
+  ],
+  "files": ["ring.go.txt"]
+}

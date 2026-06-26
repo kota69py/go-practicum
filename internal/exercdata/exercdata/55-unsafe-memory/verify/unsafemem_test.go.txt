@@ -1,0 +1,76 @@
+package unsafemem
+
+import (
+	"reflect"
+	"testing"
+	"unsafe"
+)
+
+type simpleStruct struct {
+	A int8
+	B int64
+	C int16
+}
+
+type packedStruct struct {
+	A int8
+	B int8
+	C int8
+}
+
+func TestStructSize(t *testing.T) {
+	got := StructSize[simpleStruct]()
+	want := unsafe.Sizeof(simpleStruct{})
+	if got != want {
+		t.Errorf("StructSize = %d, want %d", got, want)
+	}
+}
+
+func TestFieldOffsets(t *testing.T) {
+	offsets := FieldOffsets[simpleStruct]()
+	var s simpleStruct
+	typ := reflect.TypeOf(s)
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		if offsets[f.Name] != f.Offset {
+			t.Errorf("FieldOffsets[%q] = %d, want %d", f.Name, offsets[f.Name], f.Offset)
+		}
+	}
+}
+
+func TestBytesToIntRoundTrip(t *testing.T) {
+	original := 0xDEADBEEF
+	b := IntToBytes(original)
+	got := BytesToInt(b)
+	if got != original {
+		t.Errorf("round trip: %d -> %x -> %d", original, b, got)
+	}
+}
+
+func TestPaddingInfo(t *testing.T) {
+	info := PaddingInfo[simpleStruct]()
+	if info.TotalSize == 0 {
+		t.Error("TotalSize should not be 0")
+	}
+	if len(info.FieldOffsets) == 0 {
+		t.Error("FieldOffsets should not be empty")
+	}
+}
+
+func TestAlignOf(t *testing.T) {
+	var v int
+	want := unsafe.Alignof(v)
+	got := AlignOf[int]()
+	if got != want {
+		t.Errorf("AlignOf[int] = %d, want %d", got, want)
+	}
+}
+
+func TestAlignOfStruct(t *testing.T) {
+	var v simpleStruct
+	want := unsafe.Alignof(v)
+	got := AlignOf[simpleStruct]()
+	if got != want {
+		t.Errorf("AlignOf[simpleStruct] = %d, want %d", got, want)
+	}
+}

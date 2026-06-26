@@ -1,0 +1,3 @@
+module go-practicum-54-circuit-breaker
+
+go 1.23

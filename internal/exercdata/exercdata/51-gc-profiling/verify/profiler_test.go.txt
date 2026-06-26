@@ -1,0 +1,55 @@
+package gcprof
+
+import (
+	"testing"
+)
+
+func TestDiff(t *testing.T) {
+	p := NewProfiler()
+	before := p.Snapshot()
+	_ = make([]byte, 1024*1024)
+	after := p.Snapshot()
+	diff := p.Diff(before, after)
+	if diff.TotalAllocDiff < 1024*1024 {
+		t.Errorf("TotalAllocDiff = %d, want >= %d", diff.TotalAllocDiff, 1024*1024)
+	}
+}
+
+func TestAllocExample(t *testing.T) {
+	p := NewProfiler()
+	before := p.Snapshot()
+	AllocExample()
+	after := p.Snapshot()
+	diff := p.Diff(before, after)
+	if diff.MallocsDiff == 0 {
+		t.Error("AllocExample should allocate memory, but MallocsDiff is 0")
+	}
+}
+
+func TestAllocOptimized(t *testing.T) {
+	p := NewProfiler()
+	before := p.Snapshot()
+	AllocOptimized()
+	after := p.Snapshot()
+	exampleDiff := p.Diff(before, after)
+
+	before2 := p.Snapshot()
+	AllocExample()
+	after2 := p.Snapshot()
+	exampleDiff2 := p.Diff(before2, after2)
+
+	if exampleDiff.MallocsDiff >= exampleDiff2.MallocsDiff {
+		t.Errorf("AllocOptimized (MallocsDiff=%d) should allocate fewer objects than AllocExample (MallocsDiff=%d)",
+			exampleDiff.MallocsDiff, exampleDiff2.MallocsDiff)
+	}
+}
+
+func TestProfilerRepeatable(t *testing.T) {
+	p := NewProfiler()
+	snap1 := p.Snapshot()
+	snap2 := p.Snapshot()
+	diff := p.Diff(snap1, snap2)
+	if diff.TotalAllocDiff == 0 && diff.MallocsDiff > 0 {
+		t.Log("snapshots work multiple times")
+	}
+}

@@ -1,0 +1,107 @@
+package ring
+
+import (
+	"sync"
+	"testing"
+)
+
+func TestEnqueueDequeue(t *testing.T) {
+	rb := NewRingBuffer(4)
+	if !rb.Enqueue(10) {
+		t.Fatal("Enqueue failed on empty buffer")
+	}
+	if !rb.Enqueue(20) {
+		t.Fatal("Enqueue failed with 1 element")
+	}
+	v, ok := rb.Dequeue()
+	if !ok {
+		t.Fatal("Dequeue failed on non-empty buffer")
+	}
+	if v != 10 {
+		t.Errorf("Dequeue = %d, want 10", v)
+	}
+	v, ok = rb.Dequeue()
+	if !ok {
+		t.Fatal("Dequeue failed on non-empty buffer")
+	}
+	if v != 20 {
+		t.Errorf("Dequeue = %d, want 20", v)
+	}
+}
+
+func TestFull(t *testing.T) {
+	rb := NewRingBuffer(4)
+	for i := 0; i < 4; i++ {
+		if !rb.Enqueue(i) {
+			t.Fatalf("Enqueue failed at iteration %d", i)
+		}
+	}
+	if rb.Enqueue(99) {
+		t.Error("Enqueue should return false when full")
+	}
+}
+
+func TestEmpty(t *testing.T) {
+	rb := NewRingBuffer(4)
+	_, ok := rb.Dequeue()
+	if ok {
+		t.Error("Dequeue should return false when empty")
+	}
+	rb.Enqueue(1)
+	rb.Dequeue()
+	_, ok = rb.Dequeue()
+	if ok {
+		t.Error("Dequeue should return false after all elements consumed")
+	}
+}
+
+func TestConcurrentSPSC(t *testing.T) {
+	rb := NewRingBuffer(1024)
+	n := 10000
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for i := 0; i < n; i++ {
+			for !rb.Enqueue(i) {
+			}
+		}
+		for !rb.Enqueue(-1) {
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		seen := make(map[int]bool)
+		for {
+			v, ok := rb.Dequeue()
+			if !ok {
+				continue
+			}
+			if v == -1 {
+				break
+			}
+			if seen[v] {
+				t.Errorf("duplicate value: %d", v)
+			}
+			seen[v] = true
+		}
+		if len(seen) != n {
+			t.Errorf("got %d values, want %d", len(seen), n)
+		}
+	}()
+
+	wg.Wait()
+}
+
+func TestCapPowerOfTwo(t *testing.T) {
+	rb := NewRingBuffer(10)
+	if rb.Cap() < 10 {
+		t.Errorf("Cap() = %d, want >= 10", rb.Cap())
+	}
+	// power of 2: 10 → 16
+	if rb.Cap() != 16 {
+		t.Errorf("Cap() = %d, want 16", rb.Cap())
+	}
+}

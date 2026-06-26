@@ -1,0 +1,47 @@
+package pool
+
+import (
+	"bytes"
+	"sync"
+	"testing"
+)
+
+// BufferPool は bytes.Buffer を再利用するためのプールです。
+type BufferPool struct {
+	pool sync.Pool
+}
+
+// NewBufferPool は BufferPool を作成します。
+func NewBufferPool() *BufferPool {
+	// TODO: sync.Pool の New フィールドを設定
+	return nil
+}
+
+// Get はプールから Buffer を取得します。
+func (bp *BufferPool) Get() *bytes.Buffer {
+	// TODO
+	return nil
+}
+
+// Put は Buffer をプールに戻します。
+func (bp *BufferPool) Put(b *bytes.Buffer) {
+	// TODO
+}
+
+// ConcatWithPool は BufferPool を使って文字列を結合します。
+func ConcatWithPool(parts []string) string {
+	// TODO: BufferPool からバッファを取得し、各パーツを書き込んで結果を返す
+	return ""
+}
+
+// ConcatWithAppend は append を使って文字列を結合します。
+// 事前に十分な容量を確保してアロケーションを最小化してください。
+func ConcatWithAppend(parts []string) string {
+	// TODO: 合計長を計算し、1回の make で十分な容量を確保してから結合
+	return ""
+}
+
+// BenchmarkConcat は文字列結合のベンチマークを行う高階関数です。
+func BenchmarkConcat(b *testing.B, fn func([]string) string, parts []string) {
+	// TODO: b.ResetTimer() してベンチマーク実行
+}

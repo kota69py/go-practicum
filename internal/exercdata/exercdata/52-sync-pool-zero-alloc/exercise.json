@@ -1,0 +1,17 @@
+{
+  "name": "52-sync-pool-zero-alloc",
+  "title": "sync.Pool & ゼロアロケーション — オブジェクト再利用とベンチマーク設計",
+  "category": "performance",
+  "difficulty": 4,
+  "description": "sync.Pool を使ったオブジェクト再利用のパターンと、testing.B / -benchmem によるアロケーション計測を実践します。BufferPool で bytes.Buffer をキャッシュし、文字列結合を最適化します。",
+  "hints": [
+    "sync.Pool の New フィールドで新しいオブジェクトの生成方法を指定します",
+    "pool.Get() でプールからオブジェクトを取得し、pool.Put() で戻します",
+    "Get で取得したオブジェクトの状態はリセットしてから使います (b.Reset())",
+    "ConcatWithAppend は make([]byte, 0, totalLen) で事前確保すると効率的です",
+    "ベンチマークは b.ResetTimer() でセットアップ時間を除外できます",
+    "testing.AllocsPerRun または -benchmem フラグでアロケーション数を確認できます",
+    "BenchmarkConcat は引数で関数を受け取る高階ベンチマーク関数です"
+  ],
+  "files": ["pool.go.txt"]
+}

@@ -1,0 +1,65 @@
+package ring
+
+import "sync/atomic"
+
+type RingBuffer struct {
+	buf      []int
+	capacity uint64
+	mask     uint64
+	head     uint64
+	tail     uint64
+}
+
+func roundUpPowerOf2(v int) int {
+	v--
+	v |= v >> 1
+	v |= v >> 2
+	v |= v >> 4
+	v |= v >> 8
+	v |= v >> 16
+	if v < 0 {
+		return 1
+	}
+	return v + 1
+}
+
+func NewRingBuffer(capacity int) *RingBuffer {
+	cap := roundUpPowerOf2(capacity)
+	return &RingBuffer{
+		buf:      make([]int, cap),
+		capacity: uint64(cap),
+		mask:     uint64(cap - 1),
+	}
+}
+
+func (rb *RingBuffer) Enqueue(val int) bool {
+	head := atomic.LoadUint64(&rb.head)
+	tail := atomic.LoadUint64(&rb.tail)
+	if head-tail >= rb.capacity {
+		return false
+	}
+	rb.buf[head&rb.mask] = val
+	atomic.StoreUint64(&rb.head, head+1)
+	return true
+}
+
+func (rb *RingBuffer) Dequeue() (int, bool) {
+	tail := atomic.LoadUint64(&rb.tail)
+	head := atomic.LoadUint64(&rb.head)
+	if tail == head {
+		return 0, false
+	}
+	val := rb.buf[tail&rb.mask]
+	atomic.StoreUint64(&rb.tail, tail+1)
+	return val, true
+}
+
+func (rb *RingBuffer) Cap() int {
+	return int(rb.capacity)
+}
+
+func (rb *RingBuffer) Len() int {
+	head := atomic.LoadUint64(&rb.head)
+	tail := atomic.LoadUint64(&rb.tail)
+	return int(head - tail)
+}

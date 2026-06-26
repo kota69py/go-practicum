@@ -1,0 +1,3 @@
+module go-practicum-53-lockfree-ringbuffer
+
+go 1.23

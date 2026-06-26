@@ -1,0 +1,85 @@
+package unsafemem
+
+import (
+	"reflect"
+	"unsafe"
+)
+
+type PaddingReport struct {
+	TotalSize    uintptr
+	FieldOffsets map[string]uintptr
+	PaddingBytes uintptr
+	OptimalOrder []string
+}
+
+func StructSize[T any]() uintptr {
+	var t T
+	return unsafe.Sizeof(t)
+}
+
+func FieldOffsets[T any]() map[string]uintptr {
+	var t T
+	typ := reflect.TypeOf(t)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	if typ.Kind() != reflect.Struct {
+		return nil
+	}
+	offsets := make(map[string]uintptr, typ.NumField())
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		offsets[f.Name] = f.Offset
+	}
+	return offsets
+}
+
+func PaddingInfo[T any]() PaddingReport {
+	var t T
+	typ := reflect.TypeOf(t)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	offsets := FieldOffsets[T]()
+	total := unsafe.Sizeof(t)
+
+	reported := PaddingReport{
+		TotalSize:    total,
+		FieldOffsets: offsets,
+	}
+
+	if typ.Kind() != reflect.Struct {
+		return reported
+	}
+
+	expected := uintptr(0)
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		if f.Offset > expected {
+			reported.PaddingBytes += f.Offset - expected
+		}
+		expected = f.Offset + f.Type.Size()
+		reported.OptimalOrder = append(reported.OptimalOrder, f.Name)
+	}
+	if total > expected {
+		reported.PaddingBytes += total - expected
+	}
+
+	return reported
+}
+
+func BytesToInt(b []byte) int {
+	if len(b) < int(unsafe.Sizeof(int(0))) {
+		return 0
+	}
+	return *(*int)(unsafe.Pointer(&b[0]))
+}
+
+func IntToBytes(v int) []byte {
+	return (*[unsafe.Sizeof(v)]byte)(unsafe.Pointer(&v))[:]
+}
+
+func AlignOf[T any]() uintptr {
+	var t T
+	return unsafe.Alignof(t)
+}

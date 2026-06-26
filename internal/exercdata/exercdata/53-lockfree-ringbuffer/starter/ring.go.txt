@@ -1,0 +1,46 @@
+package ring
+
+import "sync/atomic"
+
+// RingBuffer はロックフリーな Single-Producer Single-Consumer リングバッファです。
+type RingBuffer struct {
+	buf      []int
+	capacity uint64
+	mask     uint64
+	head     uint64
+	tail     uint64
+}
+
+// NewRingBuffer は指定された容量の RingBuffer を作成します。
+// capacity は power of 2 に切り上げられます。
+func NewRingBuffer(capacity int) *RingBuffer {
+	// TODO: capacity を power of 2 に切り上げてバッファを確保
+	return nil
+}
+
+// Enqueue はバッファに値を追加します。満杯の場合は false を返します。
+func (rb *RingBuffer) Enqueue(val int) bool {
+	// TODO: atomic.AddUint64 / atomic.LoadUint64 / atomic.StoreUint64 を使って実装
+	// head を進めて、tail+capacity と比較し、超えていれば満杯
+	// 空きがあれば rb.buf[head & mask] = val に書き込み
+	return false
+}
+
+// Dequeue はバッファから値を取り出します。空の場合は false を返します。
+func (rb *RingBuffer) Dequeue() (int, bool) {
+	// TODO: atomic.AddUint64 / atomic.LoadUint64 / atomic.StoreUint64 を使って実装
+	// tail を進めて、head と比較し、同じなら空
+	// データがあれば rb.buf[tail & mask] を読み取り
+	return 0, false
+}
+
+// Cap はバッファの容量を返します。
+func (rb *RingBuffer) Cap() int {
+	return int(rb.capacity)
+}
+
+// Len はバッファ内の要素数を返します。
+func (rb *RingBuffer) Len() int {
+	// TODO: head - tail で現在の要素数を計算
+	return 0
+}

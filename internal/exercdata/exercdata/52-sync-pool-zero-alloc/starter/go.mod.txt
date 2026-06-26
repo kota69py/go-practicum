@@ -1,0 +1,3 @@
+module go-practicum-52-sync-pool-zero-alloc
+
+go 1.23

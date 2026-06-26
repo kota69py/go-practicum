@@ -1,0 +1,18 @@
+{
+  "name": "54-circuit-breaker",
+  "title": "サーキットブレーカーパターン — 障害分離と自動回復",
+  "category": "design",
+  "difficulty": 4,
+  "description": "サーキットブレーカーパターンを実装し、障害分離と自動回復の仕組みを学びます。Closed / Open / HalfOpen の3状態を持ち、閾値以上の失敗で Open、タイムアウト後に HalfOpen、成功で Closed に遷移します。",
+  "hints": [
+    "サーキットブレーカーは3状態: Closed (通常) / Open (遮断中) / HalfOpen (復旧確認中)",
+    "Closed 状態では Execute が関数を実行し、失敗をカウントします",
+    "失敗回数が FailureThreshold に達すると Open に遷移します",
+    "Open 状態では Execute が ErrOpen を即座に返します",
+    "Timeout 経過後 HalfOpen に遷移し、1リクエストを試行します",
+    "HalfOpen で成功→Closed、失敗→Open に戻ります",
+    "状態遷移は sync.Mutex で保護してスレッドセーフにします",
+    "State 型に String() メソッドを実装するとデバッグが容易です"
+  ],
+  "files": ["circuit.go.txt"]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "55-unsafe-memory",
+  "title": "unsafe / メモリアライメント — 低レイヤメモリ操作の実践",
+  "category": "language",
+  "difficulty": 5,
+  "description": "unsafe.Pointer と reflect を使った低レイヤメモリ操作を実践します。構造体のパディング解析、unsafe な型変換、メモリアライメントの理解を深めます。",
+  "hints": [
+    "unsafe.Sizeof(v) で型 T のサイズを取得できます",
+    "unsafe.Offsetof(t.Field) でフィールドのオフセットを取得できます",
+    "struct のフィールドはアライメント要件に従ってパディングが挿入されます",
+    "型 T のアライメントは unsafe.Alignof(t) または reflect.TypeOf(t).Align() で取得",
+    "BytesToInt は []byte のスライスヘッダを int のスライスヘッダに unsafe 変換します",
+    "IntToBytes はint値のポインタを[]byteのヘッダに変換、長さは unsafe.Sizeof(int)",
+    "エンディアン変換はエクササイズの範囲外ですが、注意書きを入れておくと親切です",
+    "PaddingReport は TotalSize、FieldOffsets、PaddingBytes をレポートします"
+  ],
+  "files": ["unsafemem.go.txt"]
+}

@@ -1,0 +1,46 @@
+package unsafemem
+
+// PaddingReport は構造体のパディング解析レポートです。
+type PaddingReport struct {
+	TotalSize    uintptr
+	FieldOffsets map[string]uintptr
+	PaddingBytes uintptr
+	OptimalOrder []string
+}
+
+// StructSize は型 T のメモリ上の実際のサイズを返します（パディングを含む）。
+func StructSize[T any]() uintptr {
+	// TODO: unsafe.Sizeof を使って実装
+	return 0
+}
+
+// FieldOffsets は型 T の各フィールド名とそのオフセットを返します。
+func FieldOffsets[T any]() map[string]uintptr {
+	// TODO: reflect.TypeOf と unsafe.Offsetof を使って実装
+	return nil
+}
+
+// PaddingInfo は型 T のパディング情報を解析します。
+func PaddingInfo[T any]() PaddingReport {
+	// TODO: FieldOffsets と StructSize を使ってパディングを計算
+	return PaddingReport{}
+}
+
+// BytesToInt は []byte を int に unsafe 変換します（コピーゼロ）。
+func BytesToInt(b []byte) int {
+	// TODO: unsafe.Pointer とスライスヘッダ操作で変換
+	// 注意: 入力バイト長が unsafe.Sizeof(int) 以上であることを保証すること
+	return 0
+}
+
+// IntToBytes は int を []byte に unsafe 変換します（コピーゼロ）。
+func IntToBytes(v int) []byte {
+	// TODO: unsafe.Pointer とスライスヘッダ操作で変換
+	return nil
+}
+
+// AlignOf は型 T のアライメント要件を返します。
+func AlignOf[T any]() uintptr {
+	// TODO: unsafe.Alignof または reflect.TypeOf(t).Align() で実装
+	return 0
+}

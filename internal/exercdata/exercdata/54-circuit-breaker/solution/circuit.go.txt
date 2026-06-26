@@ -1,0 +1,96 @@
+package circuit
+
+import (
+	"errors"
+	"sync"
+	"time"
+)
+
+type State int
+
+const (
+	StateClosed   State = iota
+	StateOpen
+	StateHalfOpen
+)
+
+var stateStrings = map[State]string{
+	StateClosed:   "closed",
+	StateOpen:     "open",
+	StateHalfOpen: "half-open",
+}
+
+func (s State) String() string {
+	if v, ok := stateStrings[s]; ok {
+		return v
+	}
+	return "unknown"
+}
+
+var ErrOpen = errors.New("circuit breaker is open")
+
+type Options struct {
+	FailureThreshold   int
+	Timeout            time.Duration
+	HalfOpenMaxRetries int
+}
+
+type CircuitBreaker struct {
+	mu        sync.Mutex
+	state     State
+	failures  int
+	lastError time.Time
+	opts      Options
+}
+
+func NewCircuitBreaker(opts Options) *CircuitBreaker {
+	if opts.FailureThreshold <= 0 {
+		opts.FailureThreshold = 5
+	}
+	if opts.Timeout <= 0 {
+		opts.Timeout = 5 * time.Second
+	}
+	return &CircuitBreaker{
+		state: StateClosed,
+		opts:  opts,
+	}
+}
+
+func (cb *CircuitBreaker) Execute(fn func() error) error {
+	cb.mu.Lock()
+	if cb.state == StateOpen {
+		if time.Since(cb.lastError) > cb.opts.Timeout {
+			cb.state = StateHalfOpen
+		} else {
+			cb.mu.Unlock()
+			return ErrOpen
+		}
+	}
+	cb.mu.Unlock()
+
+	err := fn()
+
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+
+	if err == nil {
+		if cb.state == StateHalfOpen {
+			cb.state = StateClosed
+			cb.failures = 0
+		}
+		return nil
+	}
+
+	cb.failures++
+	cb.lastError = time.Now()
+
+	if cb.state == StateHalfOpen {
+		cb.state = StateOpen
+		return err
+	}
+
+	if cb.failures >= cb.opts.FailureThreshold {
+		cb.state = StateOpen
+	}
+	return err
+}

@@ -1,0 +1,57 @@
+package pool
+
+import (
+	"testing"
+)
+
+func TestPoolReuse(t *testing.T) {
+	bp := NewBufferPool()
+	b1 := bp.Get()
+	b1.WriteString("hello")
+	bp.Put(b1)
+	b2 := bp.Get()
+	if b1 != b2 {
+		t.Error("Get after Put should return the same buffer")
+	}
+	if b2.Len() != 0 {
+		t.Errorf("buffer should be reset, but has Len=%d", b2.Len())
+	}
+}
+
+func TestConcatWithPool(t *testing.T) {
+	parts := []string{"Hello", ", ", "World", "!"}
+	result := ConcatWithPool(parts)
+	if result != "Hello, World!" {
+		t.Errorf("ConcatWithPool = %q, want %q", result, "Hello, World!")
+	}
+}
+
+func TestConcatWithPool_Empty(t *testing.T) {
+	result := ConcatWithPool(nil)
+	if result != "" {
+		t.Errorf("ConcatWithPool(nil) = %q, want ''", result)
+	}
+	result = ConcatWithPool([]string{})
+	if result != "" {
+		t.Errorf("ConcatWithPool([]) = %q, want ''", result)
+	}
+}
+
+func TestConcatWithAppend(t *testing.T) {
+	parts := []string{"Hello", ", ", "World", "!"}
+	result := ConcatWithAppend(parts)
+	if result != "Hello, World!" {
+		t.Errorf("ConcatWithAppend = %q, want %q", result, "Hello, World!")
+	}
+}
+
+func TestConcatWithAppend_Empty(t *testing.T) {
+	result := ConcatWithAppend(nil)
+	if result != "" {
+		t.Errorf("ConcatWithAppend(nil) = %q, want ''", result)
+	}
+	result = ConcatWithAppend([]string{})
+	if result != "" {
+		t.Errorf("ConcatWithAppend([]) = %q, want ''", result)
+	}
+}

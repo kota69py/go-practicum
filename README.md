@@ -41,9 +41,9 @@ go-practicum solution
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
 
-## 演習一覧（全50演習）
+## 演習一覧（全55演習）
 
-### concurrency（13演習）
+### concurrency（14演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -60,8 +60,9 @@ go-practicum solution
 | 45 | context-values | ★★★ | context.WithValue, リクエストスコープデータ |
 | 48 | semaphore | ★★★ | チャネルベース重み付きセマフォ |
 | 50 | errgroup-singleflight | ★★★★ | errgroup, singleflight |
+| 53 | lockfree-ringbuffer | ★★★★★ | lock-free SPSC, sync/atomic, memory ordering |
 
-### language（7演習）
+### language（8演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
@@ -72,6 +73,7 @@ go-practicum solution
 | 30 | time | ★★ | time.Format/Parse, DaysBetween, タイマー |
 | 31 | strings | ★★ | WordCount, Capitalize, strings.Builder |
 | 47 | enum | ★★★ | 型安全 enum, Stringer, JSON 対応 |
+| 55 | unsafe-memory | ★★★★★ | unsafe.Pointer, struct padding, メモリアライメント |
 
 ### testing（5演習）
 
@@ -131,12 +133,20 @@ go-practicum solution
 | 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
 | 43 | file-watch | ★★★ | ポーリングベースファイル変更検知 |
 
-### design（2演習）
+### performance（2演習）
+
+| # | 演習 | 難易度 | トピック |
+|---|------|--------|----------|
+| 51 | gc-profiling | ★★★★ | runtime.ReadMemStats, pprof, GCトレース, アロケーション最適化 |
+| 52 | sync-pool-zero-alloc | ★★★★ | sync.Pool, testing.B, -benchmem, バッファ再利用 |
+
+### design（3演習）
 
 | # | 演習 | 難易度 | トピック |
 |---|------|--------|----------|
 | 01 | interface-design | ★★ | Store インターフェース, 依存性注入 |
 | 44 | command-pattern | ★★★ | Command インターフェース, Execute/Undo |
+| 54 | circuit-breaker | ★★★★ | サーキットブレーカー, 障害分離, 自動回復 |
 
 ### database（1演習）
 

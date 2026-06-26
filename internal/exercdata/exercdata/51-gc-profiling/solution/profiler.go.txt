@@ -1,0 +1,85 @@
+package gcprof
+
+import (
+	"runtime"
+	"strings"
+)
+
+type MemStats = runtime.MemStats
+
+type ProfileDiff struct {
+	HeapAllocDiff  uint64
+	TotalAllocDiff uint64
+	MallocsDiff    uint64
+	NumGCDiff      uint32
+}
+
+type Profiler struct {
+	prev MemStats
+}
+
+func NewProfiler() *Profiler {
+	return &Profiler{}
+}
+
+func (p *Profiler) Snapshot() MemStats {
+	var m MemStats
+	runtime.ReadMemStats(&m)
+	return m
+}
+
+func (p *Profiler) Diff(before, after MemStats) ProfileDiff {
+	return ProfileDiff{
+		HeapAllocDiff:  after.HeapAlloc - before.HeapAlloc,
+		TotalAllocDiff: after.TotalAlloc - before.TotalAlloc,
+		MallocsDiff:    after.Mallocs - before.Mallocs,
+		NumGCDiff:      after.NumGC - before.NumGC,
+	}
+}
+
+func AllocExample() {
+	{
+		s := ""
+		for i := 0; i < 100; i++ {
+			s += "a"
+		}
+		_ = s
+	}
+	{
+		var s []int
+		for i := 0; i < 100; i++ {
+			s = append(s, i)
+		}
+		_ = s
+	}
+	{
+		m := make(map[int]string)
+		for i := 0; i < 100; i++ {
+			m[i] = "x"
+		}
+		_ = m
+	}
+}
+
+func AllocOptimized() {
+	var b strings.Builder
+	b.Grow(100)
+	for i := 0; i < 100; i++ {
+		b.WriteByte('a')
+	}
+	_ = b.String()
+	{
+		s := make([]int, 0, 100)
+		for i := 0; i < 100; i++ {
+			s = append(s, i)
+		}
+		_ = s
+	}
+	{
+		m := make(map[int]string, 100)
+		for i := 0; i < 100; i++ {
+			m[i] = "x"
+		}
+		_ = m
+	}
+}

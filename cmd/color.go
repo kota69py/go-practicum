@@ -42,5 +42,8 @@ func colorCyan(s string) string {
 }
 
 func stars(n int) string {
-	return strings.Repeat("★", n) + strings.Repeat("☆", 4-n)
+	if n > 5 {
+		n = 5
+	}
+	return strings.Repeat("★", n) + strings.Repeat("☆", 5-n)
 }

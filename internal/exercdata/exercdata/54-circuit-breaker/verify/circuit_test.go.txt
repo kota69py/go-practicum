@@ -1,0 +1,124 @@
+package circuit
+
+import (
+	"errors"
+	"sync"
+	"testing"
+	"time"
+)
+
+func TestInitialState(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 3,
+		Timeout:          100 * time.Millisecond,
+	})
+	if cb.state != StateClosed {
+		t.Errorf("initial state = %v, want closed", cb.state)
+	}
+}
+
+func TestExecuteSuccess(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 3,
+		Timeout:          100 * time.Millisecond,
+	})
+	err := cb.Execute(func() error {
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+	if cb.state != StateClosed {
+		t.Errorf("state = %v, want closed after success", cb.state)
+	}
+}
+
+func TestOpenOnThreshold(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 3,
+		Timeout:          100 * time.Millisecond,
+	})
+	err := errors.New("fail")
+	for i := 0; i < 3; i++ {
+		cb.Execute(func() error {
+			return err
+		})
+	}
+	if cb.state != StateOpen {
+		t.Errorf("state = %v, want open after threshold", cb.state)
+	}
+}
+
+func TestOpenReturnsErrOpen(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 1,
+		Timeout:          100 * time.Millisecond,
+	})
+	cb.Execute(func() error {
+		return errors.New("fail")
+	})
+	err := cb.Execute(func() error {
+		return nil
+	})
+	if err != ErrOpen {
+		t.Errorf("Execute returned %v, want ErrOpen", err)
+	}
+}
+
+func TestHalfOpenAndRecover(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 1,
+		Timeout:          50 * time.Millisecond,
+	})
+	cb.Execute(func() error {
+		return errors.New("fail")
+	})
+	time.Sleep(60 * time.Millisecond)
+	err := cb.Execute(func() error {
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+	if cb.state != StateClosed {
+		t.Errorf("state = %v, want closed after half-open success", cb.state)
+	}
+}
+
+func TestHalfOpenAndFail(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 1,
+		Timeout:          50 * time.Millisecond,
+	})
+	cb.Execute(func() error {
+		return errors.New("fail")
+	})
+	time.Sleep(60 * time.Millisecond)
+	err := cb.Execute(func() error {
+		return errors.New("fail again")
+	})
+	if cb.state != StateOpen {
+		t.Errorf("state = %v, want open after half-open failure", cb.state)
+	}
+	_ = err
+}
+
+func TestConcurrentExecute(t *testing.T) {
+	cb := NewCircuitBreaker(Options{
+		FailureThreshold: 5,
+		Timeout:          100 * time.Millisecond,
+	})
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if i%2 == 0 {
+				cb.Execute(func() error { return nil })
+			} else {
+				cb.Execute(func() error { return errors.New("fail") })
+			}
+		}(i)
+	}
+	wg.Wait()
+}

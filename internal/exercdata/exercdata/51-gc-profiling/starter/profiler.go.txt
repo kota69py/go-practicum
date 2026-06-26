@@ -1,0 +1,63 @@
+package gcprof
+
+import "runtime"
+
+// MemStats は runtime.MemStats のエイリアスです。
+type MemStats = runtime.MemStats
+
+// ProfileDiff は2つのスナップショット間の差分を表します。
+type ProfileDiff struct {
+	HeapAllocDiff  uint64
+	TotalAllocDiff uint64
+	MallocsDiff    uint64
+	NumGCDiff      uint32
+}
+
+// Profiler は runtime.MemStats をラップし、スナップショット機能を提供します。
+type Profiler struct {
+	prev MemStats
+}
+
+// NewProfiler は Profiler を作成します。
+func NewProfiler() *Profiler {
+	return &Profiler{}
+}
+
+// Snapshot は現在のヒープスナップショットを返します。
+func (p *Profiler) Snapshot() MemStats {
+	// TODO: runtime.ReadMemStats で現在のメモリ統計を取得
+	return MemStats{}
+}
+
+// Diff は2つのスナップショット間の差分を計算します。
+func (p *Profiler) Diff(before, after MemStats) ProfileDiff {
+	// TODO: before と after の各フィールドの差分を計算
+	return ProfileDiff{}
+}
+
+// AllocExample は様々なパターンでメモリを確保します。
+// 各セクションのアロケーション動作をコメントで説明してください。
+func AllocExample() {
+	// TODO: パターン1 — +演算子による文字列結合
+	// （何回アロケーションが発生するか考えながら実装）
+	{
+		// ここに実装
+	}
+
+	// TODO: パターン2 — 容量指定なしのスライス追加
+	{
+		// ここに実装
+	}
+
+	// TODO: パターン3 — map への追加
+	{
+		// ここに実装
+	}
+}
+
+// AllocOptimized は AllocExample のアロケーション最適化版です。
+// 余計なアロケーションを排除した実装に置き換えてください。
+func AllocOptimized() {
+	// TODO: AllocExample の各パターンをアロケーション最少化で実装
+	// ヒント: strings.Builder, make([]T, 0, cap), make(map[K]V, size)
+}

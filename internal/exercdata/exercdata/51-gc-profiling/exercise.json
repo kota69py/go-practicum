@@ -1,0 +1,17 @@
+{
+  "name": "51-gc-profiling",
+  "title": "GC & メモリプロファイリング — ランタイム内部構造の理解",
+  "category": "performance",
+  "difficulty": 4,
+  "description": "runtime.ReadMemStats を使ったメモリプロファイリングと pprof による GC トレース、アロケーション最適化を実践します。Go ランタイムのメモリ管理を理解し、効率的なコードを書けるようになりましょう。",
+  "hints": [
+    "runtime.ReadMemStats(&m) で現在のメモリ統計を取得できます",
+    "m.Alloc は割り当てられていて解放されていないメモリ量 (bytes) です",
+    "m.TotalAlloc はプログラム開始からの総割り当て量 (bytes) で、決して減少しません",
+    "m.NumGC は完了した GC サイクル数です",
+    "ProfileDiff では HeapAllocDiff や TotalAllocDiff など差異を表すフィールドを持ちます",
+    "アロケーション最適化の基本: 事前容量確保、文字列結合には strings.Builder、オブジェクト再利用",
+    "AllocExample では様々なパターンでメモリを確保し、AllocOptimized ではその最適化版を書きます"
+  ],
+  "files": ["profiler.go.txt"]
+}

@@ -1,0 +1,59 @@
+package pool
+
+import (
+	"bytes"
+	"sync"
+	"testing"
+)
+
+type BufferPool struct {
+	pool sync.Pool
+}
+
+func NewBufferPool() *BufferPool {
+	return &BufferPool{
+		pool: sync.Pool{
+			New: func() interface{} {
+				return new(bytes.Buffer)
+			},
+		},
+	}
+}
+
+func (bp *BufferPool) Get() *bytes.Buffer {
+	return bp.pool.Get().(*bytes.Buffer)
+}
+
+func (bp *BufferPool) Put(b *bytes.Buffer) {
+	b.Reset()
+	bp.pool.Put(b)
+}
+
+func ConcatWithPool(parts []string) string {
+	bp := NewBufferPool()
+	b := bp.Get()
+	defer bp.Put(b)
+	for _, p := range parts {
+		b.WriteString(p)
+	}
+	return b.String()
+}
+
+func ConcatWithAppend(parts []string) string {
+	total := 0
+	for _, p := range parts {
+		total += len(p)
+	}
+	buf := make([]byte, 0, total)
+	for _, p := range parts {
+		buf = append(buf, p...)
+	}
+	return string(buf)
+}
+
+func BenchmarkConcat(b *testing.B, fn func([]string) string, parts []string) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fn(parts)
+	}
+}
