@@ -80,7 +80,7 @@ jobs:
         run: go test ./... -count=1 -timeout 10m -coverprofile=coverage.out -covermode=atomic
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.out
