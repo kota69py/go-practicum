@@ -187,6 +187,30 @@ func TestSlow(t *testing.T) { select {} }`), 0644)
 	}
 }
 
+func FuzzLevenshtein(f *testing.F) {
+	f.Add("hello", "world")
+	f.Add("", "abc")
+	f.Add("abc", "")
+	f.Add("", "")
+	f.Add("hello", "hello")
+	f.Add("世界", "世界")
+	f.Fuzz(func(t *testing.T, a, b string) {
+		d := Levenshtein(a, b)
+		if d < 0 {
+			t.Errorf("Levenshtein(%q, %q) = %d, expected >= 0", a, b, d)
+		}
+		if Levenshtein(b, a) != d {
+			t.Errorf("Levenshtein symmetry: Levenshtein(%q, %q)=%d, Levenshtein(%q, %q)=%d", a, b, d, b, a, Levenshtein(b, a))
+		}
+		if a == b && d != 0 {
+			t.Errorf("Levenshtein(%q, %q) = %d, expected 0 for equal strings", a, b, d)
+		}
+		if len(a) >= len(b) && d > len(a) {
+			t.Errorf("Levenshtein(%q, %q) = %d, expected <= %d", a, b, d, len(a))
+		}
+	})
+}
+
 func BenchmarkListFromFS(b *testing.B) {
 	fsys := fstest.MapFS{
 		"01-hello/exercise.json": &fstest.MapFile{

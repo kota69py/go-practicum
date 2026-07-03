@@ -1,132 +1,180 @@
 # go-practicum 技術領域ギャップ分析
 
-> Google トップのGoエンジニア目線で、現状の80演習に不足している技術領域をまとめる。
+> 現状 **128演習** のカバレッジを評価し、不足領域を洗い出す。
+
+---
+
+## 凡例
+
+| 記号 | 意味 |
+|------|------|
+| ✅ カバー済み | 専用の演習が存在する |
+| 🔶 部分的 | 関連演習はあるが深掘り不足 |
+| ❌ 未カバー | 該当する演習がない |
 
 ---
 
 ## 1. Go 1.21–1.25 新機能
 
-現行演習バージョン (Go 1.23) の標準機能が未活用。
-
-| 機能 | 登場 | なぜ重要 |
-|------|------|---------|
-| `iter.Seq` / range-over-func | 1.23 | カスタムイテレータ、DB結果セットの遅延評価 |
-| `unique.Make` (interning) | 1.23 | メモリ最適化の実戦パターン |
-| `maps`, `slices` パッケージ | 1.21 | 標準化されたコレクション操作 |
-| `cmp.Ordered` / `cmp.Compare` | 1.21 | ジェネリクスを使った比較 |
-| `math/rand/v2` | 1.22 | 高速・安全な乱数 |
-| `net/http.ServeMux` methodパターン | 1.22 | `GET /api/users/{id}` の標準記法 |
-| `testing.TestDeps` / testing.Short 高度 | 1.23 | テスト基盤の制御 |
-
----
-
-## 2. Observability（可観測性）
-
-現状: 3演習 (`otel-tracing`, `prometheus-metrics`, `structured-logging`)。以下が不足。
-
-| 領域 | 内容 |
-|------|------|
-| OTel SDK初期化 | `OTEL_SDK_DISABLED` / バッチプロセッサ / サンプリング設定 |
-| Context伝搬 | gRPC interceptor + HTTP middleware + slog を1リクエストで連携 |
-| REDメトリクス設計 | Rate / Errors / Duration を自前実装 |
-| ヘルスチェック拡充 | readiness / liveness / startup probe の実戦運用 |
-
-Google SRE の第一原則は「観測可能であること」。
+| 機能 | 登場 | 状況 | 該当演習 |
+|------|------|------|----------|
+| `iter.Seq` / range-over-func | 1.23 | ✅ | 82-iter-seq |
+| `maps`, `slices` パッケージ | 1.21 | ✅ | 81-maps-slices |
+| `cmp.Ordered` / `cmp.Compare` | 1.21 | ✅ | 109-generics-constraints |
+| `net/http.ServeMux` methodパターン | 1.22 | ✅ | 83-servemux-routing |
+| `log/slog` | 1.21 | ✅ | 107-slog-basics, 108-slog-handler, 126-slogtest |
+| PGO (Profile Guided Optimization) | 1.21 | ✅ | 117-pgo |
+| `unique.Make` (interning) | 1.23 | ❌ | — |
+| `math/rand/v2` | 1.22 | ❌ | — |
+| `testing.TestDeps` / testing.Short 高度 | 1.23 | ❌ | — |
+| `go test -fuzz` のCI継続的実行 | 1.18 | 🔶 | 28/71/106 は学習用、CI未導入 |
 
 ---
 
-## 3. gRPC 深堀
+## 2. Observability（可観測性）— 8演習
 
-現状: 2演習 (`grpc-basics`, `grpc-streaming`)。以下が不足。
-
-- インターセプターチェーン（auth + logging + rate-limit + tracing の重ね合わせ）
-- ヘルスプロトコル（`grpc.health.v1.Health`）
-- ロードバランシング（`xds` 名前解決、pick_first / round_robin）
-- デッドライン伝搬（クライアント→サーバ→下流サービス）
-- `google.golang.org/protobuf` の深い使い方（`protojson`, `protowire`, `reflect/protoreflect`）
-
----
-
-## 4. データベース / ストレージ
-
-現状: 2演習 (`sql-transaction`, `sql-migration`)。以下が不足。
-
-- NoSQL（Redis パイプライン / Luaスクリプト / Pub/Sub）
-- GCS / S3 互換ストレージ（presigned URL、`cloud.google.com/go/storage`）
-- コネクションプールチューニング（`MaxOpenConns`, `MaxIdleConns`, `ConnMaxLifetime`）
-- 楽観的ロック / 悲観的ロック（`SELECT FOR UPDATE`）
-- テストコンテナ（`testcontainers-go` を使ったインテグレーションテスト）
+| 領域 | 状況 | 該当演習 |
+|------|------|----------|
+| 構造化ログ (slog) | ✅ | 66-structured-logging, 107-slog-basics, 108-slog-handler, 126-slogtest |
+| OpenTelemetry トレーシング | ✅ | 67-otel-tracing, 84-trace-context |
+| OTel SDK初期化 (バッチ/サンプリング/OTLP) | ✅ | **128-otel-sdk-init** |
+| Context伝搬 (HTTP/gRPC/slog 連携) | 🔶 | 85-context-propagation, 87-grpc-interceptor |
+| Prometheus メトリクス | ✅ | 68-prometheus-metrics |
+| REDメトリクス設計 | ✅ | 86-red-metrics |
+| ヘルスチェック | ✅ | 70-health-check, 102-k8s-probe |
+| OTel + slog の1リクエスト連携 | 🔶 | 個別演習はあるが統合演習なし |
 
 ---
 
-## 5. セキュリティ
+## 3. gRPC 深堀 — 5演習
 
-現状: 2演習 (`constant-time-comparison`, `secure-memory`)。深刻な不足。
-
-| 領域 | 内容 |
-|------|------|
-| OAuth2 / OIDC | `golang.org/x/oauth2`, id_token 検証 |
-| JWT | `golang-jwt/jwt/v5` による発行と検証 |
-| TLS / mTLS | `crypto/tls` の設定、Let's Encrypt 取得 |
-| Secret管理 | Secret Manager / Vault / env からの適切な読み込み |
-| HTTPセキュリティ | CSRF / CORS / CSP ヘッダー設定 |
-| 依存関係 | `go.sum` / SBOM / 脆弱性スキャン |
+| 領域 | 状況 | 該当演習 |
+|------|------|----------|
+| gRPC 基礎 (unary) | ✅ | 49-grpc-basics |
+| gRPC ストリーミング | ✅ | 76-grpc-streaming |
+| インターセプター (認証/ログ/トレース) | ✅ | 87-grpc-interceptor |
+| デッドライン伝搬 | ✅ | 88-grpc-deadline |
+| gRPC エラーハンドリング | ✅ | 89-grpc-errors |
+| ヘルスプロトコル (`grpc.health.v1`) | ❌ | — |
+| ロードバランシング (xds) | ❌ | — |
+| `protobuf` 深堀 (`protojson`, `protowire`, `protoreflect`) | ❌ | — |
 
 ---
 
-## 6. アーキテクチャパターン
+## 4. データベース / ストレージ — 7演習
 
-現状: 基本的なデザインパターンはある。以下が不足。
+| 領域 | 状況 | 該当演習 |
+|------|------|----------|
+| SQL トランザクション | ✅ | 06-sql-transaction |
+| SQL マイグレーション | ✅ | 74-sql-migration, 91-database-migration |
+| コネクションプール | ✅ | 63-connection-pool, 92-connection-pool |
+| Redis 基礎 | ✅ | 90-redis-basics |
+| テストコンテナ | ✅ | 116-testcontainers |
+| Redis パイプライン / Lua / Pub/Sub | 🔶 | 90-redis-basics は基礎のみ |
+| GCS / S3 互換ストレージ (presigned URL) | ❌ | — |
+| 楽観的ロック / 悲観的ロック | ❌ | — |
 
-- CQRS / イベントソーシング
-- Saga パターン（分散トランザクション）
-- Backpressure（`time.Ticker` 以外の制御）
-- Graceful degradation（部分障害時の設計）
-- Thundering herd 対策（singleflight はあるが、実戦的な coalsecing）
+---
+
+## 5. セキュリティ — 8演習
+
+| 領域 | 状況 | 該当演習 |
+|------|------|----------|
+| 定数時間比較 | ✅ | 56-constant-time-comparison |
+| セキュアメモリ | ✅ | 59-secure-memory |
+| JWT 発行・検証 | ✅ | 93-jwt-auth |
+| TLS / mTLS | ✅ | 94-tls-mtls |
+| OAuth2 認可コードフロー | ✅ | 95-oauth2 |
+| シークレット管理 | ✅ | 96-secret-management |
+| HTTP セキュリティ (CSRF/CORS/CSP) | ✅ | **127-http-security** |
+| OIDC id_token 検証 | ❌ | OAuth2 はあるが OIDC は未カバー |
+| Let's Encrypt / autocert | ❌ | — |
+| SBOM / 依存関係スキャン | 🔶 | CI に govulncheck 導入済みだが演習なし |
+
+---
+
+## 6. アーキテクチャパターン — 7演習
+
+| 領域 | 状況 | 該当演習 |
+|------|------|----------|
+| クリーンアーキテクチャ | ✅ | 103-clean-arch |
+| CQRS | ✅ | 104-cqrs |
+| イベント駆動 | ✅ | 105-event-driven |
+| ヘキサゴナルアーキテクチャ | ✅ | 113-hexagonal-arch |
+| Command パターン | ✅ | 44-command-pattern |
+| Hook パターン | ✅ | 60-hook-pattern |
+| Singleflight (Thundering herd対策) | ✅ | 50-errgroup-singleflight |
+| Wire DI | ✅ | 75-wire-di |
+| Circuit breaker | ✅ | 54-circuit-breaker, 112-circuit-breaker |
+| Saga パターン | ❌ | — |
+| Backpressure 制御 | ❌ | — |
+| Graceful degradation | ❌ | — |
 
 ---
 
 ## 7. ツーリング
 
-現状使えていない重要なツール。
-
-| ツール | 用途 |
-|--------|------|
-| `go test -fuzz` + CI | ファジングによる回帰テスト |
-| `go tool pprof` / `go tool trace` | 本番プロファイルの読み方まで含む |
-| `go tool cover` + HTML | CIでのカバレッジ閾値 enforcement |
-| `go vet` カスタムアナライザ | `go-critic` 等のサードパーティ linter |
-| Docker multi-stage build | `CGO_ENABLED=0`, `distroless`, `scratch` |
-| `goreleaser` | リリース自動化、Homebrew tap |
+| ツール | 状況 | 該当演習・設定 |
+|--------|------|----------------|
+| `go test -fuzz` | ✅ | 28-fuzzing, 71-fuzzing, 106-fuzz-testing |
+| `go tool pprof` / `go tool trace` | ✅ | 65-trace-profiling |
+| `go test -bench` + benchstat | 🔶 | 57-advanced-benchmark, CI未導入 |
+| `go vet` + golangci-lint (13 linters) | ✅ | `.golangci.yml` に gosec/gocritic 等含む |
+| Docker multi-stage build | ✅ | `Dockerfile` (alpine→scratch) |
+| `goreleaser` | ✅ | `.goreleaser.yaml` + release workflow |
+| CI カバレッジ計測 | ✅ | `codecov` Action + README バッジ |
+| `govulncheck` | ✅ | CI security job |
+| Dependabot | ✅ | `.github/dependabot.yml` |
+| `go test -fuzz` の CI 継続的実行 | ❌ | — |
+| `go-licenses` ライセンスチェック | ❌ | — |
+| カスタム go vet アナライザ | ❌ | — |
 
 ---
 
-## 8. HTTP 深堀
+## 8. HTTP 深堀 — 13演習
 
-現状: 3演習 (`http-handler`, `http-client`, `middleware`)。以下が不足。
-
-- `httputil.ReverseProxy`（リバースプロキシ実装）
-- HTTP/2 サーバプッシュ / ストリーミング
-- Server-Sent Events（`text/event-stream`）
-- レート制限の実戦（スライディングウィンドウ + Redis）
-- TLS 終端 + ACME（`autocert` / Let's Encrypt 自動取得）
+| 領域 | 状況 | 該当演習 |
+|------|------|----------|
+| HTTP ハンドラ基礎 | ✅ | 03-http-handler |
+| HTTP クライアント | ✅ | 12-http-client |
+| ミドルウェアパターン | ✅ | 15-middleware |
+| ServeMux ルーティング | ✅ | 83-servemux-routing |
+| Web ルーター | ✅ | 97-web-router |
+| Web ミドルウェア | ✅ | 98-web-middleware |
+| Web テスト | ✅ | 99-web-testing |
+| WebSocket | ✅ | 115-websocket-chat |
+| Server-Sent Events | ✅ | 123-sse |
+| HTTP セキュリティ (CSRF/CORS/CSP) | ✅ | **127-http-security** |
+| レート制限 | ✅ | 16-rate-limiting |
+| `httputil.ReverseProxy` | ❌ | — |
+| HTTP/2 サーバプッシュ | ❌ | — |
+| TLS 終端 + ACME (`autocert`) | ❌ | — |
 
 ---
 
 ## 総評
 
-現状の80演習は「Go言語そのものの習得」としては良くできている。Google エンジニアとして不足しているのは主に **Observability × 本番運用 × セキュリティ** の3軸。
+128演習まで拡充した結果、**主要8領域のカバレッジは大きく向上**した。
+特にセキュリティ（8演習）、Observability（8演習）、gRPC（5演習）、HTTP（13演習）は実戦レベルの厚みが出ている。
 
-「動くコードを書く」から「本番で動かし続けるコードを書く」への飛躍に必要なのは、標準ライブラリ外のエコシステム知識と分散システム設計判断力。
+### それでも不足している領域
 
-### 追加推奨カテゴリ
+| 領域 | ギャップ |
+|------|----------|
+| **分散システム** | Saga、Backpressure、Graceful degradation |
+| **ストレージ応用** | GCS/S3 presigned URL、Redis 高度（Pipeline/Lua）、楽観的/悲観的ロック |
+| **OIDC** | OAuth2 はあるが id_token 検証は未カバー |
+| **CI 高度化** | Fuzzing 継続実行、Benchmark 比較、ライセンスチェック |
+| **プロトコルバッファ** | protojson/protowire/protoreflect の深掘り |
+
+### 次の一手
+
+もし追加するとすれば:
 
 ```
-infra         (Docker/k8s/Graceful shutdown with lifecycle hooks)
-security      (OAuth2/JWT/TLS/mTLS)
-observability (OTel SDK/Context propagation/RED)
-datastore     (Redis/GCS/connection pooling)
-integration   (testcontainers/contract testing)
+distributed-systems  (Saga / Backpressure / Graceful degradation)  → 3演習
+storage-advanced     (GCS/S3 / Redis pipeline / locking)           → 3演習
+ci-advanced          (fuzz CI / benchstat / license check)         → 1設定 + 2演習
+oidc-deep            (id_token verification, PKCE)                 → 1演習
+protobuf-deep        (protojson, protowire, protoreflect)         → 1演習
 ```
-
-この5領域に各3〜5演習を追加するとカバレッジが大幅に向上する。
