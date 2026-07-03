@@ -1,0 +1,164 @@
+package main
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
+type SpanContext struct {
+	TraceID      string
+	SpanID       string
+	ParentSpanID string
+}
+
+type Span struct {
+	context    SpanContext
+	operation  string
+	startTime  time.Time
+	endTime    time.Time
+	attributes map[string]string
+	events     []SpanEvent
+	exporter   Exporter
+}
+
+type SpanEvent struct {
+	Timestamp  time.Time
+	Name       string
+	Attributes map[string]string
+}
+
+type Exporter interface {
+	Export(s Span) error
+}
+
+type TracerProvider struct {
+	exporter Exporter
+}
+
+type Tracer struct {
+	provider *TracerProvider
+}
+
+func NewTracerProvider(exporter Exporter) *TracerProvider {
+	return &TracerProvider{exporter: exporter}
+}
+
+func (p *TracerProvider) Tracer() *Tracer {
+	return &Tracer{provider: p}
+}
+
+func generateID() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+func generateTraceID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+func (t *Tracer) Start(ctx context.Context, operation string) (context.Context, *Span) {
+	parent, ok := SpanContextFromContext(ctx)
+	var sc SpanContext
+	if ok {
+		sc = SpanContext{
+			TraceID:      parent.TraceID,
+			SpanID:       generateID(),
+			ParentSpanID: parent.SpanID,
+		}
+	} else {
+		sc = SpanContext{
+			TraceID: generateTraceID(),
+			SpanID:  generateID(),
+		}
+	}
+	s := &Span{
+		context:    sc,
+		operation:  operation,
+		startTime:  time.Now(),
+		attributes: make(map[string]string),
+		exporter:   t.provider.exporter,
+	}
+	ctx = ContextWithSpanContext(ctx, sc)
+	return ctx, s
+}
+
+func (s *Span) End() {
+	s.endTime = time.Now()
+	if s.exporter != nil {
+		s.exporter.Export(*s)
+	}
+}
+
+func (s *Span) SetAttribute(key, value string) {
+	s.attributes[key] = value
+}
+
+func (s *Span) AddEvent(name string, attrs map[string]string) {
+	s.events = append(s.events, SpanEvent{
+		Timestamp:  time.Now(),
+		Name:       name,
+		Attributes: attrs,
+	})
+}
+
+type ConsoleExporter struct{}
+
+type spanJSON struct {
+	Operation    string            `json:"operation"`
+	TraceID      string            `json:"trace_id"`
+	SpanID       string            `json:"span_id"`
+	ParentSpanID string            `json:"parent_span_id,omitempty"`
+	StartTime    string            `json:"start_time"`
+	EndTime      string            `json:"end_time"`
+	Duration     string            `json:"duration"`
+	Attributes   map[string]string `json:"attributes,omitempty"`
+	Events       []spanEventJSON   `json:"events,omitempty"`
+}
+
+type spanEventJSON struct {
+	Timestamp  string            `json:"timestamp"`
+	Name       string            `json:"name"`
+	Attributes map[string]string `json:"attributes,omitempty"`
+}
+
+func (e *ConsoleExporter) Export(s Span) error {
+	events := make([]spanEventJSON, len(s.events))
+	for i, ev := range s.events {
+		events[i] = spanEventJSON{
+			Timestamp:  ev.Timestamp.Format(time.RFC3339Nano),
+			Name:       ev.Name,
+			Attributes: ev.Attributes,
+		}
+	}
+	output := spanJSON{
+		Operation:    s.operation,
+		TraceID:      s.context.TraceID,
+		SpanID:       s.context.SpanID,
+		ParentSpanID: s.context.ParentSpanID,
+		StartTime:    s.startTime.Format(time.RFC3339Nano),
+		EndTime:      s.endTime.Format(time.RFC3339Nano),
+		Duration:     s.endTime.Sub(s.startTime).String(),
+		Attributes:   s.attributes,
+		Events:       events,
+	}
+	data, _ := json.Marshal(output)
+	fmt.Println(string(data))
+	return nil
+}
+
+type contextKey struct{}
+
+func ContextWithSpanContext(ctx context.Context, sc SpanContext) context.Context {
+	return context.WithValue(ctx, contextKey{}, sc)
+}
+
+func SpanContextFromContext(ctx context.Context) (SpanContext, bool) {
+	sc, ok := ctx.Value(contextKey{}).(SpanContext)
+	return sc, ok
+}

@@ -1,0 +1,79 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func RecoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("panic: %v", rec)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+func SafeCall(fn func() error) (err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			if e, ok := rec.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("panic: %v", rec)
+			}
+		}
+	}()
+	return fn()
+}
+
+func DeferOrder() string {
+	var result string
+	defer func() { result = "1" + result }()
+	defer func() { result = "2" + result }()
+	defer func() { result = "3" + result }()
+	return result
+}
+
+func NamedReturnWithDefer(x int) (result int) {
+	result = x + 1
+	defer func() {
+		result++
+	}()
+	return
+}
+
+func PanicToError(fn func() error) (err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("panic occurred: %v", rec)
+		}
+	}()
+	return fn()
+}
+
+func Repanic(fn func()) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("repanic: %v", rec)
+			panic(rec)
+		}
+	}()
+	fn()
+}
+
+func DeferArgsEval() string {
+	var s string
+	defer fmt.Sprintf("a")
+	s = "b"
+	defer func() { s += "c" }()
+	s += "d"
+	return s
+}
+
+var _ = log.Printf
+var _ = fmt.Sprintf

@@ -1,0 +1,48 @@
+package main
+
+/*
+#include <stdlib.h>
+#include <string.h>
+
+int add(int a, int b) {
+	return a + b;
+}
+
+double multiply(double a, double b) {
+	return a * b;
+}
+
+int string_length(const char* s) {
+	return (int)strlen(s);
+}
+
+char* concat(const char* a, const char* b) {
+	int len = (int)(strlen(a) + strlen(b) + 1);
+	char* result = (char*)malloc(len);
+	if (result == NULL) return NULL;
+	strcpy(result, a);
+	strcat(result, b);
+	return result;
+}
+*/
+import "C"
+import (
+	"fmt"
+	"unsafe"
+)
+
+// TODO: Add(a, b int) int を実装
+// C.add(C.int(a), C.int(b)) を呼び出す
+
+// TODO: Multiply(a, b float64) float64 を実装
+// C.multiply(C.double(a), C.double(b)) を呼び出す
+
+// TODO: StringLength(s string) int を実装
+// C.CString で変換し、C.string_length を呼び出し、defer C.free で解放
+
+// TODO: Concat(a, b string) string を実装
+// C.concat を呼び出し、C.GoString で Go の文字列に変換
+
+func main() {
+	fmt.Println("CGO Demo")
+}

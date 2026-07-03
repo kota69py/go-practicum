@@ -1,0 +1,150 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
+
+func setupProbeServer() *ProbeServer {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	ps.server.Addr = srv.URL
+	return ps
+}
+
+func TestHealthzAlwaysOK(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/healthz")
+	if err != nil {
+		t.Fatalf("GET /healthz: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestReadyzNotReady(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	resp, _ := http.Get(srv.URL + "/readyz")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+func TestReadyzWhenReady(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	ps.SetReady(true)
+	resp, _ := http.Get(srv.URL + "/readyz")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestStartupzNotStarted(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	resp, _ := http.Get(srv.URL + "/startupz")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+func TestStartupzWhenStarted(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	ps.SetStarted(true)
+	resp, _ := http.Get(srv.URL + "/startupz")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestShutdownSetsNotReady(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	ps.SetReady(true)
+	ps.Shutdown(context.Background())
+
+	resp, _ := http.Get(srv.URL + "/readyz")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("status after shutdown: got %d, want %d", resp.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+func TestHealthzAfterStarted(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	ps.SetStarted(true)
+	resp, _ := http.Get(srv.URL + "/healthz")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestReadyzTransitions(t *testing.T) {
+	ps := NewProbeServer(":0")
+	srv := httptest.NewServer(ps.server.Handler)
+	defer srv.Close()
+
+	checkStatus := func(want int) {
+		resp, _ := http.Get(srv.URL + "/readyz")
+		resp.Body.Close()
+		if resp.StatusCode != want {
+			t.Errorf("status: got %d, want %d", resp.StatusCode, want)
+		}
+	}
+
+	checkStatus(http.StatusServiceUnavailable)
+	ps.SetReady(true)
+	checkStatus(http.StatusOK)
+	ps.SetReady(false)
+	checkStatus(http.StatusServiceUnavailable)
+}
+
+func TestListenAndServe(t *testing.T) {
+	ps := NewProbeServer(":0")
+	errCh := make(chan error, 1)
+	go func() {
+		// Use a listener on random port instead
+		errCh <- ps.ListenAndServe()
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	ps.Shutdown(context.Background())
+
+	select {
+	case err := <-errCh:
+		if err != nil && err != http.ErrServerClosed {
+			t.Errorf("ListenAndServe: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for ListenAndServe")
+	}
+}

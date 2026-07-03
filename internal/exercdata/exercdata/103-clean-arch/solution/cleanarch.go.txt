@@ -1,0 +1,137 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"sync"
+	"time"
+)
+
+type Task struct {
+	ID        string
+	Title     string
+	Done      bool
+	CreatedAt time.Time
+}
+
+type TaskRepository interface {
+	FindAll() ([]*Task, error)
+	FindByID(id string) (*Task, error)
+	Save(task *Task) error
+	Delete(id string) error
+}
+
+type TaskUseCase interface {
+	ListTasks() ([]*Task, error)
+	GetTask(id string) (*Task, error)
+	CreateTask(title string) (*Task, error)
+	CompleteTask(id string) (*Task, error)
+	DeleteTask(id string) error
+}
+
+type taskUseCase struct {
+	repo TaskRepository
+}
+
+func NewTaskUseCase(repo TaskRepository) TaskUseCase {
+	return &taskUseCase{repo: repo}
+}
+
+func (uc *taskUseCase) ListTasks() ([]*Task, error) {
+	return uc.repo.FindAll()
+}
+
+func (uc *taskUseCase) GetTask(id string) (*Task, error) {
+	return uc.repo.FindByID(id)
+}
+
+func (uc *taskUseCase) CreateTask(title string) (*Task, error) {
+	if title == "" {
+		return nil, errors.New("title is required")
+	}
+	task := &Task{
+		ID:        fmt.Sprintf("%d", time.Now().UnixNano()),
+		Title:     title,
+		Done:      false,
+		CreatedAt: time.Now(),
+	}
+	if err := uc.repo.Save(task); err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func (uc *taskUseCase) CompleteTask(id string) (*Task, error) {
+	task, err := uc.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	task.Done = true
+	if err := uc.repo.Save(task); err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func (uc *taskUseCase) DeleteTask(id string) error {
+	return uc.repo.Delete(id)
+}
+
+type InMemoryTaskRepository struct {
+	tasks map[string]*Task
+	mu    sync.RWMutex
+	next  int
+}
+
+func NewInMemoryTaskRepository() *InMemoryTaskRepository {
+	return &InMemoryTaskRepository{
+		tasks: make(map[string]*Task),
+		next:  1,
+	}
+}
+
+func (r *InMemoryTaskRepository) FindAll() ([]*Task, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	list := make([]*Task, 0, len(r.tasks))
+	for _, t := range r.tasks {
+		list = append(list, t)
+	}
+	return list, nil
+}
+
+func (r *InMemoryTaskRepository) FindByID(id string) (*Task, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	t, ok := r.tasks[id]
+	if !ok {
+		return nil, fmt.Errorf("task %s not found", id)
+	}
+	return t, nil
+}
+
+func (r *InMemoryTaskRepository) Save(task *Task) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if task.ID == "" {
+		task.ID = fmt.Sprintf("%d", r.next)
+		r.next++
+	}
+	r.tasks[task.ID] = task
+	return nil
+}
+
+func (r *InMemoryTaskRepository) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.tasks, id)
+	return nil
+}
+
+type TaskHandler struct {
+	useCase TaskUseCase
+}
+
+func NewTaskHandler(useCase TaskUseCase) *TaskHandler {
+	return &TaskHandler{useCase: useCase}
+}

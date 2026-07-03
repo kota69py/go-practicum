@@ -1,0 +1,45 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	pb "grpc-deadline/proto/echo"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+func CallWithDeadline(client pb.EchoServiceClient, message string, timeout time.Duration) (string, error) {
+	ctx := context.Background()
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	resp, err := client.Echo(ctx, &pb.EchoRequest{Message: message})
+	if err != nil {
+		if status.Code(err) == codes.DeadlineExceeded {
+			return "", fmt.Errorf("deadline exceeded: %w", err)
+		}
+		return "", err
+	}
+	return resp.Message, nil
+}
+
+func CallWithRetry(client pb.EchoServiceClient, message string, timeout time.Duration, maxRetries int) (string, error) {
+	var lastErr error
+	for range maxRetries + 1 {
+		result, err := CallWithDeadline(client, message, timeout)
+		if err == nil {
+			return result, nil
+		}
+		lastErr = err
+		if status.Code(err) != codes.DeadlineExceeded {
+			return "", err
+		}
+	}
+	return "", fmt.Errorf("all retries failed: %w", lastErr)
+}

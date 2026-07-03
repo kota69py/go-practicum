@@ -1,0 +1,25 @@
+package testingutil
+
+import (
+	"errors"
+	"io"
+	"io/fs"
+)
+
+// TODO: SlowReader を実装する
+// io.Reader インターフェースを満たし、chunkSz バイトずつデータを返す
+
+// TODO: ErrorReader を実装する
+// errAt バイト読み込んだ後に指定されたエラーを返す Reader
+
+// TODO: MemFile を実装する
+// fs.File インターフェースを満たす
+
+// TODO: MemFS を実装する
+// fs.FS インターフェースを満たす
+
+// TODO: 以下の関数を実装する
+// CountReaderBytes(r io.Reader) (int, error)
+// NewMemFS() *MemFS
+// NewStringWriter() *StringWriter
+// SetupCleanupData(t interface{ Cleanup(func()) }) (string, func() bool)

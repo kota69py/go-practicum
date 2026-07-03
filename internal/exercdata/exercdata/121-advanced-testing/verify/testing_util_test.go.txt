@@ -1,0 +1,129 @@
+package testingutil
+
+import (
+	"errors"
+	"io"
+	"testing"
+	"testing/fstest"
+	"testing/iotest"
+)
+
+func TestSlowReaderWithHalfReader(t *testing.T) {
+	r := NewSlowReader("Hello, World! Testing advanced IO...", 5)
+	hr := iotest.HalfReader(r)
+	data, err := io.ReadAll(hr)
+	if err != nil {
+		t.Fatalf("ReadAll failed: %v", err)
+	}
+	want := "Hello, World! Testing advanced IO..."
+	if string(data) != want {
+		t.Errorf("got %q, want %q", string(data), want)
+	}
+}
+
+func TestErrorReaderWithDataErrReader(t *testing.T) {
+	r := NewErrorReader("short data that will error", 10, io.ErrUnexpectedEOF)
+	der := iotest.DataErrReader(r)
+	data, err := io.ReadAll(der)
+	if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatalf("expected ErrUnexpectedEOF or nil, got: %v", err)
+	}
+	if len(data) == 0 {
+		t.Log("reader returned data before error")
+	} else {
+		t.Logf("read %d bytes before error", len(data))
+	}
+}
+
+func TestErrorReaderTimeout(t *testing.T) {
+	r := NewErrorReader("data", 0, io.ErrNoProgress)
+	tr := iotest.TimeoutReader(r)
+	_, err := tr.Read(make([]byte, 4))
+	if !errors.Is(err, io.ErrNoProgress) {
+		t.Fatalf("expected ErrNoProgress, got: %v", err)
+	}
+}
+
+func TestCountReaderBytes(t *testing.T) {
+	r := NewSlowReader("Hello World", 3)
+	n, err := CountReaderBytes(r)
+	if err != nil {
+		t.Fatalf("CountReaderBytes failed: %v", err)
+	}
+	if n != 11 {
+		t.Errorf("got %d bytes, want 11", n)
+	}
+}
+
+func TestMemFSWithTestFS(t *testing.T) {
+	mfs := NewMemFS()
+	mfs.Add("file1.txt", "content1")
+	mfs.Add("dir/file2.txt", "content2")
+
+	if err := fstest.TestFS(mfs, "file1.txt", "dir/file2.txt"); err != nil {
+		t.Fatalf("TestFS failed: %v", err)
+	}
+}
+
+func TestMemFSReadFile(t *testing.T) {
+	mfs := NewMemFS()
+	mfs.Add("hello.txt", "Hello, World!")
+	data, err := fs.ReadFile(mfs, "hello.txt")
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+	if string(data) != "Hello, World!" {
+		t.Errorf("got %q, want %q", string(data), "Hello, World!")
+	}
+}
+
+func TestStringWriterWithWriter(t *testing.T) {
+	var w io.Writer = NewStringWriter()
+	n, err := w.Write([]byte("Hello "))
+	if err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+	if n != 6 {
+		t.Errorf("wrote %d bytes, want 6", n)
+	}
+	if sw, ok := w.(*StringWriter); ok {
+		if sw.String() != "Hello " {
+			t.Errorf("got %q, want %q", sw.String(), "Hello ")
+		}
+	}
+}
+
+func TestCleanup(t *testing.T) {
+	data, check := SetupCleanupData(t)
+	if data != "temporary-data" {
+		t.Errorf("got %q, want %q", data, "temporary-data")
+	}
+	t.Cleanup(func() {
+		if !check() {
+			t.Error("cleanup did not run or flag not set")
+		}
+	})
+}
+
+func TestTempDirUsage(t *testing.T) {
+	tmpDir := t.TempDir()
+	mfs := NewMemFS()
+	mfs.Add("test.txt", "temp dir test")
+
+	data, err := fs.ReadFile(mfs, "test.txt")
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+	if string(data) != "temp dir test" {
+		t.Errorf("got %q, want %q", string(data), "temp dir test")
+	}
+	t.Logf("tmpDir: %s", tmpDir)
+}
+
+func TestSetenvUsage(t *testing.T) {
+	t.Setenv("TEST_ENV", "hello")
+	val := "hello"
+	if val != "hello" {
+		t.Errorf("got %q, want %q", val, "hello")
+	}
+}

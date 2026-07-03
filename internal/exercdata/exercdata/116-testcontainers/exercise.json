@@ -1,0 +1,17 @@
+{
+  "name": "116-testcontainers",
+  "title": "Testcontainers — インテグレーションテスト",
+  "category": "testing",
+  "difficulty": 3,
+  "description": "Testcontainers for Go を使ったインテグレーションテストを学びます。Docker コンテナで PostgreSQL を起動し、マイグレーションを実行、テストデータを投入してクエリを検証する一連の流れを実装します。",
+  "hints": [
+    "testcontainers.WithImage(\"postgres:16-alpine\") でコンテナ指定",
+    "testcontainers.CleanupContainer で後処理",
+    "container.ConnectionString(ctx) で接続文字列取得",
+    "testcontainers.PostgresModule で専用モジュール",
+    "SkipIfProviderIsNotHealthy で Docker 不在時にスキップ",
+    "テスト全体にタイムアウトを設定",
+    "t.Cleanup(func(){}) でコンテナ破棄を登録"
+  ],
+  "files": ["integration.go.txt"]
+}

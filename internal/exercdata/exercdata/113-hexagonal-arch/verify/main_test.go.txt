@@ -1,0 +1,122 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestInMemoryRepository(t *testing.T) {
+	repo := NewInMemoryUserRepository()
+	if repo == nil {
+		t.Fatal("repo is nil")
+	}
+
+	user, err := repo.FindByID("nope")
+	if err == nil {
+		t.Error("expected error for missing user")
+	}
+
+	u := &User{Name: "Alice", Email: "alice@example.com"}
+	if err := repo.Save(u); err != nil {
+		t.Fatalf("Save error: %v", err)
+	}
+	if u.ID == "" {
+		t.Error("expected non-empty ID after Save")
+	}
+
+	got, err := repo.FindByID(u.ID)
+	if err != nil {
+		t.Fatalf("FindByID error: %v", err)
+	}
+	if got.Name != "Alice" {
+		t.Errorf("Name = %q, want %q", got.Name, "Alice")
+	}
+
+	users, err := repo.FindAll()
+	if err != nil {
+		t.Fatalf("FindAll error: %v", err)
+	}
+	if len(users) != 1 {
+		t.Errorf("len = %d, want 1", len(users))
+	}
+
+	if err := repo.Delete(u.ID); err != nil {
+		t.Fatalf("Delete error: %v", err)
+	}
+	_, err = repo.FindByID(u.ID)
+	if err == nil {
+		t.Error("expected error after Delete")
+	}
+}
+
+func TestFileRepository(t *testing.T) {
+	path := t.TempDir() + "/users.json"
+	repo := NewFileUserRepository(path)
+	if repo == nil {
+		t.Fatal("repo is nil")
+	}
+
+	u := &User{Name: "Bob", Email: "bob@example.com"}
+	if err := repo.Save(u); err != nil {
+		t.Fatalf("Save error: %v", err)
+	}
+
+	got, err := repo.FindByID(u.ID)
+	if err != nil {
+		t.Fatalf("FindByID error: %v", err)
+	}
+	if got.Name != "Bob" {
+		t.Errorf("Name = %q, want %q", got.Name, "Bob")
+	}
+}
+
+func TestUserService(t *testing.T) {
+	repo := NewInMemoryUserRepository()
+	svc := NewUserService(repo)
+
+	u, err := svc.Register("Charlie", "charlie@example.com")
+	if err != nil {
+		t.Fatalf("Register error: %v", err)
+	}
+	if u.Name != "Charlie" {
+		t.Errorf("Name = %q, want %q", u.Name, "Charlie")
+	}
+
+	got, err := svc.Get(u.ID)
+	if err != nil {
+		t.Fatalf("Get error: %v", err)
+	}
+	if got.Name != "Charlie" {
+		t.Errorf("Get name = %q", got.Name)
+	}
+
+	list, err := svc.List()
+	if err != nil {
+		t.Fatalf("List error: %v", err)
+	}
+	if len(list) != 1 {
+		t.Errorf("len = %d, want 1", len(list))
+	}
+
+	if err := svc.Remove(u.ID); err != nil {
+		t.Fatalf("Remove error: %v", err)
+	}
+	_, err = svc.Get(u.ID)
+	if err == nil {
+		t.Error("expected error after Remove")
+	}
+}
+
+func TestUserServiceMissing(t *testing.T) {
+	repo := NewInMemoryUserRepository()
+	svc := NewUserService(repo)
+
+	_, err := svc.Get("nope")
+	if err == nil {
+		t.Error("expected error for missing user")
+	}
+}
+
+func TestUserRepositoryInterface(t *testing.T) {
+	var _ UserRepository = NewInMemoryUserRepository()
+	var _ UserRepository = NewFileUserRepository(t.TempDir() + "/test.json")
+}

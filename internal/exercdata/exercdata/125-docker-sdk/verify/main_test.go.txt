@@ -1,0 +1,228 @@
+package main
+
+import (
+	"context"
+	"io"
+	"strings"
+	"testing"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
+)
+
+// mockClient implements ContainerClient for testing.
+type mockClient struct {
+	imagePullFunc         func(ctx context.Context, ref string, options types.ImagePullOptions) (io.ReadCloser, error)
+	containerCreateFunc   func(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *specs.Platform, containerName string) (container.CreateResponse, error)
+	containerStartFunc    func(ctx context.Context, containerID string, options container.StartOptions) error
+	containerStopFunc     func(ctx context.Context, containerID string, options container.StopOptions) error
+	containerLogsFunc     func(ctx context.Context, containerID string, options container.LogsOptions) (io.ReadCloser, error)
+	closeFunc             func() error
+}
+
+func (m *mockClient) ImagePull(ctx context.Context, ref string, options types.ImagePullOptions) (io.ReadCloser, error) {
+	return m.imagePullFunc(ctx, ref, options)
+}
+
+func (m *mockClient) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *specs.Platform, containerName string) (container.CreateResponse, error) {
+	return m.containerCreateFunc(ctx, config, hostConfig, networkingConfig, platform, containerName)
+}
+
+func (m *mockClient) ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error {
+	return m.containerStartFunc(ctx, containerID, options)
+}
+
+func (m *mockClient) ContainerStop(ctx context.Context, containerID string, options container.StopOptions) error {
+	return m.containerStopFunc(ctx, containerID, options)
+}
+
+func (m *mockClient) ContainerLogs(ctx context.Context, containerID string, options container.LogsOptions) (io.ReadCloser, error) {
+	return m.containerLogsFunc(ctx, containerID, options)
+}
+
+func (m *mockClient) Close() error {
+	if m.closeFunc != nil {
+		return m.closeFunc()
+	}
+	return nil
+}
+
+type stringReadCloser struct {
+	*strings.Reader
+}
+
+func (stringReadCloser) Close() error { return nil }
+
+func TestNewDockerClient(t *testing.T) {
+	cli, err := NewDockerClient()
+	if err != nil {
+		t.Skip("Docker not available:", err)
+	}
+	defer cli.Close()
+}
+
+func TestPullImage(t *testing.T) {
+	var called bool
+	mc := &mockClient{
+		imagePullFunc: func(_ context.Context, ref string, _ types.ImagePullOptions) (io.ReadCloser, error) {
+			called = true
+			if ref != "nginx:latest" {
+				t.Errorf("got ref %q, want %q", ref, "nginx:latest")
+			}
+			return stringReadCloser{strings.NewReader("pulling...")}, nil
+		},
+	}
+	if err := PullImage(context.Background(), mc, "nginx:latest"); err != nil {
+		t.Fatal(err)
+	}
+	if !called {
+		t.Error("ImagePull was not called")
+	}
+}
+
+func TestRunContainer(t *testing.T) {
+	var createCalled, startCalled bool
+	mc := &mockClient{
+		containerCreateFunc: func(_ context.Context, cfg *container.Config, _ *container.HostConfig, _ *network.NetworkingConfig, _ *specs.Platform, _ string) (container.CreateResponse, error) {
+			createCalled = true
+			if cfg.Image != "nginx:latest" {
+				t.Errorf("got image %q, want %q", cfg.Image, "nginx:latest")
+			}
+			return container.CreateResponse{ID: "abc123"}, nil
+		},
+		containerStartFunc: func(_ context.Context, containerID string, _ container.StartOptions) error {
+			startCalled = true
+			if containerID != "abc123" {
+				t.Errorf("got id %q, want %q", containerID, "abc123")
+			}
+			return nil
+		},
+	}
+	cfg := &container.Config{Image: "nginx:latest"}
+	id, err := RunContainer(context.Background(), mc, cfg, &container.HostConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "abc123" {
+		t.Errorf("got id %q, want %q", id, "abc123")
+	}
+	if !createCalled {
+		t.Error("ContainerCreate was not called")
+	}
+	if !startCalled {
+		t.Error("ContainerStart was not called")
+	}
+}
+
+func TestStopContainer(t *testing.T) {
+	var called bool
+	mc := &mockClient{
+		containerStopFunc: func(_ context.Context, containerID string, _ container.StopOptions) error {
+			called = true
+			if containerID != "abc123" {
+				t.Errorf("got id %q, want %q", containerID, "abc123")
+			}
+			return nil
+		},
+	}
+	if err := StopContainer(context.Background(), mc, "abc123"); err != nil {
+		t.Fatal(err)
+	}
+	if !called {
+		t.Error("ContainerStop was not called")
+	}
+}
+
+func TestGetContainerLogs(t *testing.T) {
+	var called bool
+	mc := &mockClient{
+		containerLogsFunc: func(_ context.Context, containerID string, opts container.LogsOptions) (io.ReadCloser, error) {
+			called = true
+			if containerID != "abc123" {
+				t.Errorf("got id %q, want %q", containerID, "abc123")
+			}
+			if !opts.ShowStdout {
+				t.Error("ShowStdout should be true")
+			}
+			if !opts.ShowStderr {
+				t.Error("ShowStderr should be true")
+			}
+			return stringReadCloser{strings.NewReader("hello world")}, nil
+		},
+	}
+	out, err := GetContainerLogs(context.Background(), mc, "abc123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out != "hello world" {
+		t.Errorf("got output %q, want %q", out, "hello world")
+	}
+	if !called {
+		t.Error("ContainerLogs was not called")
+	}
+}
+
+func TestPullImageErrorPropagation(t *testing.T) {
+	mc := &mockClient{
+		imagePullFunc: func(_ context.Context, _ string, _ types.ImagePullOptions) (io.ReadCloser, error) {
+			return nil, io.ErrUnexpectedEOF
+		},
+	}
+	err := PullImage(context.Background(), mc, "nginx:latest")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestContainerCreateError(t *testing.T) {
+	mc := &mockClient{
+		containerCreateFunc: func(_ context.Context, _ *container.Config, _ *container.HostConfig, _ *network.NetworkingConfig, _ *specs.Platform, _ string) (container.CreateResponse, error) {
+			return container.CreateResponse{}, io.ErrClosedPipe
+		},
+	}
+	_, err := RunContainer(context.Background(), mc, &container.Config{Image: "alpine"}, &container.HostConfig{})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestContainerStartError(t *testing.T) {
+	mc := &mockClient{
+		containerCreateFunc: func(_ context.Context, _ *container.Config, _ *container.HostConfig, _ *network.NetworkingConfig, _ *specs.Platform, _ string) (container.CreateResponse, error) {
+			return container.CreateResponse{ID: "abc123"}, nil
+		},
+		containerStartFunc: func(_ context.Context, _ string, _ container.StartOptions) error {
+			return io.ErrClosedPipe
+		},
+	}
+	_, err := RunContainer(context.Background(), mc, &container.Config{Image: "alpine"}, &container.HostConfig{})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestStopContainerError(t *testing.T) {
+	mc := &mockClient{
+		containerStopFunc: func(_ context.Context, _ string, _ container.StopOptions) error {
+			return io.ErrUnexpectedEOF
+		},
+	}
+	err := StopContainer(context.Background(), mc, "abc123")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestGetContainerLogsError(t *testing.T) {
+	mc := &mockClient{
+		containerLogsFunc: func(_ context.Context, _ string, _ container.LogsOptions) (io.ReadCloser, error) {
+			return nil, io.ErrUnexpectedEOF
+		},
+	}
+	_, err := GetContainerLogs(context.Background(), mc, "abc123")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}

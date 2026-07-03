@@ -1,0 +1,39 @@
+package main
+
+import (
+	"fmt"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
+	pb "go-practicum-grpc-streaming/proto/stream"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+func main() {
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "listen error: %v\n", err)
+		os.Exit(1)
+	}
+	port := lis.Addr().(*net.TCPAddr).Port
+	fmt.Printf("server listening on port %d\n", port)
+
+	s := grpc.NewServer()
+	pb.RegisterStreamServiceServer(s, NewStreamServer())
+	reflection.Register(s)
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		s.GracefulStop()
+	}()
+
+	if err := s.Serve(lis); err != nil {
+		fmt.Fprintf(os.Stderr, "serve error: %v\n", err)
+		os.Exit(1)
+	}
+}

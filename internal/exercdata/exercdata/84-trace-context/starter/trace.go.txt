@@ -1,0 +1,112 @@
+package main
+
+import (
+	"context"
+	"crypto/rand"
+	"fmt"
+	"time"
+)
+
+// SpanContext はトレースコンテキストを保持します。
+type SpanContext struct {
+	TraceID    string
+	SpanID     string
+	ParentSpanID string
+}
+
+// Span は単一の処理単位を表します。
+type Span struct {
+	context    SpanContext
+	operation  string
+	startTime  time.Time
+	endTime    time.Time
+	attributes map[string]string
+	events     []SpanEvent
+	exporter   Exporter
+}
+
+// SpanEvent はスパン上のイベント（ログ・エラー）を表します。
+type SpanEvent struct {
+	Timestamp time.Time
+	Name      string
+	Attributes map[string]string
+}
+
+// Exporter はスパンを外部に出力するインターフェースです。
+type Exporter interface {
+	Export(s Span) error
+}
+
+// TracerProvider は Tracer を作成するファクトリです。
+type TracerProvider struct {
+	exporter Exporter
+}
+
+// Tracer はスパンを作成します。
+type Tracer struct {
+	provider *TracerProvider
+}
+
+func NewTracerProvider(exporter Exporter) *TracerProvider {
+	return &TracerProvider{exporter: exporter}
+}
+
+func (p *TracerProvider) Tracer() *Tracer {
+	return &Tracer{provider: p}
+}
+
+func generateID() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+// Start は新しいスパンを開始します。
+// ctx に親の SpanContext が含まれている場合、それを継承します。
+func (t *Tracer) Start(ctx context.Context, operation string) (context.Context, *Span) {
+	// TODO: ctx から親 SpanContext を取得する
+	// TODO: 新しい TraceID / SpanID を生成する
+	// TODO: 親があれば ParentSpanID を設定する
+	// TODO: 新しい Span を作成し、新しい SpanContext を ctx に格納して返す
+	return ctx, nil
+}
+
+// End はスパンを終了し、エクスポータに出力します。
+func (s *Span) End() {
+	// TODO: endTime を記録する
+	// TODO: exporter.Export(s) を呼び出す
+}
+
+// SetAttribute はスパンに属性を追加します。
+func (s *Span) SetAttribute(key, value string) {
+	// TODO: attributes マップにキー・値を追加する
+}
+
+// AddEvent はスパンにイベントを追加します。
+func (s *Span) AddEvent(name string, attrs map[string]string) {
+	// TODO: 現在時刻と共に SpanEvent を作成し events に追加する
+}
+
+// ---- エクスポータ実装 ----
+
+// ConsoleExporter はスパンを JSON 形式で標準出力に出力します。
+type ConsoleExporter struct{}
+
+func (e *ConsoleExporter) Export(s Span) error {
+	// TODO: スパンの情報を JSON 風の文字列で出力する
+	fmt.Printf("Span: %s [%s] %s -> %s\n", s.operation, s.context.SpanID, s.startTime.Format(time.RFC3339Nano), s.endTime.Format(time.RFC3339Nano))
+	return nil
+}
+
+// ---- コンテキスト操作 ----
+
+type contextKey struct{}
+
+func ContextWithSpanContext(ctx context.Context, sc SpanContext) context.Context {
+	return context.WithValue(ctx, contextKey{}, sc)
+}
+
+func SpanContextFromContext(ctx context.Context) (SpanContext, bool) {
+	sc, ok := ctx.Value(contextKey{}).(SpanContext)
+	return sc, ok
+}

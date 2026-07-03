@@ -1,0 +1,166 @@
+package main
+
+import (
+	"database/sql"
+	"testing"
+
+	_ "modernc.org/sqlite"
+)
+
+func TestParseMigration(t *testing.T) {
+	up, down := ParseMigration("CREATE TABLE users (id INT);\n--- down\nDROP TABLE users;")
+	if up != "CREATE TABLE users (id INT);" {
+		t.Errorf("up: got %q", up)
+	}
+	if down != "DROP TABLE users;" {
+		t.Errorf("down: got %q", down)
+	}
+}
+
+func TestParseMigrationNoDown(t *testing.T) {
+	up, down := ParseMigration("CREATE TABLE users (id INT);")
+	if up != "CREATE TABLE users (id INT);" {
+		t.Errorf("up: got %q", up)
+	}
+	if down != "" {
+		t.Errorf("down: got %q, want empty", down)
+	}
+}
+
+func TestEnsureSchemaTable(t *testing.T) {
+	db := openTestDB(t)
+	defer db.Close()
+
+	if err := EnsureSchemaTable(db); err != nil {
+		t.Fatalf("EnsureSchemaTable: %v", err)
+	}
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&count)
+	if count != 0 {
+		t.Errorf("expected 0 rows, got %d", count)
+	}
+}
+
+func TestAppliedVersions(t *testing.T) {
+	db := openTestDB(t)
+	defer db.Close()
+
+	EnsureSchemaTable(db)
+	db.Exec("INSERT INTO schema_migrations (version) VALUES (1)")
+	db.Exec("INSERT INTO schema_migrations (version) VALUES (2)")
+
+	applied, err := AppliedVersions(db)
+	if err != nil {
+		t.Fatalf("AppliedVersions: %v", err)
+	}
+	if !applied[1] {
+		t.Error("expected version 1 applied")
+	}
+	if !applied[2] {
+		t.Error("expected version 2 applied")
+	}
+	if applied[3] {
+		t.Error("expected version 3 not applied")
+	}
+}
+
+func TestMigratorUp(t *testing.T) {
+	db := openTestDB(t)
+	defer db.Close()
+
+	EnsureSchemaTable(db)
+
+	migrations := []Migration{
+		{Version: 1, Name: "001-create-users", UpSQL: "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)", DownSQL: "DROP TABLE IF EXISTS users"},
+		{Version: 2, Name: "002-add-posts", UpSQL: "CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY, title TEXT)", DownSQL: "DROP TABLE IF EXISTS posts"},
+	}
+
+	migrator := NewMigrator(db, migrations)
+
+	if err := migrator.Up(); err != nil {
+		t.Fatalf("Up: %v", err)
+	}
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&count)
+	if count != 2 {
+		t.Errorf("expected 2 applied migrations, got %d", count)
+	}
+
+	db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	if count != 0 {
+		t.Errorf("expected users table to exist, count=%d", count)
+	}
+}
+
+func TestMigratorUpPartial(t *testing.T) {
+	db := openTestDB(t)
+	defer db.Close()
+
+	EnsureSchemaTable(db)
+	db.Exec("INSERT INTO schema_migrations (version) VALUES (1)")
+
+	migrations := []Migration{
+		{Version: 1, Name: "001-create-users", UpSQL: "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)", DownSQL: "DROP TABLE IF EXISTS users"},
+		{Version: 2, Name: "002-add-posts", UpSQL: "CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY, title TEXT)", DownSQL: "DROP TABLE IF EXISTS posts"},
+	}
+
+	migrator := NewMigrator(db, migrations)
+
+	if err := migrator.Up(); err != nil {
+		t.Fatalf("Up: %v", err)
+	}
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&count)
+	if count != 2 {
+		t.Errorf("expected 2 rows, got %d", count)
+	}
+}
+
+func TestMigratorDown(t *testing.T) {
+	db := openTestDB(t)
+	defer db.Close()
+
+	EnsureSchemaTable(db)
+
+	migrations := []Migration{
+		{Version: 1, Name: "001-create-users", UpSQL: "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)", DownSQL: "DROP TABLE IF EXISTS users"},
+		{Version: 2, Name: "002-add-posts", UpSQL: "CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY, title TEXT)", DownSQL: "DROP TABLE IF EXISTS posts"},
+	}
+
+	migrator := NewMigrator(db, migrations)
+	migrator.Up()
+
+	if err := migrator.Down(); err != nil {
+		t.Fatalf("Down: %v", err)
+	}
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&count)
+	if count != 1 {
+		t.Errorf("expected 1 remaining migration, got %d", count)
+	}
+}
+
+func TestMigratorDownEmpty(t *testing.T) {
+	db := openTestDB(t)
+	defer db.Close()
+
+	EnsureSchemaTable(db)
+
+	migrator := NewMigrator(db, []Migration{})
+	if err := migrator.Down(); err != nil {
+		t.Errorf("Down on empty should not error: %v", err)
+	}
+}
+
+func openTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("sql.Open: %v", err)
+	}
+	return db
+}

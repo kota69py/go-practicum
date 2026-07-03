@@ -1,0 +1,68 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"log/slog"
+	"sync"
+)
+
+// MapHandler は slog.Handler インターフェースを実装し、属性を JSON でバッファに書き込みます。
+type MapHandler struct {
+	mu     sync.Mutex
+	buf    *bytes.Buffer
+	attrs  []slog.Attr
+	groups []string
+}
+
+// NewMapHandler は MapHandler を作成します。
+func NewMapHandler(buf *bytes.Buffer) *MapHandler {
+	// TODO: MapHandler を初期化して返す
+	return nil
+}
+
+// Enabled は常に true を返します（全レベルを受け付ける）。
+func (h *MapHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	// TODO: 常に true を返す
+	return false
+}
+
+// Handle はレコードの属性をバッファに書き込みます。
+// 事前に設定された属性 (WithAttrs) とレコードの属性をマージして JSON 出力します。
+func (h *MapHandler) Handle(ctx context.Context, r slog.Record) error {
+	// TODO:
+	// 1. ミューテックスをロック
+	// 2. 事前属性 + レコード属性を map に集める
+	// 3. JSON エンコードしてバッファに書き込み
+	return nil
+}
+
+// WithAttrs は事前属性を持った新しいハンドラーを返します。
+func (h *MapHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// TODO: 現在の状態をコピーし、新しい属性を追加して返す
+	return nil
+}
+
+// WithGroup はグループ化された新しいハンドラーを返します。
+func (h *MapHandler) WithGroup(name string) slog.Handler {
+	// TODO: 現在の状態をコピーし、グループ名を追加して返す
+	return nil
+}
+
+// clone は MapHandler のコピーを作成します（ディープコピー）。
+func (h *MapHandler) clone() *MapHandler {
+	// TODO: 属性とグループをコピーした新しい MapHandler を返す
+	return nil
+}
+
+// addAttr は属性を map に再帰的に追加します。グループがある場合はキーに "." で連結します。
+func (h *MapHandler) addAttr(m map[string]any, a slog.Attr, groups []string) {
+	// TODO:
+	// 1. a.Value.Resolve() で解決
+	// 2. KindGroup の場合は再帰的に処理
+	// 3. それ以外は map に追加（キーは groups + a.Key を "." で連結）
+}
+
+var _ = bytes.NewBuffer
+var _ = context.Background
+var _ = sync.Mutex{}

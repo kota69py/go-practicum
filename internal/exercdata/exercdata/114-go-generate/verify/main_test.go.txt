@@ -1,0 +1,49 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestPillString(t *testing.T) {
+	names := map[Pill]string{
+		Placebo:      "Placebo",
+		Aspirin:      "Aspirin",
+		Ibuprofen:    "Ibuprofen",
+		Paracetamol:  "Paracetamol",
+		Acetaminophen: "Acetaminophen",
+		Naproxen:     "Naproxen",
+	}
+	for pill, want := range names {
+		got := pill.String()
+		if got != want {
+			t.Errorf("Pill(%d).String() = %q, want %q", pill, got, want)
+		}
+	}
+}
+
+func TestPillStringUnknown(t *testing.T) {
+	unknown := Pill(99)
+	got := unknown.String()
+	if got == "placeholder" {
+		t.Error("String() still returns placeholder; run go generate")
+	}
+	if got == "" {
+		t.Error("String() should not be empty")
+	}
+}
+
+func TestPillValues(t *testing.T) {
+	if Placebo != 0 {
+		t.Errorf("Placebo = %d, want 0", Placebo)
+	}
+	if Aspirin != 1 {
+		t.Errorf("Aspirin = %d, want 1", Aspirin)
+	}
+	if Ibuprofen != 2 {
+		t.Errorf("Ibuprofen = %d, want 2", Ibuprofen)
+	}
+}
+
+func TestGoGenerateDirective(t *testing.T) {
+	_ = Placebo.String()
+}

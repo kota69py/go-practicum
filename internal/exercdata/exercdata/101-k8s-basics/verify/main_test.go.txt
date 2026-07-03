@@ -1,0 +1,125 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestNewWebDeployment(t *testing.T) {
+	d := NewWebDeployment()
+	if d.APIVersion != "apps/v1" {
+		t.Errorf("apiVersion: got %q, want apps/v1", d.APIVersion)
+	}
+	if d.Kind != "Deployment" {
+		t.Errorf("kind: got %q, want Deployment", d.Kind)
+	}
+	if d.Metadata.Name != "web-app" {
+		t.Errorf("name: got %q, want web-app", d.Metadata.Name)
+	}
+	if d.Spec.Replicas != 3 {
+		t.Errorf("replicas: got %d, want 3", d.Spec.Replicas)
+	}
+	if d.Spec.Selector == nil {
+		t.Fatal("selector is nil")
+	}
+	if d.Spec.Selector.MatchLabels["app"] != "web-app" {
+		t.Errorf("selector label: got %q, want web-app", d.Spec.Selector.MatchLabels["app"])
+	}
+	if len(d.Spec.Template.Spec.Containers) != 1 {
+		t.Fatalf("containers: got %d, want 1", len(d.Spec.Template.Spec.Containers))
+	}
+	c := d.Spec.Template.Spec.Containers[0]
+	if c.Image != "nginx:latest" {
+		t.Errorf("image: got %q, want nginx:latest", c.Image)
+	}
+	if c.LivenessProbe == nil {
+		t.Error("livenessProbe is nil")
+	} else {
+		if c.LivenessProbe.HTTPGet.Path != "/healthz" {
+			t.Errorf("liveness path: got %q, want /healthz", c.LivenessProbe.HTTPGet.Path)
+		}
+	}
+	if c.ReadinessProbe == nil {
+		t.Error("readinessProbe is nil")
+	}
+	if len(c.EnvFrom) == 0 || c.EnvFrom[0].ConfigMapRef.Name != "app-config" {
+		t.Error("expected envFrom configMapRef app-config")
+	}
+}
+
+func TestNewWebService(t *testing.T) {
+	s := NewWebService()
+	if s.APIVersion != "v1" {
+		t.Errorf("apiVersion: got %q, want v1", s.APIVersion)
+	}
+	if s.Kind != "Service" {
+		t.Errorf("kind: got %q, want Service", s.Kind)
+	}
+	if s.Spec.Type != "ClusterIP" {
+		t.Errorf("type: got %q, want ClusterIP", s.Spec.Type)
+	}
+	if s.Spec.Selector["app"] != "web-app" {
+		t.Errorf("selector: got %q, want web-app", s.Spec.Selector["app"])
+	}
+	if len(s.Spec.Ports) != 1 || s.Spec.Ports[0].Port != 80 {
+		t.Errorf("port: got %+v, want port 80", s.Spec.Ports)
+	}
+}
+
+func TestNewAppConfigMap(t *testing.T) {
+	cm := NewAppConfigMap()
+	if cm.APIVersion != "v1" {
+		t.Errorf("apiVersion: got %q, want v1", cm.APIVersion)
+	}
+	if cm.Kind != "ConfigMap" {
+		t.Errorf("kind: got %q, want ConfigMap", cm.Kind)
+	}
+	if cm.Data["APP_ENV"] != "production" {
+		t.Errorf("APP_ENV: got %q, want production", cm.Data["APP_ENV"])
+	}
+	if cm.Data["LOG_LEVEL"] != "info" {
+		t.Errorf("LOG_LEVEL: got %q, want info", cm.Data["LOG_LEVEL"])
+	}
+	if cm.Data["CACHE_TTL"] != "300" {
+		t.Errorf("CACHE_TTL: got %q, want 300", cm.Data["CACHE_TTL"])
+	}
+}
+
+func TestValidateDeploymentValid(t *testing.T) {
+	d := NewWebDeployment()
+	if err := ValidateDeployment(d); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestValidateDeploymentInvalidAPIVersion(t *testing.T) {
+	d := NewWebDeployment()
+	d.APIVersion = "v1"
+	if err := ValidateDeployment(d); err == nil {
+		t.Error("expected error for wrong apiVersion")
+	}
+}
+
+func TestValidateDeploymentInvalidKind(t *testing.T) {
+	d := NewWebDeployment()
+	d.Kind = "Pod"
+	if err := ValidateDeployment(d); err == nil {
+		t.Error("expected error for wrong kind")
+	}
+}
+
+func TestValidateDeploymentNoContainers(t *testing.T) {
+	d := NewWebDeployment()
+	d.Spec.Template.Spec.Containers = nil
+	if err := ValidateDeployment(d); err == nil {
+		t.Error("expected error for no containers")
+	}
+}
+
+func TestNewWebDeploymentTemplateLabelsMatch(t *testing.T) {
+	d := NewWebDeployment()
+	for k, v := range d.Spec.Selector.MatchLabels {
+		if d.Spec.Template.Metadata.Labels[k] != v {
+			t.Errorf("label %s=%s mismatch with template %s=%s", k, v, k, d.Spec.Template.Metadata.Labels[k])
+		}
+	}
+}

@@ -1,0 +1,17 @@
+{
+  "name": "124-panic-recover",
+  "title": "panic / recover / defer — 実践パターン",
+  "category": "error-handling",
+  "difficulty": 3,
+  "description": "Go の panic・recover・defer の実践的なパターンを学びます。defer の実行順序とスタックトレース、panic の伝搬と回復、recover を使ったエラー変換、Net/http のリカバリーミドルウェア実装を理解します。",
+  "hints": [
+    "defer は LIFO (Last-In-First-Out) 順で実行",
+    "defer の引数は即時評価、変数は参照評価",
+    "recover は defer 内でのみ有効",
+    "panic は defer 実行後に伝搬",
+    "named return 値は defer 内で変更可能",
+    "recover から error への変換が推奨パターン",
+    "recover してそのまま panic し直すとスタックトレース保持"
+  ],
+  "files": ["recovery.go.txt"]
+}

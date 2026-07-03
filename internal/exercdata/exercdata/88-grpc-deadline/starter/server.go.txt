@@ -1,0 +1,29 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	pb "grpc-deadline/proto/echo"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type slowServer struct {
+	pb.UnimplementedEchoServiceServer
+	simulateLatency time.Duration
+}
+
+// Echo はリクエストを処理します。simulateLatency が設定されている場合、
+// その時間だけ処理を遅延させてから応答を返します。
+// コンテキストの期限が切れている場合は DeadlineExceeded を返します。
+func (s *slowServer) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	// TODO: ctx.Err() で期限切れをチェック
+	// TODO: if err != nil → return nil, err
+	// TODO: simulateLatency > 0 の場合、select で ctx.Done() か time.After(simulateLatency) を待つ
+	// TODO: ctx.Done() が先の場合 → DeadlineExceeded
+	// TODO: time.After が先の場合 → 正常応答
+	return &pb.EchoResponse{Message: fmt.Sprintf("hello: %s", req.Message)}, nil
+}

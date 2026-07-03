@@ -1,0 +1,141 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestCreateTask(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	task, err := uc.CreateTask("Buy milk")
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+	if task.Title != "Buy milk" {
+		t.Errorf("title: got %q, want %q", task.Title, "Buy milk")
+	}
+	if task.Done {
+		t.Error("new task should not be done")
+	}
+	if task.ID == "" {
+		t.Error("expected non-empty ID")
+	}
+	if task.CreatedAt.IsZero() {
+		t.Error("expected non-zero CreatedAt")
+	}
+}
+
+func TestCreateTaskEmptyTitle(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	_, err := uc.CreateTask("")
+	if err == nil {
+		t.Fatal("expected error for empty title")
+	}
+}
+
+func TestListTasks(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	uc.CreateTask("Task 1")
+	uc.CreateTask("Task 2")
+
+	tasks, err := uc.ListTasks()
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 2 {
+		t.Errorf("tasks: got %d, want 2", len(tasks))
+	}
+}
+
+func TestGetTask(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	created, _ := uc.CreateTask("Get me")
+	got, err := uc.GetTask(created.ID)
+	if err != nil {
+		t.Fatalf("GetTask: %v", err)
+	}
+	if got.Title != "Get me" {
+		t.Errorf("title: got %q, want %q", got.Title, "Get me")
+	}
+}
+
+func TestGetTaskNotFound(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	_, err := uc.GetTask("999")
+	if err == nil {
+		t.Fatal("expected error for not found")
+	}
+}
+
+func TestCompleteTask(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	created, _ := uc.CreateTask("Complete me")
+	completed, err := uc.CompleteTask(created.ID)
+	if err != nil {
+		t.Fatalf("CompleteTask: %v", err)
+	}
+	if !completed.Done {
+		t.Error("expected task to be done")
+	}
+}
+
+func TestDeleteTask(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	created, _ := uc.CreateTask("Delete me")
+	if err := uc.DeleteTask(created.ID); err != nil {
+		t.Fatalf("DeleteTask: %v", err)
+	}
+	_, err := uc.GetTask(created.ID)
+	if err == nil {
+		t.Error("expected error after delete")
+	}
+}
+
+func TestTaskHandler(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+	_ = NewTaskHandler(uc)
+}
+
+func TestEndToEnd(t *testing.T) {
+	repo := NewInMemoryTaskRepository()
+	uc := NewTaskUseCase(repo)
+
+	t1, _ := uc.CreateTask("Task 1")
+	t2, _ := uc.CreateTask("Task 2")
+	uc.CompleteTask(t1.ID)
+
+	tasks, _ := uc.ListTasks()
+	if len(tasks) != 2 {
+		t.Errorf("expected 2 tasks, got %d", len(tasks))
+	}
+
+	gotT1, _ := uc.GetTask(t1.ID)
+	if !gotT1.Done {
+		t.Error("expected t1 to be done")
+	}
+
+	gotT2, _ := uc.GetTask(t2.ID)
+	if gotT2.Done {
+		t.Error("expected t2 not to be done")
+	}
+
+	uc.DeleteTask(t1.ID)
+	tasks, _ = uc.ListTasks()
+	if len(tasks) != 1 {
+		t.Errorf("expected 1 task after delete, got %d", len(tasks))
+	}
+}

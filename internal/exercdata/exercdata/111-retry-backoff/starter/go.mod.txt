@@ -1,0 +1,3 @@
+module go-practicum-retry
+
+go 1.25

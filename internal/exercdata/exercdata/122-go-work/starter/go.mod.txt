@@ -1,0 +1,3 @@
+module go-practicum-go-work
+
+go 1.23

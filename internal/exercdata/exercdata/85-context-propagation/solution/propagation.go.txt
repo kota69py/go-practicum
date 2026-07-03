@@ -1,0 +1,100 @@
+package main
+
+import (
+	"context"
+	"crypto/rand"
+	"fmt"
+	"net/http"
+	"strings"
+)
+
+type TraceContext struct {
+	TraceID string
+	SpanID  string
+}
+
+const traceHeader = "X-Trace-Context"
+
+func ExtractTraceContext(r *http.Request) (TraceContext, bool) {
+	val := r.Header.Get(traceHeader)
+	if val == "" {
+		return TraceContext{}, false
+	}
+	traceID, spanID, ok := strings.Cut(val, ":")
+	if !ok || traceID == "" || spanID == "" {
+		return TraceContext{}, false
+	}
+	return TraceContext{TraceID: traceID, SpanID: spanID}, true
+}
+
+func InjectTraceContext(r *http.Request, tc TraceContext) {
+	r.Header.Set(traceHeader, tc.TraceID+":"+tc.SpanID)
+}
+
+type ctxKey struct{}
+
+func ContextWithTrace(ctx context.Context, tc TraceContext) context.Context {
+	return context.WithValue(ctx, ctxKey{}, tc)
+}
+
+func TraceFromContext(ctx context.Context) (TraceContext, bool) {
+	tc, ok := ctx.Value(ctxKey{}).(TraceContext)
+	return tc, ok
+}
+
+func GenerateTraceID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+func GenerateSpanID() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+func ServerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tc, ok := ExtractTraceContext(r)
+		if !ok {
+			tc = TraceContext{
+				TraceID: GenerateTraceID(),
+				SpanID:  GenerateSpanID(),
+			}
+		}
+		ctx := ContextWithTrace(r.Context(), tc)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func ClientMiddleware(next http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		if tc, ok := TraceFromContext(r.Context()); ok {
+			InjectTraceContext(r, tc)
+		}
+		return next.RoundTrip(r)
+	})
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+func GetTraceID(ctx context.Context) string {
+	tc, ok := TraceFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	return tc.TraceID
+}
+
+func GetSpanID(ctx context.Context) string {
+	tc, ok := TraceFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	return tc.SpanID
+}

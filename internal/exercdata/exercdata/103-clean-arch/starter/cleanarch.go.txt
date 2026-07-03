@@ -1,0 +1,76 @@
+package main
+
+import (
+	"errors"
+	"sync"
+	"time"
+)
+
+// ===== Entity Layer =====
+// 外部依存ゼロのビジネスロジック
+
+// Task はタスクを表すエンティティです。
+type Task struct {
+	ID        string
+	Title     string
+	Done      bool
+	CreatedAt time.Time
+}
+
+// ===== UseCase Layer (interfaces defined here) =====
+
+// TaskRepository は永続化のインターフェースです（DIP）。
+// 実装は外側（repository layer）が行います。
+type TaskRepository interface {
+	// TODO: FindAll(), FindByID(id), Save(task), Delete(id)
+}
+
+// TaskUseCase はタスクに関するユースケースを定義します。
+type TaskUseCase interface {
+	// TODO: ListTasks(), GetTask(id), CreateTask(title), CompleteTask(id), DeleteTask(id)
+}
+
+// taskUseCase は TaskUseCase の実装です。
+type taskUseCase struct {
+	// TODO: repo TaskRepository
+}
+
+// NewTaskUseCase は TaskUseCase を作成します。
+func NewTaskUseCase(repo TaskRepository) TaskUseCase {
+	return &taskUseCase{/* TODO */ }
+}
+
+// TODO: ListTasks, GetTask, CreateTask, CompleteTask, DeleteTask を実装
+
+// ===== Repository Layer =====
+
+// InMemoryTaskRepository は TaskRepository のインメモリ実装です。
+type InMemoryTaskRepository struct {
+	// TODO: tasks map[string]*Task, mu sync.RWMutex
+}
+
+// NewInMemoryTaskRepository は新しいインメモリリポジトリを作成します。
+func NewInMemoryTaskRepository() *InMemoryTaskRepository {
+	// TODO: 初期化して返す
+	return nil
+}
+
+// TODO: FindAll, FindByID, Save, Delete を実装
+
+// ===== Handler Layer =====
+
+// TaskHandler は HTTP ハンドラーを提供します。
+type TaskHandler struct {
+	// TODO: useCase TaskUseCase
+}
+
+// NewTaskHandler は TaskHandler を作成します。
+func NewTaskHandler(useCase TaskUseCase) *TaskHandler {
+	// TODO: 初期化して返す
+	return nil
+}
+
+// TODO: HandleList, HandleGet, HandleCreate, HandleComplete, HandleDelete を実装
+
+var _ = errors.New
+var _ = sync.Mutex

@@ -1,0 +1,91 @@
+package main
+
+import (
+	"go/ast"
+	"go/token"
+	"testing"
+)
+
+func TestIsMagicNumber(t *testing.T) {
+	tests := []struct {
+		value string
+		kind  string
+		want  bool
+	}{
+		{"0", "INT", false},
+		{"1", "INT", false},
+		{"2", "INT", false},
+		{"3", "INT", true},
+		{"100", "INT", true},
+		{"999", "INT", true},
+		{"-1", "INT", true},
+		{"3.14", "FLOAT", true},
+		{"0.5", "FLOAT", true},
+		{"1.0", "FLOAT", true},
+	}
+	for _, tt := range tests {
+		if got := IsMagicNumber(&ast.BasicLit{Kind: tokenLookup(tt.kind), Value: tt.value}); got != tt.want {
+			t.Errorf("IsMagicNumber(%q, %s) = %v, want %v", tt.value, tt.kind, got, tt.want)
+		}
+	}
+}
+
+func tokenLookup(kind string) token.Token {
+	switch kind {
+	case "INT":
+		return token.INT
+	case "FLOAT":
+		return token.FLOAT
+	default:
+		return token.ILLEGAL
+	}
+}
+
+func TestHasOSExit(t *testing.T) {
+	if HasOSExit(nil) {
+		t.Error("HasOSExit(nil) = true, want false")
+	}
+	empty := &ast.BlockStmt{}
+	if HasOSExit(empty) {
+		t.Error("HasOSExit(empty block) = true, want false")
+	}
+	withExit := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ExprStmt{
+				X: &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   &ast.Ident{Name: "os"},
+						Sel: &ast.Ident{Name: "Exit"},
+					},
+				},
+			},
+		},
+	}
+	if !HasOSExit(withExit) {
+		t.Error("HasOSExit(with os.Exit) = false, want true")
+	}
+	withPrint := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ExprStmt{
+				X: &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   &ast.Ident{Name: "fmt"},
+						Sel: &ast.Ident{Name: "Println"},
+					},
+				},
+			},
+		},
+	}
+	if HasOSExit(withPrint) {
+		t.Error("HasOSExit(with fmt.Println) = true, want false")
+	}
+}
+
+func TestAnalyzerMetadata(t *testing.T) {
+	if MagicNumberAnalyzer.Name != "magicnumber" {
+		t.Errorf("MagicNumberAnalyzer.Name = %q, want %q", MagicNumberAnalyzer.Name, "magicnumber")
+	}
+	if OSExitAnalyzer.Name != "osexit" {
+		t.Errorf("OSExitAnalyzer.Name = %q, want %q", OSExitAnalyzer.Name, "osexit")
+	}
+}

@@ -1,0 +1,110 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+)
+
+// TraceContext は HTTP 越しに伝搬するトレース情報です。
+type TraceContext struct {
+	TraceID string
+	SpanID  string
+}
+
+const traceHeader = "X-Trace-Context"
+
+// ExtractTraceContext は HTTP ヘッダーから TraceContext を抽出してください。
+// フォーマット: "trace-id:span-id"
+func ExtractTraceContext(r *http.Request) (TraceContext, bool) {
+	// TODO: r.Header.Get(traceHeader) で値を取得
+	// TODO: strings.Cut で ":" で分割
+	// TODO: 両方空でなければ TraceContext を返す
+	return TraceContext{}, false
+}
+
+// InjectTraceContext は TraceContext を HTTP ヘッダーに設定してください。
+func InjectTraceContext(r *http.Request, tc TraceContext) {
+	// TODO: r.Header.Set(traceHeader, "trace-id:span-id") の形式で設定
+}
+
+// contextKey は context に TraceContext を保存するためのキーです。
+type ctxKey struct{}
+
+// ContextWithTrace は context に TraceContext を格納します。
+func ContextWithTrace(ctx context.Context, tc TraceContext) context.Context {
+	return context.WithValue(ctx, ctxKey{}, tc)
+}
+
+// TraceFromContext は context から TraceContext を取得します。
+func TraceFromContext(ctx context.Context) (TraceContext, bool) {
+	tc, ok := ctx.Value(ctxKey{}).(TraceContext)
+	return tc, ok
+}
+
+// GenerateTraceID は新しいトレース ID を生成します。
+func GenerateTraceID() string {
+	return fmt.Sprintf("trace-%d", len([]byte{0}))
+}
+
+// GenerateSpanID は新しいスパン ID を生成します。
+func GenerateSpanID() string {
+	return fmt.Sprintf("span-%d", len([]byte{0}))
+}
+
+// ---- ミドルウェア ----
+
+// ServerMiddleware はリクエストから TraceContext を抽出し、context に格納する
+// HTTP ミドルウェアを返してください。
+// ヘッダーがない場合は新しい TraceContext を生成します。
+func ServerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: ExtractTraceContext でヘッダーから取得
+		// TODO: なければ GenerateTraceID / GenerateSpanID で新規作成
+		// TODO: ContextWithTrace で context に格納
+		// TODO: r.WithContext(ctx) でリクエストを差し替え
+		// TODO: next.ServeHTTP(w, r) で次のハンドラへ
+	})
+}
+
+// ClientMiddleware は context から TraceContext を取り出し、
+// 送信リクエストのヘッダーに設定する http.RoundTripper を返してください。
+func ClientMiddleware(next http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		// TODO: TraceFromContext で context から TraceContext を取得
+		// TODO: InjectTraceContext でヘッダーに設定
+		// TODO: next.RoundTrip(r) で次のトランスポートへ
+		return nil, nil
+	})
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+// GetTraceID は context から TraceID を取得するヘルパーです（ハンドラ内で使用）。
+func GetTraceID(ctx context.Context) string {
+	tc, ok := TraceFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	return tc.TraceID
+}
+
+// GetSpanID は context から SpanID を取得するヘルパーです。
+func GetSpanID(ctx context.Context) string {
+	tc, ok := TraceFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	return tc.SpanID
+}
+
+// GenerateTraceSpanID は実際にユニークな ID を生成する改善版です。
+// GenerateTraceID / GenerateSpanID の代わりにこちらを使ってください。
+func GenerateTraceSpanID() (traceID, spanID string) {
+	return fmt.Sprintf("trace-%x", len([]byte{0})), fmt.Sprintf("span-%x", len([]byte{0}))
+}

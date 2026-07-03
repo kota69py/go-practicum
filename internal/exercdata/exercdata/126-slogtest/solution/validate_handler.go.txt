@@ -1,0 +1,81 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"log/slog"
+	"sync"
+)
+
+type MapHandler struct {
+	mu     sync.Mutex
+	buf    *bytes.Buffer
+	attrs  []slog.Attr
+	groups []string
+}
+
+func NewMapHandler(buf *bytes.Buffer) *MapHandler {
+	return &MapHandler{buf: buf}
+}
+
+func (h *MapHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return true
+}
+
+func (h *MapHandler) Handle(ctx context.Context, r slog.Record) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	m := make(map[string]any)
+	for _, a := range h.attrs {
+		h.addAttr(m, a, h.groups)
+	}
+	r.Attrs(func(a slog.Attr) bool {
+		h.addAttr(m, a, h.groups)
+		return true
+	})
+
+	data, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	h.buf.Write(data)
+	h.buf.WriteByte('\n')
+	return nil
+}
+
+func (h *MapHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	c := h.clone()
+	c.attrs = append(c.attrs, attrs...)
+	return c
+}
+
+func (h *MapHandler) WithGroup(name string) slog.Handler {
+	c := h.clone()
+	c.groups = append(c.groups, name)
+	return c
+}
+
+func (h *MapHandler) clone() *MapHandler {
+	return &MapHandler{
+		buf:    h.buf,
+		attrs:  append([]slog.Attr(nil), h.attrs...),
+		groups: append([]string(nil), h.groups...),
+	}
+}
+
+func (h *MapHandler) addAttr(m map[string]any, a slog.Attr, groups []string) {
+	v := a.Value.Resolve()
+	if v.Kind() == slog.KindGroup {
+		for _, attr := range v.Group() {
+			h.addAttr(m, attr, append(groups, a.Key))
+		}
+		return
+	}
+	key := a.Key
+	for _, g := range groups {
+		key = g + "." + key
+	}
+	m[key] = v.Any()
+}

@@ -1,0 +1,17 @@
+{
+  "name": "120-cgo-basics",
+  "title": "CGO — C言語との連携の基礎",
+  "category": "language",
+  "difficulty": 4,
+  "description": "CGO を使って Go から C のコードを呼び出す方法を学びます。C の関数を Go から呼び出すインターフェースを作成し、文字列や数値の受け渡しを実践します。注意: CGO のコンパイルには C コンパイラ (gcc/clang/msys2) が必要です。",
+  "hints": [
+    "import \"C\" の直前に // #include <...> のコメントで C コードを記述",
+    "C.int, C.double などで C の型に変換",
+    "C.CString で Go string → C string",
+    "C.GoString で C string → Go string",
+    "defer C.free(unsafe.Pointer(cstr)) で解放忘れ防止",
+    "cgo のビルドには CGO_ENABLED=1 が必要",
+    "Windows では MSYS2/MinGW-w64 の gcc が必要"
+  ],
+  "files": ["cgo_main.go.txt"]
+}

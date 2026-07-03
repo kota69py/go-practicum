@@ -1,0 +1,79 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"os/signal"
+	"sync/atomic"
+	"syscall"
+)
+
+// ProbeServer はヘルスチェックエンドポイントを提供する HTTP サーバーです。
+type ProbeServer struct {
+	server    *http.Server
+	ready     atomic.Bool
+	started   atomic.Bool
+}
+
+// NewProbeServer は新しい ProbeServer を作成します。
+func NewProbeServer(addr string) *ProbeServer {
+	ps := &ProbeServer{}
+	mux := http.NewServeMux()
+	// TODO: /healthz → healthzHandler
+	// TODO: /readyz → readyzHandler
+	// TODO: /startupz → startupzHandler
+	ps.server = &http.Server{Addr: addr, Handler: mux}
+	return ps
+}
+
+// SetReady はサーバーの準備状態を設定します。
+func (ps *ProbeServer) SetReady(r bool) {
+	// TODO: ps.ready.Store(r)
+}
+
+// SetStarted はサーバーの起動状態を設定します。
+func (ps *ProbeServer) SetStarted(s bool) {
+	// TODO: ps.started.Store(s)
+}
+
+// healthzHandler は生存確認エンドポイントです。
+// 常に 200 OK と {"status":"ok"} を返します。
+func (ps *ProbeServer) healthzHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: 200 と JSON を返す
+}
+
+// readyzHandler は準備完了確認エンドポイントです。
+// ps.ready が true なら 200、false なら 503 を返します。
+func (ps *ProbeServer) readyzHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: ps.ready の状態に応じて 200 または 503
+}
+
+// startupzHandler は起動完了確認エンドポイントです。
+// ps.started が true なら 200、false なら 503 を返します。
+func (ps *ProbeServer) startupzHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: ps.started の状態に応じて 200 または 503
+}
+
+// ListenAndServe は HTTP サーバーを起動します。
+func (ps *ProbeServer) ListenAndServe() error {
+	// TODO: ps.server.ListenAndServe() を呼び出す
+	return nil
+}
+
+// Shutdown は Graceful Shutdown を実行します。
+func (ps *ProbeServer) Shutdown(ctx context.Context) error {
+	// TODO: SetReady(false) で準備未完了に
+	// TODO: ps.server.Shutdown(ctx) で graceful shutdown
+	return nil
+}
+
+// WaitForShutdown はシグナルを待ち受けてシャットダウンを実行します。
+func WaitForShutdown(ps *ProbeServer) error {
+	// TODO: signal.NotifyContext で SIGINT/SIGTERM を待機
+	// TODO: シグナル受信後 Shutdown を呼び出す
+	return nil
+}
+
+var _ = signal.Notify
+var _ = syscall.SIGINT
+var _ = http.ListenAndServe

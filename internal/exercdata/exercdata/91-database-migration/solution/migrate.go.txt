@@ -1,0 +1,116 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"sort"
+	"strings"
+
+	_ "modernc.org/sqlite"
+)
+
+type Migration struct {
+	Version int
+	Name    string
+	UpSQL   string
+	DownSQL string
+}
+
+type Migrator struct {
+	db         *sql.DB
+	migrations []Migration
+}
+
+func NewMigrator(db *sql.DB, migrations []Migration) *Migrator {
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i].Version < migrations[j].Version
+	})
+	return &Migrator{db: db, migrations: migrations}
+}
+
+func EnsureSchemaTable(db *sql.DB) error {
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+		version INT PRIMARY KEY,
+		applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+	)`)
+	return err
+}
+
+func AppliedVersions(db *sql.DB) (map[int]bool, error) {
+	rows, err := db.Query("SELECT version FROM schema_migrations ORDER BY version")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	applied := make(map[int]bool)
+	for rows.Next() {
+		var v int
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		applied[v] = true
+	}
+	return applied, rows.Err()
+}
+
+func (m *Migrator) Up() error {
+	applied, err := AppliedVersions(m.db)
+	if err != nil {
+		return fmt.Errorf("check applied: %w", err)
+	}
+	for _, mig := range m.migrations {
+		if applied[mig.Version] {
+			continue
+		}
+		tx, err := m.db.Begin()
+		if err != nil {
+			return fmt.Errorf("begin tx: %w", err)
+		}
+		if _, err := tx.Exec(mig.UpSQL); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("migrate up %s: %w", mig.Name, err)
+		}
+		if _, err := tx.Exec("INSERT INTO schema_migrations (version) VALUES (?)", mig.Version); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("record migration: %w", err)
+		}
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit: %w", err)
+		}
+	}
+	return nil
+}
+
+func (m *Migrator) Down() error {
+	applied, err := AppliedVersions(m.db)
+	if err != nil {
+		return fmt.Errorf("check applied: %w", err)
+	}
+	var last *Migration
+	for i := range m.migrations {
+		if applied[m.migrations[i].Version] {
+			last = &m.migrations[i]
+		}
+	}
+	if last == nil {
+		return nil
+	}
+	tx, err := m.db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	if _, err := tx.Exec(last.DownSQL); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("migrate down %s: %w", last.Name, err)
+	}
+	if _, err := tx.Exec("DELETE FROM schema_migrations WHERE version = ?", last.Version); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("unrecord migration: %w", err)
+	}
+	return tx.Commit()
+}
+
+func ParseMigration(content string) (up, down string) {
+	up, down, _ = strings.Cut(content, "--- down")
+	return strings.TrimSpace(up), strings.TrimSpace(down)
+}

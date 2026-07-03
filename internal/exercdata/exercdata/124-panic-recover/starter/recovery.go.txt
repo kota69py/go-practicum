@@ -1,0 +1,87 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+// RecoveryMiddleware はパニックをキャッチして 500 Internal Server Error を返す
+// HTTP ミドルウェアです。パニックの内容はログに記録します。
+func RecoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: defer + recover() でパニックをキャッチ
+		// TODO: パニック内容を log.Printf("panic: %v", rec) で出力
+		// TODO: http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// SafeCall は関数 fn を実行し、パニックが発生した場合は recover して
+// error として返します。パニックがなければ fn のエラーをそのまま返します。
+// パニック値が error インターフェースを実装している場合は error として、
+// それ以外は fmt.Errorf("panic: %v", rec) でラップします。
+func SafeCall(fn func() error) (err error) {
+	// TODO: defer で recover を呼び出し、err に代入
+	// TODO: パニック値を error に変換（型アサーション or fmt.Errorf）
+	return fn()
+}
+
+// DeferOrder は defer の LIFO 実行順序をデモンストレーションします。
+// 3 つの defer を登録し、それぞれの実行順序を示す文字列を返します。
+// 戻り値: "3-2-1" （3 つめの defer → 2 つめ → 1 つめ の順）
+func DeferOrder() string {
+	// TODO: 3 つの defer を登録（LIFO 順）
+	// TODO: "1", "2", "3" を連結した結果を返す
+	return ""
+}
+
+// NamedReturnWithDefer は名前付き戻り値を defer 内で変更できることを示します。
+// 渡された値に 1 を加算して返しますが、defer 内でさらに 1 加算します。
+func NamedReturnWithDefer(x int) (result int) {
+	// TODO: result = x + 1
+	// TODO: defer で result++
+
+	// 本来の return では result = x + 1
+	return
+}
+
+// PanicToError はパニックを error に変換する推奨パターンを示します。
+// fn を実行し、パニックが発生した場合は recover して error として返します。
+// パニック値は fmt.Errorf("panic occurred: %v", rec) でラップします。
+// 正常時は fn の戻り値をそのまま返します。
+func PanicToError(fn func() error) (err error) {
+	// TODO: defer で recover → error 変換
+	return fn()
+}
+
+// Repanic は recover 後に同じパニック値を panic し直すことで
+// スタックトレースを保持するパターンを示します。
+// fn でパニックが発生した場合、ログに記録してから panic し直します。
+func Repanic(fn func()) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("repanic: %v", rec)
+			// TODO: 同じ値を panic し直す
+		}
+	}()
+	fn()
+}
+
+// DeferArgsEval は defer の引数が即時評価されることを示します。
+// 戻り値として "abcd" を返します（defer 登録時の引数の値が使われる）。
+func DeferArgsEval() string {
+	var s string
+	defer fmt.Fprint(nil, "") // 参照除去用
+	// TODO: defer fmt.Sprintf を使って "a" を追加（実際は即時評価なので無意味）
+	// TODO: s = "b"
+	// TODO: defer で s += "c"
+	// TODO: s += "d"
+	// TODO: return s の代わりに直接 return
+
+	// 期待: "bd" （引数は即時評価されるが変数sは参照評価）
+	return ""
+}
+
+var _ = log.Printf
+var _ = fmt.Sprintf

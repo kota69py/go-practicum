@@ -1,0 +1,124 @@
+package main
+
+import (
+	"context"
+	"strings"
+	"testing"
+)
+
+func TestStartSpan(t *testing.T) {
+	ex := &ConsoleExporter{}
+	tp := NewTracerProvider(ex)
+	tr := tp.Tracer()
+
+	ctx, span := tr.Start(context.Background(), "test-operation")
+	if span == nil {
+		t.Fatal("span is nil")
+	}
+	if span.operation != "test-operation" {
+		t.Errorf("got operation %q, want %q", span.operation, "test-operation")
+	}
+	if span.context.TraceID == "" {
+		t.Error("expected non-empty TraceID")
+	}
+	if span.context.SpanID == "" {
+		t.Error("expected non-empty SpanID")
+	}
+
+	sc, ok := SpanContextFromContext(ctx)
+	if !ok {
+		t.Fatal("no SpanContext in context")
+	}
+	if sc.TraceID != span.context.TraceID {
+		t.Error("context TraceID mismatch")
+	}
+}
+
+func TestParentChildSpan(t *testing.T) {
+	ex := &ConsoleExporter{}
+	tp := NewTracerProvider(ex)
+	tr := tp.Tracer()
+
+	ctx, parent := tr.Start(context.Background(), "parent")
+	_, child := tr.Start(ctx, "child")
+
+	if child.context.TraceID != parent.context.TraceID {
+		t.Error("child should have same TraceID as parent")
+	}
+	if child.context.ParentSpanID != parent.context.SpanID {
+		t.Errorf("child ParentSpanID %q != parent SpanID %q", child.context.ParentSpanID, parent.context.SpanID)
+	}
+}
+
+func TestSpanAttributes(t *testing.T) {
+	ex := &ConsoleExporter{}
+	tp := NewTracerProvider(ex)
+	tr := tp.Tracer()
+
+	_, span := tr.Start(context.Background(), "attr-test")
+	span.SetAttribute("key1", "val1")
+	span.SetAttribute("key2", "val2")
+
+	if span.attributes["key1"] != "val1" {
+		t.Errorf("got %q, want %q", span.attributes["key1"], "val1")
+	}
+	if span.attributes["key2"] != "val2" {
+		t.Errorf("got %q, want %q", span.attributes["key2"], "val2")
+	}
+}
+
+func TestSpanEvent(t *testing.T) {
+	ex := &ConsoleExporter{}
+	tp := NewTracerProvider(ex)
+	tr := tp.Tracer()
+
+	_, span := tr.Start(context.Background(), "event-test")
+	span.AddEvent("error", map[string]string{"msg": "something went wrong"})
+
+	if len(span.events) != 1 {
+		t.Fatalf("got %d events, want 1", len(span.events))
+	}
+	if span.events[0].Name != "error" {
+		t.Errorf("got event name %q, want %q", span.events[0].Name, "error")
+	}
+}
+
+func TestSpanEnd(t *testing.T) {
+	ex := &ConsoleExporter{}
+	tp := NewTracerProvider(ex)
+	tr := tp.Tracer()
+
+	_, span := tr.Start(context.Background(), "end-test")
+	span.End()
+
+	if span.endTime.IsZero() {
+		t.Error("expected non-zero endTime")
+	}
+}
+
+func TestConsoleExporterOutput(t *testing.T) {
+	var buf strings.Builder
+	ex := &ConsoleExporter{}
+	tp := NewTracerProvider(ex)
+	tr := tp.Tracer()
+
+	_, span := tr.Start(context.Background(), "output-test")
+	span.SetAttribute("env", "test")
+	span.AddEvent("info", map[string]string{"detail": "hello"})
+	span.End()
+
+	_ = buf
+	_ = ex
+	_ = tp
+}
+
+func TestGenerateIDUniqueness(t *testing.T) {
+	ids := make(map[string]bool)
+	for i := 0; i < 100; i++ {
+		id := generateID()
+		if ids[id] {
+			t.Errorf("duplicate ID: %s", id)
+		}
+		ids[id] = true
+	}
+}

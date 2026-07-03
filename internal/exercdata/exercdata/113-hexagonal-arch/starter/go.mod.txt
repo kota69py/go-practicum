@@ -1,0 +1,3 @@
+module go-practicum-hex
+
+go 1.25

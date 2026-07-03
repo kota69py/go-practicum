@@ -1,0 +1,17 @@
+{
+  "name": "89-grpc-errors",
+  "title": "gRPC エラーハンドリング — ステータスコードとエラー伝搬",
+  "category": "net",
+  "difficulty": 3,
+  "description": "gRPC のエラーハンドリングパターンを学びます。status.Errorf によるエラー生成、codes パッケージの使い分け、status.FromError によるエラー解析、クライアント側でのエラーハンドリングとリトライロジックを実装します。",
+  "hints": [
+    "status.Error(codes.NotFound, \"msg\") でエラーを生成",
+    "status.Errorf(codes.InvalidArgument, \"invalid: %s\", val) でフォーマット",
+    "codes は NotFound / InvalidArgument / AlreadyExists / Internal 等がある",
+    "クライアント側: status.Code(err) でコードを取得",
+    "status.FromError(err) で詳細情報（Message / Details）を取得",
+    "errors.Is は grpc の status ラップに対応していないので注意",
+    "リトライ時は DeadlineExceeded / Unavailable のみリトライ、他は即座にエラー返却"
+  ],
+  "files": ["errors.go.txt"]
+}

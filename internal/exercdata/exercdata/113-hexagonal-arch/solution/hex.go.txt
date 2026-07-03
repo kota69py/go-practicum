@@ -1,0 +1,182 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+)
+
+type User struct {
+	ID    string
+	Name  string
+	Email string
+}
+
+type UserRepository interface {
+	FindByID(id string) (*User, error)
+	FindAll() ([]*User, error)
+	Save(user *User) error
+	Delete(id string) error
+}
+
+type UserService struct {
+	repo UserRepository
+}
+
+func NewUserService(repo UserRepository) *UserService {
+	return &UserService{repo: repo}
+}
+
+func (s *UserService) Register(name, email string) (*User, error) {
+	user := &User{ID: fmt.Sprintf("%d", len(name)+len(email)), Name: name, Email: email}
+	if err := s.repo.Save(user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (s *UserService) Get(id string) (*User, error) {
+	return s.repo.FindByID(id)
+}
+
+func (s *UserService) List() ([]*User, error) {
+	return s.repo.FindAll()
+}
+
+func (s *UserService) Remove(id string) error {
+	return s.repo.Delete(id)
+}
+
+type InMemoryUserRepository struct {
+	users map[string]*User
+	mu    sync.RWMutex
+}
+
+func NewInMemoryUserRepository() *InMemoryUserRepository {
+	return &InMemoryUserRepository{users: make(map[string]*User)}
+}
+
+func (r *InMemoryUserRepository) FindByID(id string) (*User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	u, ok := r.users[id]
+	if !ok {
+		return nil, fmt.Errorf("user %s not found", id)
+	}
+	return u, nil
+}
+
+func (r *InMemoryUserRepository) FindAll() ([]*User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	res := make([]*User, 0, len(r.users))
+	for _, u := range r.users {
+		res = append(res, u)
+	}
+	return res, nil
+}
+
+func (r *InMemoryUserRepository) Save(user *User) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if user.ID == "" {
+		user.ID = fmt.Sprintf("%d", len(r.users)+1)
+	}
+	r.users[user.ID] = user
+	return nil
+}
+
+func (r *InMemoryUserRepository) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.users, id)
+	return nil
+}
+
+type FileUserRepository struct {
+	path string
+	mu   sync.RWMutex
+}
+
+func NewFileUserRepository(path string) *FileUserRepository {
+	return &FileUserRepository{path: path}
+}
+
+func (r *FileUserRepository) load() (map[string]*User, error) {
+	data, err := os.ReadFile(r.path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return make(map[string]*User), nil
+		}
+		return nil, err
+	}
+	var users map[string]*User
+	if err := json.Unmarshal(data, &users); err != nil {
+		return make(map[string]*User), nil
+	}
+	return users, nil
+}
+
+func (r *FileUserRepository) save(users map[string]*User) error {
+	data, err := json.MarshalIndent(users, "", "  ")
+	if err != nil {
+		return err
+	}
+	os.MkdirAll(filepath.Dir(r.path), 0755)
+	return os.WriteFile(r.path, data, 0644)
+}
+
+func (r *FileUserRepository) FindByID(id string) (*User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	users, err := r.load()
+	if err != nil {
+		return nil, err
+	}
+	u, ok := users[id]
+	if !ok {
+		return nil, fmt.Errorf("user %s not found", id)
+	}
+	return u, nil
+}
+
+func (r *FileUserRepository) FindAll() ([]*User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	users, err := r.load()
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*User, 0, len(users))
+	for _, u := range users {
+		res = append(res, u)
+	}
+	return res, nil
+}
+
+func (r *FileUserRepository) Save(user *User) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	users, err := r.load()
+	if err != nil {
+		return err
+	}
+	if user.ID == "" {
+		user.ID = fmt.Sprintf("%d", len(users)+1)
+	}
+	users[user.ID] = user
+	return r.save(users)
+}
+
+func (r *FileUserRepository) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	users, err := r.load()
+	if err != nil {
+		return err
+	}
+	delete(users, id)
+	return r.save(users)
+}

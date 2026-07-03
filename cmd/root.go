@@ -16,8 +16,10 @@ type Runner struct {
 func NewRunner(fsys fs.FS) *Runner {
 	r := &Runner{exercFS: fsys}
 	r.rootCmd = &cobra.Command{
-		Use:   "go-practicum",
-		Short: "Go実戦演習 — 設計・テスト・実装力を鍛えるCLIツール",
+		Use:           "go-practicum",
+		Short:         "Go実戦演習 — 設計・テスト・実装力を鍛えるCLIツール",
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		Long: `go-practicum は、Goエンジニアとしての実戦スキルを鍛えるCLI演習ツールです。
 
 写経ではなく、インターフェース設計・テスト実装・エラーハンドリング・
@@ -30,7 +32,8 @@ func NewRunner(fsys fs.FS) *Runner {
    go-practicum hint                   ヒントを表示
    go-practicum solution               解答例を表示
    go-practicum check                  コードを静的解析
-   go-practicum export [json|html]     学習進捗をエクスポート`,
+   go-practicum export [json|html]     学習進捗をエクスポート
+   go-practicum completion [shell]     補完スクリプトを生成`,
 	}
 	r.rootCmd.AddCommand(r.newListCmd())
 	r.rootCmd.AddCommand(r.newStartCmd())
@@ -45,6 +48,8 @@ func NewRunner(fsys fs.FS) *Runner {
 	r.rootCmd.AddCommand(r.newExportCmd())
 	r.rootCmd.AddCommand(r.newResetCmd())
 	r.rootCmd.AddCommand(r.newVersionCmd())
+	r.rootCmd.AddCommand(r.newDoctorCmd())
+	r.rootCmd.AddCommand(r.newCompletionCmd())
 	return r
 }
 

@@ -31,6 +31,9 @@ jobs:
       - name: Test
         run: go test ./... -count=1 -timeout 10m
 
+      - name: Doctor
+        run: go run . doctor
+
   lint:
     strategy:
       matrix:

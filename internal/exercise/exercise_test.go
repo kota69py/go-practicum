@@ -4,8 +4,10 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
 func TestLoadFromFS(t *testing.T) {
@@ -146,18 +148,59 @@ func TestPass(t *testing.T) {}`), 0644)
  	}
  }
 
- func TestVerifyFail(t *testing.T) {
- 	dir := t.TempDir()
- 	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module test"), 0644)
- 	os.WriteFile(filepath.Join(dir, "main_test.go"), []byte(`package main
- import "testing"
- func TestFail(t *testing.T) { t.Error("boom") }`), 0644)
+func TestVerifyFail(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module test"), 0644)
+	os.WriteFile(filepath.Join(dir, "main_test.go"), []byte(`package main
+import "testing"
+func TestFail(t *testing.T) { t.Error("boom") }`), 0644)
 
- 	result, err := Verify(context.Background(), dir)
+	result, err := Verify(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Verify error: %v", err)
 	}
 	if result.Passed {
 		t.Error("Passed = true, want false")
+	}
+}
+
+func TestVerifyTimeout(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module test"), 0644)
+	// A test that sleeps longer than the context deadline
+	os.WriteFile(filepath.Join(dir, "slow_test.go"), []byte(`package main
+import "testing"
+func TestSlow(t *testing.T) { select {} }`), 0644)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
+	result, err := Verify(ctx, dir)
+	if err == nil {
+		t.Error("expected timeout error, got nil")
+	}
+	if result.Passed {
+		t.Error("Passed = true on timeout, want false")
+	}
+	if !strings.Contains(result.Errors, "タイムアウト") {
+		t.Errorf("Errors missing timeout message: %s", result.Errors)
+	}
+}
+
+func BenchmarkListFromFS(b *testing.B) {
+	fsys := fstest.MapFS{
+		"01-hello/exercise.json": &fstest.MapFile{
+			Data: []byte(`{"title":"Hello","category":"basics","difficulty":1,"topics":["fmt"],"hints":["use fmt.Println"],"files":["main.go"]}`),
+		},
+		"02-world/exercise.json": &fstest.MapFile{
+			Data: []byte(`{"title":"World","category":"basics","difficulty":2,"topics":["fmt"],"hints":["use fmt.Println"],"files":["main.go"]}`),
+		},
+		"03-test/exercise.json": &fstest.MapFile{
+			Data: []byte(`{"title":"Test","category":"testing","difficulty":3,"topics":["testing"],"hints":[],"files":["main_test.go"]}`),
+		},
+	}
+	b.ResetTimer()
+	for range b.N {
+		ListFromFS(fsys)
 	}
 }

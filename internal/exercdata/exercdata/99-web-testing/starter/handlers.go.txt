@@ -1,0 +1,44 @@
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+	"strings"
+)
+
+// このファイルに実装するハンドラー：
+//   GET  /echo?msg=hello → {"message":"hello"}
+//   POST /uppercase      → リクエストボディを大文字にして返す
+//   GET  /counter        → アクセス回数を{"count":N}で返す
+
+func NewServer() http.Handler {
+	mux := http.NewServeMux()
+	// TODO: 各エンドポイントをハンドラーに関連付け
+	return mux
+}
+
+func echoHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: r.URL.Query().Get("msg") でメッセージを取得
+	// TODO: JSON で {"message": msg} を返す
+	writeJSON(w, http.StatusOK, nil)
+}
+
+func uppercaseHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: リクエストボディを読み取り
+	// TODO: strings.ToUpper() で大文字に変換
+	// TODO: 大文字にした文字列を text/plain で返す
+}
+
+func counterHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: パッケージ変数でアクセス回数をカウント
+	// TODO: {"count": N} を返す
+	writeJSON(w, http.StatusOK, nil)
+}
+
+func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+var _ = strings.ToUpper

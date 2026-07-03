@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/kota69py/go-practicum/internal/exercise"
@@ -17,15 +16,13 @@ func (r *Runner) newSearchCmd() *cobra.Command {
 		Use:   "search <query>",
 		Short: "演習を検索（名前・タイトル・トピック）",
 		Args:  cobra.ExactArgs(1),
-		Run: func(c *cobra.Command, args []string) {
+		RunE: func(c *cobra.Command, args []string) error {
 			if r.exercFS == nil {
-				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-				os.Exit(1)
+				return fmt.Errorf("演習データが見つかりません")
 			}
 			all, err := exercise.ListFromFS(r.exercFS)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("%v", err)
 			}
 
 			query := strings.ToLower(args[0])
@@ -42,19 +39,20 @@ func (r *Runner) newSearchCmd() *cobra.Command {
 			}
 
 			if len(matched) == 0 {
-				fmt.Printf("「%s」に一致する演習は見つかりませんでした。\n", args[0])
-				return
+				c.Printf("「%s」に一致する演習は見つかりませんでした。\n", args[0])
+				return nil
 			}
 
-			fmt.Printf("「%s」の検索結果: %d 件\n\n", args[0], len(matched))
+			c.Printf("「%s」の検索結果: %d 件\n\n", args[0], len(matched))
 			for _, ex := range matched {
 				status := " "
 				if prog.IsCompleted(ex.Name) {
 					status = "✅"
 				}
-				fmt.Printf("  %s %s [%s] %s\n", status, stars(ex.Difficulty), ex.Category, ex.Title)
-				fmt.Printf("        → %s\n", colorCyan("go-practicum start "+ex.Name))
+				c.Printf("  %s %s [%s] %s\n", status, stars(ex.Difficulty), ex.Category, ex.Title)
+				c.Printf("        → %s\n", colorCyan("go-practicum start "+ex.Name))
 			}
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&searchCategory, "category", "c", "", "カテゴリで絞り込み")

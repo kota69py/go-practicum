@@ -40,167 +40,244 @@ go-practicum solution
 | `verify` | 進行中の演習を `go test` で検証（全テスト通過で完了マーク） |
 | `hint` | 現在の演習のヒントを表示 |
 | `solution` | 現在の演習の解答例を表示 |
+| `info <name>` | 演習の詳細（カテゴリ・難易度・トピック・ヒント）を表示 |
+| `search <query>` | 演習を名前・タイトル・トピックで検索 |
+| `graph` | カテゴリ別の学習マップを表示 |
+| `status` | 学習進捗を表示（カテゴリ別プログレスバー） |
+| `check` | 現在の演習コードを `go vet` / `gofmt` で静的解析 |
+| `export [format]` | 進捗をエクスポート（`json` / `html` / `csv` / `md`、`-o` で出力先指定） |
+| `reset [name]` | 進捗をリセット（name指定で個別、省略で全削除） |
+| `version` | バージョン情報を表示 |
+| `doctor` | 全演習データ（JSON・ファイル構成）を検証 |
+| `completion [bash\|zsh\|fish\|powershell]` | シェルの補完スクリプトを生成 |
 
-## 演習一覧（全80演習）
+## 演習一覧（全126演習）
 
-### concurrency（15演習）
+### architecture（4演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 05 | concurrency | ★★★★ | WaitGroup, channel fan-out |
-| 07 | context | ★★★★ | context.WithCancel, ctx.Done() |
-| 14 | graceful-shutdown | ★★★★ | signal.Notify, http.Server.Shutdown |
-| 16 | rate-limiting | ★★★ | token bucket, time.Ticker |
-| 19 | fan-in-fan-out | ★★★★ | マージチャネル, ワーカー分散 |
-| 20 | sync-mutex | ★★★ | Mutex, RWMutex, スレッドセーフデータ構造 |
-| 21 | worker-pool | ★★★ | channel-based worker pool, context cancel |
-| 32 | sync-once-map | ★★★ | sync.Once, sync.Map, CompareAndSwap |
-| 35 | sync-atomic | ★★★ | atomic.Add, atomic.Value, CAS |
-| 40 | pubsub | ★★★★ | チャネルベース publish/subscribe |
-| 45 | context-values | ★★★ | context.WithValue, リクエストスコープデータ |
-| 48 | semaphore | ★★★ | チャネルベース重み付きセマフォ |
-| 50 | errgroup-singleflight | ★★★★ | errgroup, singleflight |
-| 53 | lockfree-ringbuffer | ★★★★★ | lock-free SPSC, sync/atomic, memory ordering |
-| 72 | rate-limiter | ★★★★ | トークンバケット, スライディングウィンドウ, レート制御 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 103 | clean-arch | ★★★ |
+| 104 | cqrs | ★★★ |
+| 105 | event-driven | ★★★ |
+| 113 | hexagonal-arch | ★★★ |
 
-### language（10演習）
+### concurrency（16演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 13 | generics | ★★★ | 型パラメータ, Map/Filter/Reduce |
-| 22 | reflection | ★★★ | reflect.TypeOf/ValueOf, 構造体タグ |
-| 24 | functional-options | ★★★ | 関数型オプションパターン |
-| 27 | sorting | ★★ | sort.Slice, sort.Search, 重複除去 |
-| 30 | time | ★★ | time.Format/Parse, DaysBetween, タイマー |
-| 31 | strings | ★★ | WordCount, Capitalize, strings.Builder |
-| 47 | enum | ★★★ | 型安全 enum, Stringer, JSON 対応 |
-| 55 | unsafe-memory | ★★★★★ | unsafe.Pointer, struct padding, メモリアライメント |
-| 58 | build-tags | ★★★★ | //go:build, 条件付きビルド, プラットフォーム分岐 |
-| 80 | codegen | ★★★★★ | go:generate, AST解析, コード自動生成 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 05 | concurrency | ★★★★ |
+| 07 | context | ★★★★ |
+| 14 | graceful-shutdown | ★★★★ |
+| 16 | rate-limiting | ★★★ |
+| 19 | fan-in-fan-out | ★★★★ |
+| 20 | sync-mutex | ★★★ |
+| 21 | worker-pool | ★★★ |
+| 32 | sync-once-map | ★★★ |
+| 35 | sync-atomic | ★★★ |
+| 40 | pubsub | ★★★★ |
+| 45 | context-values | ★★★ |
+| 48 | semaphore | ★★★ |
+| 50 | errgroup-singleflight | ★★★★ |
+| 53 | lockfree-ringbuffer | ★★★★★ |
+| 72 | rate-limiter | ★★★★ |
+| 110 | worker-pool | ★★★ |
 
-### testing（7演習）
+### language（16演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 02 | table-driven-test | ★★ | テーブル駆動テスト |
-| 10 | test-double | ★★★ | モック, 呼び出し記録アサート |
-| 18 | test-helpers | ★★★ | t.Helper, Golden Files, テストユーティリティ |
-| 23 | benchmarking | ★★★ | testing.B, 文字列連結ベンチマーク |
-| 28 | fuzzing | ★★★ | Go 1.18+ fuzzing, hex parser |
-| 71 | fuzzing-advanced | ★★★★ | testing/fuzz, 不変条件テスト, ラウンドトリップ検証 |
-| 79 | mockgen | ★★★ | go.uber.org/mock, モック生成, 呼び出し検証 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 13 | generics | ★★★ |
+| 22 | reflection | ★★★ |
+| 24 | functional-options | ★★★ |
+| 27 | sorting | ★★ |
+| 30 | time | ★★ |
+| 31 | strings | ★★ |
+| 47 | enum | ★★★ |
+| 55 | unsafe-memory | ★★★★★ |
+| 58 | build-tags | ★★★★ |
+| 80 | codegen | ★★★★★ |
+| 81 | maps-slices | ★★ |
+| 82 | iter-seq | ★★★ |
+| 109 | generics-constraints | ★★★ |
+| 114 | go-generate | ★★ |
+| 118 | go-analysis | ★★★★ |
+| 120 | cgo-basics | ★★★★ |
 
-### io（5演習）
+### testing（11演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 09 | file-io | ★★★ | CSV リーディング, encoding/csv |
-| 25 | embed | ★★ | //go:embed, embed.FS |
-| 26 | io-reader-writer | ★★★ | io.Reader/Writer 実装, ROT13 |
-| 33 | io-multi-pipe | ★★★ | MultiReader, TeeReader, io.Pipe |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 02 | table-driven-test | ★★ |
+| 10 | test-double | ★★★ |
+| 18 | test-helpers | ★★★ |
+| 23 | benchmarking | ★★★ |
+| 28 | fuzzing | ★★★ |
+| 71 | fuzzing | ★★★★ |
+| 79 | mockgen | ★★★ |
+| 99 | web-testing | ★★ |
+| 106 | fuzz-testing | ★★ |
+| 116 | testcontainers | ★★★ |
+| 121 | advanced-testing | ★★★ |
 
-### net（9演習）
+### io（6演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 03 | http-handler | ★★★ | REST API, httptest |
-| 12 | http-client | ★★★ | retry with backoff, context timeout |
-| 15 | middleware | ★★★ | HTTP ミドルウェアデコレータパターン |
-| 41 | file-server | ★★ | http.FileServer, 静的ファイル配信 |
-| 49 | grpc-basics | ★★★★ | gRPC, protobuf, UnaryServerInterceptor |
-| 67 | otel-tracing | ★★★★ | OpenTelemetry, 分散トレース, Span, 伝搬 |
-| 68 | prometheus-metrics | ★★★★ | Prometheus, Counter/Histogram, /metrics |
-| 70 | health-check | ★★★ | Readiness/Liveness, Kubernetes Probe, Checker |
-| 76 | grpc-streaming | ★★★★ | Server/Client/Bidi Streaming, チャット |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 09 | file-io | ★★★ |
+| 25 | embed | ★★ |
+| 26 | io-reader-writer | ★★★ |
+| 33 | io-multi-pipe | ★★★ |
+| 37 | compress-gzip | ★★★ |
+| 119 | io-fs | ★★★ |
+
+### net（17演習）
+
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 03 | http-handler | ★★★ |
+| 12 | http-client | ★★★ |
+| 15 | middleware | ★★★ |
+| 41 | file-server | ★★ |
+| 49 | grpc-basics | ★★★★ |
+| 67 | otel-tracing | ★★★★ |
+| 68 | prometheus-metrics | ★★★★ |
+| 70 | health-check | ★★★ |
+| 76 | grpc-streaming | ★★★★ |
+| 83 | servemux-routing | ★★★ |
+| 87 | grpc-interceptor | ★★★★ |
+| 88 | grpc-deadline | ★★★★ |
+| 89 | grpc-errors | ★★★ |
+| 101 | k8s-basics | ★★★ |
+| 102 | k8s-probe | ★★ |
+| 115 | websocket-chat | ★★★ |
+| 123 | sse | ★★★ |
 
 ### encoding（3演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 08 | json-serialization | ★★★ | struct tags, MarshalJSON/UnmarshalJSON |
-| 38 | encoding-xml | ★★ | xml.Marshal/Unmarshal, 構造体タグ, 属性 |
-| 42 | struct-validation | ★★★ | reflect 構造体タグバリデーション |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 08 | json-serialization | ★★★ |
+| 38 | encoding-xml | ★★ |
+| 42 | struct-validation | ★★★ |
 
-### configuration（3演習）
+### configuration（4演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 17 | config | ★★ | 環境変数読み込み, デフォルト値 |
-| 29 | cli-flag | ★★ | flag.FlagSet サブコマンド |
-| 77 | feature-flag | ★★★★ | 段階的ロールアウト, A/Bテスト, Kill Switch |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 17 | config | ★★ |
+| 29 | cli-flag | ★★ |
+| 77 | feature-flag | ★★★★ |
+| 122 | go-work | ★★★ |
 
-### error-handling（2演習）
+### error-handling（5演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 04 | error-handling | ★★★ | sentinel errors, エラーラッピング, custom error type |
-| 39 | retry-backoff | ★★★ | 指数バックオフ, ジッター付きリトライ |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 04 | error-handling | ★★★ |
+| 39 | retry-backoff | ★★★ |
+| 111 | retry-backoff | ★★★ |
+| 112 | circuit-breaker | ★★★ |
+| 124 | panic-recover | ★★★ |
 
-### os（3演習）
+### os（5演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 36 | os-exec | ★★★ | exec.Command, stdin pipe, ストリーミング出力 |
-| 43 | file-watch | ★★★ | ポーリングベースファイル変更検知 |
-| 69 | graceful-shutdown | ★★★ | os/signal, Shutdown, シグナルハンドリング |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 36 | os-exec | ★★★ |
+| 43 | file-watch | ★★★ |
+| 69 | graceful-shutdown | ★★★ |
+| 100 | docker-multiarch | ★★ |
+| 125 | docker-sdk | ★★★ |
 
-### performance（7演習）
+### performance（8演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 51 | gc-profiling | ★★★★ | runtime.ReadMemStats, pprof, GCトレース, アロケーション最適化 |
-| 52 | sync-pool-zero-alloc | ★★★★ | sync.Pool, testing.B, -benchmem, バッファ再利用 |
-| 57 | advanced-benchmark | ★★★★ | testing.Benchmark, 比較計測, ウォームアップ, alloc分析 |
-| 61 | gmp-scheduler | ★★★★★ | G/M/P モデル, GOMAXPROCS, Gosched, プリエンプション |
-| 62 | escape-analysis | ★★★★★ | エスケープ分析, スタック/ヒープ, -gcflags=-m |
-| 64 | latency-analysis | ★★★★ | パーセンタイル, Tail Latency, 負荷テスト, outlier検出 |
-| 65 | trace-profiling | ★★★★★ | runtime/trace, 実行トレース, goroutine可視化 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 51 | gc-profiling | ★★★★ |
+| 52 | sync-pool-zero-alloc | ★★★★ |
+| 57 | advanced-benchmark | ★★★★ |
+| 61 | gmp-scheduler | ★★★★★ |
+| 62 | escape-analysis | ★★★★★ |
+| 64 | latency-analysis | ★★★★ |
+| 65 | trace-profiling | ★★★★★ |
+| 117 | pgo | ★★★ |
 
-### security（2演習）
+### security（6演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 56 | constant-time-comparison | ★★★★ | crypto/subtle, HMAC, タイミング攻撃対策, 定数時間比較 |
-| 59 | secure-memory | ★★★★ | crypto/rand, メモリゼロ化, パスワードハッシュ, 機密情報保護 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 56 | constant-time-comparison | ★★★★ |
+| 59 | secure-memory | ★★★★ |
+| 93 | jwt-auth | ★★★ |
+| 94 | tls-mtls | ★★★★ |
+| 95 | oauth2 | ★★★ |
+| 96 | secret-management | ★★★ |
 
 ### design（8演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 01 | interface-design | ★★ | Store インターフェース, 依存性注入 |
-| 44 | command-pattern | ★★★ | Command インターフェース, Execute/Undo |
-| 54 | circuit-breaker | ★★★★ | サーキットブレーカー, 障害分離, 自動回復 |
-| 60 | hook-pattern | ★★★★ | Hook/インターセプターチェーン, パイプライン, Recovery |
-| 63 | connection-pool | ★★★★ | 汎用Pool[T], 借用/返却, idle管理, リソース制御 |
-| 73 | workflow-orchestration | ★★★★★ | ステートマシン, パイプライン, ロールバック |
-| 75 | wire-di | ★★★★ | google/wire, 依存性注入, Provider/Injector |
-| 78 | api-pagination | ★★★ | Cursor/Offset ページネーション, トークン |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 01 | interface-design | ★★ |
+| 44 | command-pattern | ★★★ |
+| 54 | circuit-breaker | ★★★★ |
+| 60 | hook-pattern | ★★★★ |
+| 63 | connection-pool | ★★★★ |
+| 73 | workflow-orchestration | ★★★★★ |
+| 75 | wire-di | ★★★★ |
+| 78 | api-pagination | ★★★ |
 
 ### database（2演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 06 | sql-transaction | ★★★ | Begin/Commit/Rollback, モックストア |
-| 74 | sql-migration | ★★★ | golang-migrate, スキーマ管理, Up/Down |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 06 | sql-transaction | ★★★ |
+| 74 | sql-migration | ★★★ |
 
-### logging（2演習）
+### datastore（3演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 11 | structured-log | ★★ | log/slog, JSON handler, Group |
-| 66 | structured-logging | ★★★ | log/slog レベル制御, 構造化ログ, With/コンテキスト |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 90 | redis-basics | ★★★ |
+| 91 | database-migration | ★★★★ |
+| 92 | connection-pool | ★★★ |
+
+### logging（5演習）
+
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 11 | structured-log | ★★ |
+| 66 | structured-logging | ★★★ |
+| 107 | slog-basics | ★★ |
+| 108 | slog-handler | ★★★ |
+| 126 | slogtest | ★★ |
 
 ### templating（1演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 34 | template | ★★★ | text/template, range, 条件分岐 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 34 | template | ★★★ |
 
 ### crypto（1演習）
 
-| # | 演習 | 難易度 | トピック |
-|---|------|--------|----------|
-| 46 | crypto-aes | ★★★ | AES-256-GCM 暗号化・復号 |
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 46 | crypto-aes | ★★★ |
+
+### observability（3演習）
+
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 84 | trace-context | ★★★ |
+| 85 | context-propagation | ★★★★ |
+| 86 | red-metrics | ★★★ |
+
+### web（2演習）
+
+| # | 演習 | 難易度 |
+|---|------|--------|
+| 97 | web-router | ★★ |
+| 98 | web-middleware | ★★ |
 
 ## 進捗管理
 
@@ -241,6 +318,17 @@ exercdata/
 go build -o go-practicum .
 # または
 go install .
+```
+
+### Makefile
+
+```bash
+make all       # vet → test → build
+make test      # 全テスト実行
+make vet       # go vet
+make lint      # golangci-lint
+make doctor    # 演習データ検証
+make clean     # テストキャッシュ削除
 ```
 
 ### 全演習のテスト

@@ -1,0 +1,144 @@
+package main
+
+import (
+	"sync/atomic"
+	"testing"
+)
+
+func TestEventInterface(t *testing.T) {
+	event := NewUserCreatedEvent("user-1", "Alice")
+	if event.Type() != "user.created" {
+		t.Errorf("type: got %q, want %q", event.Type(), "user.created")
+	}
+	if event.Data() == nil {
+		t.Error("data is nil")
+	}
+}
+
+func TestSubscribeAndPublish(t *testing.T) {
+	bus := NewEventBus()
+	var handled atomic.Int64
+
+	bus.Subscribe("user.created", EventHandlerFunc(func(event Event) error {
+		handled.Add(1)
+		return nil
+	}))
+
+	bus.Publish(NewUserCreatedEvent("u1", "Alice"))
+	if handled.Load() != 1 {
+		t.Errorf("handled: got %d, want 1", handled.Load())
+	}
+}
+
+func TestPublishOnlyMatchingType(t *testing.T) {
+	bus := NewEventBus()
+	var userHandled atomic.Int64
+	var orderHandled atomic.Int64
+
+	bus.Subscribe("user.created", EventHandlerFunc(func(event Event) error {
+		userHandled.Add(1)
+		return nil
+	}))
+	bus.Subscribe("order.placed", EventHandlerFunc(func(event Event) error {
+		orderHandled.Add(1)
+		return nil
+	}))
+
+	bus.Publish(NewUserCreatedEvent("u1", "Alice"))
+	if userHandled.Load() != 1 {
+		t.Errorf("user handled: got %d, want 1", userHandled.Load())
+	}
+	if orderHandled.Load() != 0 {
+		t.Errorf("order handled: got %d, want 0", orderHandled.Load())
+	}
+}
+
+func TestWildcardSubscriber(t *testing.T) {
+	bus := NewEventBus()
+	var count atomic.Int64
+
+	bus.Subscribe("*", EventHandlerFunc(func(event Event) error {
+		count.Add(1)
+		return nil
+	}))
+
+	bus.Publish(NewUserCreatedEvent("u1", "Alice"))
+	bus.Publish(NewOrderPlacedEvent("o1", "u1", 100.0))
+
+	if count.Load() != 2 {
+		t.Errorf("handled: got %d, want 2", count.Load())
+	}
+}
+
+func TestMultipleHandlers(t *testing.T) {
+	bus := NewEventBus()
+	var count atomic.Int64
+
+	bus.Subscribe("user.created", EventHandlerFunc(func(event Event) error {
+		count.Add(1)
+		return nil
+	}))
+	bus.Subscribe("user.created", EventHandlerFunc(func(event Event) error {
+		count.Add(1)
+		return nil
+	}))
+
+	bus.Publish(NewUserCreatedEvent("u1", "Alice"))
+	if count.Load() != 2 {
+		t.Errorf("handled: got %d, want 2", count.Load())
+	}
+}
+
+func TestPublishAsync(t *testing.T) {
+	bus := NewEventBus()
+	var count atomic.Int64
+
+	bus.Subscribe("user.created", EventHandlerFunc(func(event Event) error {
+		count.Add(1)
+		return nil
+	}))
+
+	bus.PublishAsync(NewUserCreatedEvent("u1", "Alice"))
+	bus.Wait()
+
+	if count.Load() != 1 {
+		t.Errorf("handled: got %d, want 1", count.Load())
+	}
+}
+
+func TestUnsubscribe(t *testing.T) {
+	bus := NewEventBus()
+	var count atomic.Int64
+
+	handler := EventHandlerFunc(func(event Event) error {
+		count.Add(1)
+		return nil
+	})
+
+	bus.Subscribe("user.created", handler)
+	bus.Publish(NewUserCreatedEvent("u1", "Alice"))
+
+	bus.Unsubscribe("user.created", handler)
+	bus.Publish(NewUserCreatedEvent("u2", "Bob"))
+
+	if count.Load() != 1 {
+		t.Errorf("handled: got %d, want 1 (only before unsubscribe)", count.Load())
+	}
+}
+
+func TestBusClose(t *testing.T) {
+	bus := NewEventBus()
+	bus.Close()
+}
+
+func TestEventHandlerFunc(t *testing.T) {
+	var called bool
+	fn := EventHandlerFunc(func(event Event) error {
+		called = true
+		return nil
+	})
+	fn.Handle(NewUserCreatedEvent("u1", ""))
+	if !called {
+		t.Error("handler was not called")
+	}
+}

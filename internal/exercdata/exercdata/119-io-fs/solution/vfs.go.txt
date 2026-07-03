@@ -1,0 +1,118 @@
+package vfs
+
+import (
+	"io/fs"
+	"sort"
+	"time"
+)
+
+type File struct {
+	name    string
+	content []byte
+	isDir   bool
+}
+
+func (f *File) Stat() (fs.FileInfo, error) {
+	return &fileInfo{
+		name:  f.name,
+		size:  int64(len(f.content)),
+		isDir: f.isDir,
+	}, nil
+}
+
+func (f *File) Read(buf []byte) (int, error) {
+	if len(f.content) == 0 {
+		return 0, nil
+	}
+	n := copy(buf, f.content)
+	f.content = f.content[n:]
+	return n, nil
+}
+
+func (f *File) Close() error {
+	return nil
+}
+
+type fileInfo struct {
+	name  string
+	size  int64
+	isDir bool
+}
+
+func (fi *fileInfo) Name() string      { return fi.name }
+func (fi *fileInfo) Size() int64       { return fi.size }
+func (fi *fileInfo) Mode() fs.FileMode { return 0644 }
+func (fi *fileInfo) ModTime() time.Time {
+	return time.Time{}
+}
+func (fi *fileInfo) IsDir() bool      { return fi.isDir }
+func (fi *fileInfo) Sys() interface{} { return nil }
+
+type FS struct {
+	files map[string]*File
+}
+
+func NewFS() *FS {
+	return &FS{files: map[string]*File{}}
+}
+
+func (f *FS) Add(name, content string) {
+	f.files[name] = &File{
+		name:    name,
+		content: []byte(content),
+	}
+}
+
+func (f *FS) Open(name string) (fs.File, error) {
+	if file, ok := f.files[name]; ok {
+		return file, nil
+	}
+	return nil, fs.ErrNotExist
+}
+
+func (f *FS) ReadDir(name string) ([]fs.DirEntry, error) {
+	dir := name
+	if dir == "." {
+		dir = ""
+	}
+	var entries []fs.DirEntry
+	seen := map[string]bool{}
+	for path := range f.files {
+		if dir == "" {
+			if !containsSlash(path) {
+				entries = append(entries, &dirEntry{name: path, isDir: false})
+			}
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name() < entries[j].Name()
+	})
+	return entries, nil
+}
+
+func (f *FS) ReadFile(name string) ([]byte, error) {
+	file, ok := f.files[name]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+	return file.content, nil
+}
+
+type dirEntry struct {
+	name  string
+	isDir bool
+}
+
+func (d *dirEntry) Name() string               { return d.name }
+func (d *dirEntry) IsDir() bool                { return d.isDir }
+func (d *dirEntry) Type() fs.FileMode          { return 0 }
+func (d *dirEntry) Info() (fs.FileInfo, error) { return nil, nil }
+
+func containsSlash(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] == '/' {
+			return true
+		}
+	}
+	return false
+}

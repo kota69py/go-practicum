@@ -1,0 +1,72 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"testing"
+	"time"
+
+	_ "modernc.org/sqlite"
+)
+
+// BenchmarkPoolConfig は異なるプール設定で QueryAll のパフォーマンスを計測します。
+// ベンチマーク結果から最適な設定を見つけてください。
+func BenchmarkPoolConfig(b *testing.B) {
+	// 各種設定でベンチマーク:
+	configs := []struct {
+		name      string
+		maxOpen   int
+		maxIdle   int
+		lifetime  time.Duration
+	}{
+		{"default", 0, 2, 0},
+		{"max1", 1, 1, 0},
+		{"max10", 10, 5, 0},
+		{"max100", 100, 10, 0},
+	}
+
+	for _, cfg := range configs {
+		b.Run(cfg.name, func(b *testing.B) {
+			db, err := InitDB(":memory:", cfg.maxOpen, cfg.maxIdle, cfg.lifetime)
+			if err != nil {
+				b.Fatalf("InitDB: %v", err)
+			}
+			defer db.Close()
+
+			if err := SeedData(db, 1000); err != nil {
+				b.Fatalf("SeedData: %v", err)
+			}
+
+			b.ResetTimer()
+			for range b.N {
+				_, err := QueryAll(db)
+				if err != nil {
+					b.Fatalf("QueryAll: %v", err)
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkConcurrentQueries は異なる並列度でクエリを実行した際のプール統計を計測します。
+func BenchmarkConcurrentQueries(b *testing.B) {
+	concurrencyLevels := []int{1, 5, 10, 50}
+	for _, n := range concurrencyLevels {
+		b.Run(fmt.Sprintf("n=%d", n), func(b *testing.B) {
+			db, err := InitDB(":memory:", 10, 5, 0)
+			if err != nil {
+				b.Fatalf("InitDB: %v", err)
+			}
+			defer db.Close()
+
+			if err := SeedData(db, 100); err != nil {
+				b.Fatalf("SeedData: %v", err)
+			}
+
+			b.ResetTimer()
+			for range b.N {
+				RunConcurrentQueries(db, n, time.Millisecond)
+			}
+		})
+	}
+}

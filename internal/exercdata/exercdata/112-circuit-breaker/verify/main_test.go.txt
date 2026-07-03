@@ -1,0 +1,101 @@
+package main
+
+import (
+	"errors"
+	"testing"
+	"time"
+)
+
+func TestNewCircuitBreaker(t *testing.T) {
+	cb := NewCircuitBreaker(3, 100*time.Millisecond)
+	if cb == nil {
+		t.Fatal("breaker is nil")
+	}
+	if cb.State() != StateClosed {
+		t.Errorf("state = %v, want closed", cb.State())
+	}
+}
+
+func TestExecuteSuccess(t *testing.T) {
+	cb := NewCircuitBreaker(3, time.Second)
+	err := cb.Execute(func() error { return nil })
+	if err != nil {
+		t.Fatalf("Execute error: %v", err)
+	}
+	if cb.State() != StateClosed {
+		t.Errorf("state = %v, want closed", cb.State())
+	}
+}
+
+func TestExecuteOpenAfterFailures(t *testing.T) {
+	cb := NewCircuitBreaker(3, time.Second)
+
+	for i := 0; i < 3; i++ {
+		cb.Execute(func() error { return errors.New("fail") })
+	}
+
+	if cb.State() != StateOpen {
+		t.Errorf("state = %v, want open", cb.State())
+	}
+}
+
+func TestExecuteShortCircuit(t *testing.T) {
+	cb := NewCircuitBreaker(1, time.Second)
+
+	cb.Execute(func() error { return errors.New("fail") })
+
+	err := cb.Execute(func() error { return nil })
+	if err != ErrOpen {
+		t.Errorf("expected ErrOpen, got %v", err)
+	}
+}
+
+func TestExecuteHalfOpen(t *testing.T) {
+	cb := NewCircuitBreaker(1, 50*time.Millisecond)
+
+	cb.Execute(func() error { return errors.New("fail") })
+	time.Sleep(60 * time.Millisecond)
+
+	if cb.State() != StateHalfOpen {
+		t.Errorf("state = %v, want half-open", cb.State())
+	}
+}
+
+func TestExecuteHalfOpenSuccess(t *testing.T) {
+	cb := NewCircuitBreaker(1, 50*time.Millisecond)
+
+	cb.Execute(func() error { return errors.New("fail") })
+	time.Sleep(60 * time.Millisecond)
+
+	err := cb.Execute(func() error { return nil })
+	if err != nil {
+		t.Fatalf("Execute in half-open: %v", err)
+	}
+	if cb.State() != StateClosed {
+		t.Errorf("state = %v, want closed", cb.State())
+	}
+}
+
+func TestExecuteHalfOpenFailure(t *testing.T) {
+	cb := NewCircuitBreaker(1, 50*time.Millisecond)
+
+	cb.Execute(func() error { return errors.New("fail") })
+	time.Sleep(60 * time.Millisecond)
+
+	cb.Execute(func() error { return errors.New("probe fail") })
+	if cb.State() != StateOpen {
+		t.Errorf("state = %v, want open after half-open failure", cb.State())
+	}
+}
+
+func TestStateString(t *testing.T) {
+	if StateClosed.String() != "closed" {
+		t.Errorf("got %q", StateClosed.String())
+	}
+	if StateOpen.String() != "open" {
+		t.Errorf("got %q", StateOpen.String())
+	}
+	if StateHalfOpen.String() != "half-open" {
+		t.Errorf("got %q", StateHalfOpen.String())
+	}
+}

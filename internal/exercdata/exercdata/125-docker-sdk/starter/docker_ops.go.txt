@@ -1,0 +1,59 @@
+package main
+
+import (
+	"context"
+	"io"
+	"os"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
+)
+
+// ContainerClient は Docker コンテナ操作に必要なメソッドを定義するインターフェースです。
+type ContainerClient interface {
+	ImagePull(ctx context.Context, ref string, options types.ImagePullOptions) (io.ReadCloser, error)
+	ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *specs.Platform, containerName string) (container.CreateResponse, error)
+	ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error
+	ContainerStop(ctx context.Context, containerID string, options container.StopOptions) error
+	ContainerLogs(ctx context.Context, containerID string, options container.LogsOptions) (io.ReadCloser, error)
+	Close() error
+}
+
+// NewDockerClient creates a new Docker client using environment variables.
+func NewDockerClient() (ContainerClient, error) {
+	// TODO: client.NewClientWithOpts で Docker クライアントを作成する
+	//       client.FromEnv と client.WithAPIVersionNegotiation を使用する
+	return nil, nil
+}
+
+// PullImage pulls a Docker image from a registry and prints progress to stdout.
+func PullImage(ctx context.Context, cli ContainerClient, image string) error {
+	// TODO: cli.ImagePull でイメージをプルする
+	// TODO: 戻り値の reader の内容を io.Copy で os.Stdout に出力する
+	return nil
+}
+
+// RunContainer creates and starts a container with the given configuration.
+func RunContainer(ctx context.Context, cli ContainerClient, cfg *container.Config, hostCfg *container.HostConfig) (string, error) {
+	// TODO: cli.ContainerCreate でコンテナを作成する
+	//       networkingConfig と platform と containerName は nil / "" で良い
+	// TODO: cli.ContainerStart でコンテナを起動する
+	return "", nil
+}
+
+// StopContainer stops a running container.
+func StopContainer(ctx context.Context, cli ContainerClient, containerID string) error {
+	// TODO: cli.ContainerStop でコンテナを停止する
+	return nil
+}
+
+// GetContainerLogs retrieves the logs of a container and returns them as a string.
+func GetContainerLogs(ctx context.Context, cli ContainerClient, containerID string) (string, error) {
+	// TODO: cli.ContainerLogs でログを取得する
+	//       ShowStdout と ShowStderr を true に設定する
+	// TODO: io.ReadAll で内容を読み取り文字列として返す
+	return "", nil
+}

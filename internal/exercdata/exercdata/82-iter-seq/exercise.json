@@ -1,0 +1,16 @@
+{
+  "name": "82-iter-seq",
+  "title": "iter.Seq — カスタムイテレータとジェネリクス",
+  "category": "language",
+  "difficulty": 3,
+  "description": "Go 1.23 で導入された iter パッケージと range-over-func を使って、二分木の深さ優先探索 (DFS)・幅優先探索 (BFS) イテレータを実装します。iter.Seq / iter.Seq2 の使い方をマスターしましょう。",
+  "hints": [
+    "iter.Seq[T] は func(yield func(T) bool) bool のエイリアス",
+    "range-over-func: for v := range seq { ... } でイテレータを消費",
+    "DFS: スタック（再帰またはスライス）を使って木を辿る",
+    "BFS: キュー（スライス）を使ってレベル順に木を辿る",
+    "Inorder: 左→根→右の順序で訪問する",
+    "slices.Collect(seq) でイテレータの結果をスライスに変換"
+  ],
+  "files": ["main.go.txt"]
+}

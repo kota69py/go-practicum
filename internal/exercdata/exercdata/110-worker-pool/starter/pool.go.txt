@@ -1,0 +1,65 @@
+package main
+
+import (
+	"context"
+	"sync"
+)
+
+// Job は実行するジョブを表します。
+type Job struct {
+	ID   int
+	Task func() (interface{}, error)
+}
+
+// Result はジョブの実行結果を表します。
+type Result struct {
+	JobID int
+	Value interface{}
+	Err   error
+}
+
+// Pool はワーカープールを管理します。
+type Pool struct {
+	// TODO: jobCh   chan Job
+	// TODO: resultCh chan Result
+	// TODO: workers  int
+	// TODO: wg       sync.WaitGroup
+	// TODO: ctx      context.Context
+	// TODO: cancel   context.CancelFunc
+}
+
+// NewPool は指定された数のワーカーを持つプールを作成します。
+func NewPool(workers int) *Pool {
+	// TODO: チャネルの作成
+	// TODO: Context の作成
+	// TODO: ワーカー goroutine の起動
+	return nil
+}
+
+// worker はジョブチャネルからジョブを受け取り、結果チャネルに結果を送信します。
+func (p *Pool) worker(id int) {
+	// TODO: jobCh からジョブを受信
+	// TODO: ジョブを実行して結果を resultCh に送信
+	// TODO: ctx.Done() でキャンセルを検出
+}
+
+// Submit はジョブをプールに送信します。
+func (p *Pool) Submit(job Job) {
+	// TODO: jobCh にジョブを送信
+}
+
+// Results は結果チャネルを返します。
+func (p *Pool) Results() <-chan Result {
+	// TODO: resultCh を返す
+	return nil
+}
+
+// Stop はプールを停止し、全てのワーカーの完了を待ちます。
+func (p *Pool) Stop() {
+	// TODO: cancel() でキャンセル
+	// TODO: close(jobCh) でジョブチャネルをクローズ
+	// TODO: wg.Wait() で全ワーカー完了待ち
+	// TODO: close(resultCh) で結果チャネルをクローズ
+}
+
+var _ = sync.WaitGroup{}

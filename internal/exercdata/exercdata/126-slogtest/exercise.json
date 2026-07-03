@@ -1,0 +1,17 @@
+{
+  "name": "126-slogtest",
+  "title": "slogtest — カスタムハンドラーの検証",
+  "category": "logging",
+  "difficulty": 2,
+  "description": "Go 1.22 で導入された testing/slogtest パッケージを使って、カスタム slog.Handler の実装を検証する方法を学びます。slogtest はハンドラーが正しく属性を処理し、グループ化や WithAttrs/WithGroup を適切に実装しているかを自動テストします。",
+  "hints": [
+    "slogtest.TestHandler でハンドラーの実装を検証",
+    "ハンドラーは slog.Handler インターフェースを完全実装",
+    "Enabled / Handle / WithAttrs / WithGroup の4メソッド",
+    "Handle 内で record.Attrs のイテレートが正しいか確認",
+    "WithAttrs は新しいハンドラーを返すべき",
+    "WithGroup は属性をグループ化して扱う",
+    "slog.NewRecord でテスト用レコードを作成可能"
+  ],
+  "files": ["validate_handler.go.txt"]
+}

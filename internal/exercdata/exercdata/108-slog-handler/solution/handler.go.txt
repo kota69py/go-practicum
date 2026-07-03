@@ -1,0 +1,62 @@
+package main
+
+import (
+	"context"
+	"io"
+	"log/slog"
+)
+
+type LevelFilterHandler struct {
+	handler  slog.Handler
+	minLevel slog.Level
+}
+
+func NewLevelFilterHandler(minLevel slog.Level, h slog.Handler) *LevelFilterHandler {
+	return &LevelFilterHandler{handler: h, minLevel: minLevel}
+}
+
+func (h *LevelFilterHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= h.minLevel
+}
+
+func (h *LevelFilterHandler) Handle(ctx context.Context, r slog.Record) error {
+	return h.handler.Handle(ctx, r)
+}
+
+func (h *LevelFilterHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &LevelFilterHandler{handler: h.handler.WithAttrs(attrs), minLevel: h.minLevel}
+}
+
+func (h *LevelFilterHandler) WithGroup(name string) slog.Handler {
+	return &LevelFilterHandler{handler: h.handler.WithGroup(name), minLevel: h.minLevel}
+}
+
+type PrefixHandler struct {
+	handler slog.Handler
+	prefix  string
+}
+
+func NewPrefixHandler(prefix string, h slog.Handler) *PrefixHandler {
+	return &PrefixHandler{handler: h, prefix: prefix}
+}
+
+func (h *PrefixHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.handler.Enabled(ctx, level)
+}
+
+func (h *PrefixHandler) Handle(ctx context.Context, r slog.Record) error {
+	r2 := slog.NewRecord(r.Time, r.Level, h.prefix+r.Message, r.PC)
+	r.Attrs(func(a slog.Attr) bool {
+		r2.AddAttrs(a)
+		return true
+	})
+	return h.handler.Handle(ctx, r2)
+}
+
+func (h *PrefixHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &PrefixHandler{handler: h.handler.WithAttrs(attrs), prefix: h.prefix}
+}
+
+func (h *PrefixHandler) WithGroup(name string) slog.Handler {
+	return &PrefixHandler{handler: h.handler.WithGroup(name), prefix: h.prefix}
+}

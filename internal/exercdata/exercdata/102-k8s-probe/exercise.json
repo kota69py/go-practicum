@@ -1,0 +1,17 @@
+{
+  "name": "102-k8s-probe",
+  "title": "Kubernetes Probe — ヘルスチェック HTTP サーバー",
+  "category": "net",
+  "difficulty": 2,
+  "description": "Kubernetes の livenessProbe / readinessProbe / startupProbe に対応した HTTP ヘルスチェックサーバーを実装します。/healthz（生存確認）、/readyz（準備完了）、/startupz（起動完了）の各エンドポイントを実装し、Graceful Shutdown のパターンを学びます。",
+  "hints": [
+    "/healthz は常に 200 OK を返す",
+    "/readyz はアプリケーションの準備状態を返す（DB接続等）",
+    "/startupz は起動完了後は常に 200、起動中は 503",
+    "sync.Once や atomic.Bool で状態管理",
+    "http.Server の Shutdown() で Graceful Shutdown",
+    "signal.Notify で SIGINT/SIGTERM をハンドリング",
+    "/debug/pprof/ は runtime/pprof のエンドポイント"
+  ],
+  "files": ["probe.go.txt"]
+}

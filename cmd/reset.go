@@ -18,30 +18,28 @@ func (r *Runner) newResetCmd() *cobra.Command {
 		Long: `進捗データをリセットします。
    name を指定すると該当演習のみ、省略すると全演習をリセットします。`,
 		Args: cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			prog, err := progress.Load()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: 進捗読み込み失敗: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("進捗読み込み失敗: %v", err)
 			}
 
 			if len(args) == 0 {
 				if len(prog.Completed) == 0 && prog.InProgress == "" {
-					fmt.Println("リセットするデータがありません。")
-					return
+					cmd.Println("リセットするデータがありません。")
+					return nil
 				}
 				if !confirmStdin("全ての進捗データをリセットしますか？") {
-					fmt.Println("キャンセルしました。")
-					return
+					cmd.Println("キャンセルしました。")
+					return nil
 				}
 				prog.Completed = nil
 				prog.InProgress = ""
-				if err := prog.Save(); err != nil {
-					fmt.Fprintf(os.Stderr, "エラー: 保存失敗: %v\n", err)
-					os.Exit(1)
+				if err := progress.Save(prog); err != nil {
+					return fmt.Errorf("保存失敗: %v", err)
 				}
-				fmt.Println("✅ " + colorGreen("全ての進捗をリセットしました"))
-				return
+				cmd.Println("✅ " + colorGreen("全ての進捗をリセットしました"))
+				return nil
 			}
 
 			name := args[0]
@@ -55,22 +53,21 @@ func (r *Runner) newResetCmd() *cobra.Command {
 				}
 			}
 			if !found && prog.InProgress != name {
-				fmt.Fprintf(os.Stderr, "エラー: 演習 %q の進捗データが見つかりません\n", name)
-				os.Exit(1)
+				return fmt.Errorf("演習 %q の進捗データが見つかりません", name)
 			}
 			if !confirmStdin(fmt.Sprintf("演習 %q の進捗をリセットしますか？", name)) {
-				fmt.Println("キャンセルしました。")
-				return
+				cmd.Println("キャンセルしました。")
+				return nil
 			}
 			prog.Completed = kept
 			if prog.InProgress == name {
 				prog.InProgress = ""
 			}
-			if err := prog.Save(); err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: 保存失敗: %v\n", err)
-				os.Exit(1)
+			if err := progress.Save(prog); err != nil {
+				return fmt.Errorf("保存失敗: %v", err)
 			}
-			fmt.Printf("✅ " + colorGreen(fmt.Sprintf("演習 %q の進捗をリセットしました\n", name)))
+			cmd.Println("✅ " + colorGreen(fmt.Sprintf("演習 %q の進捗をリセットしました", name)))
+			return nil
 		},
 	}
 }

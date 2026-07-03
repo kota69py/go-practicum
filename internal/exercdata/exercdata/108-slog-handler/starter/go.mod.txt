@@ -1,0 +1,3 @@
+module go-practicum-slog-handler
+
+go 1.25

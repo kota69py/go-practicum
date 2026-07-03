@@ -1,0 +1,27 @@
+package main
+
+import (
+	"os"
+	"runtime/pprof"
+)
+
+func Fibonacci(n int) int {
+	// TODO: 再帰的にフィボナッチ数を計算する
+	// ヒント: n <= 1 の場合は n を返す
+	// それ以外は Fibonacci(n-1) + Fibonacci(n-2)
+	return 0
+}
+
+func Compute(limit int) int {
+	// TODO: limit 回だけ Fibonacci(20) を呼び出して合計を返す
+	return 0
+}
+
+func GenerateCPUProfile(filename string) error {
+	// TODO: CPUプロファイルを生成する
+	// 1. os.Create でファイルを作成
+	// 2. pprof.StartCPUProfile でプロファイル開始
+	// 3. defer pprof.StopCPUProfile
+	// 4. Compute(100) を実行してプロファイルデータを収集
+	return nil
+}

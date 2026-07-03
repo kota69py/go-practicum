@@ -1,0 +1,17 @@
+{
+  "name": "114-go-generate",
+  "title": "go generate — コード自動生成と stringer",
+  "category": "language",
+  "difficulty": 2,
+  "description": "go generate を使ったコード生成パターンを学びます。//go:generate ディレクティブ、stringer ツールによる enum メソッド自動生成、テンプレートベースのカスタムジェネレーター実装を体験します。",
+  "hints": [
+    "//go:generate ディレクティブで生成コマンドを指定",
+    "go generate ./... で全生成を実行",
+    "stringer -type=Pill で String() メソッドを生成",
+    "go run golang.org/x/tools/cmd/stringer@latest -type=X",
+    "go:generate は go build とは独立して実行",
+    "生成ファイルは _test.go 以外の _string.go に",
+    "カスタムジェネレーターは text/template で作成"
+  ],
+  "files": ["gen.go.txt", "gen_string.go.txt"]
+}

@@ -1,0 +1,28 @@
+package main
+
+import (
+	"log"
+	"net"
+
+	pb "grpc-interceptor/proto/echo"
+	"google.golang.org/grpc"
+)
+
+func main() {
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			LoggingInterceptor,
+			RecoveryInterceptor,
+			AuthInterceptor,
+		),
+	)
+	pb.RegisterEchoServiceServer(s, &echoServer{})
+	log.Printf("server listening at %v", lis.Addr())
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+}

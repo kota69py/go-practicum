@@ -1,0 +1,88 @@
+package main
+
+import (
+	"errors"
+	"sync/atomic"
+	"testing"
+)
+
+func TestNewPool(t *testing.T) {
+	p := NewPool(3)
+	if p == nil {
+		t.Fatal("pool is nil")
+	}
+	defer p.Stop()
+}
+
+func TestPoolSubmitAndResults(t *testing.T) {
+	p := NewPool(2)
+	defer p.Stop()
+
+	var count atomic.Int64
+	for i := 0; i < 5; i++ {
+		id := i
+		p.Submit(Job{ID: id, Task: func() (interface{}, error) {
+			count.Add(1)
+			return id * 2, nil
+		}})
+	}
+	p.Stop()
+
+	done := false
+	for r := range p.Results() {
+		if r.Err != nil {
+			t.Errorf("Job %d error: %v", r.JobID, r.Err)
+		}
+		val, ok := r.Value.(int)
+		if !ok || val != r.JobID*2 {
+			t.Errorf("Job %d: got %v, want %d", r.JobID, r.Value, r.JobID*2)
+		}
+		done = true
+	}
+	if !done && count.Load() == 0 {
+		t.Error("no results received")
+	}
+	if count.Load() != 5 {
+		t.Errorf("count = %d, want 5", count.Load())
+	}
+}
+
+func TestPoolErrorHandling(t *testing.T) {
+	p := NewPool(2)
+	defer p.Stop()
+
+	p.Submit(Job{ID: 1, Task: func() (interface{}, error) {
+		return nil, errors.New("task error")
+	}})
+	p.Stop()
+
+	for r := range p.Results() {
+		if r.Err == nil {
+			t.Error("expected error")
+		}
+	}
+}
+
+func TestPoolConcurrencyLimit(t *testing.T) {
+	p := NewPool(3)
+	defer p.Stop()
+
+	var maxConcurrent atomic.Int64
+	var concurrent atomic.Int64
+
+	for i := 0; i < 10; i++ {
+		p.Submit(Job{ID: i, Task: func() (interface{}, error) {
+			n := concurrent.Add(1)
+			for n > maxConcurrent.Load() {
+				maxConcurrent.Store(n)
+			}
+			concurrent.Add(-1)
+			return nil, nil
+		}})
+	}
+	p.Stop()
+
+	if maxConcurrent.Load() > 3 {
+		t.Errorf("max concurrency = %d, want <= 3", maxConcurrent.Load())
+	}
+}

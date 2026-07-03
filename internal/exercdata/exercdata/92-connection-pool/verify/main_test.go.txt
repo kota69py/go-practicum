@@ -1,0 +1,106 @@
+package main
+
+import (
+	"database/sql"
+	"testing"
+	"time"
+
+	_ "modernc.org/sqlite"
+)
+
+func TestInitDB(t *testing.T) {
+	db, err := InitDB(":memory:", 5, 2, time.Minute)
+	if err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	defer db.Close()
+
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+}
+
+func TestSeedData(t *testing.T) {
+	db, err := InitDB(":memory:", 0, 2, 0)
+	if err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	defer db.Close()
+
+	if err := SeedData(db, 100); err != nil {
+		t.Fatalf("SeedData: %v", err)
+	}
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	if count != 100 {
+		t.Errorf("expected 100 users, got %d", count)
+	}
+}
+
+func TestQueryAll(t *testing.T) {
+	db, _ := InitDB(":memory:", 0, 2, 0)
+	defer db.Close()
+
+	SeedData(db, 10)
+	names, err := QueryAll(db)
+	if err != nil {
+		t.Fatalf("QueryAll: %v", err)
+	}
+	if len(names) != 10 {
+		t.Errorf("expected 10 names, got %d", len(names))
+	}
+	if names[0] != "user-0" {
+		t.Errorf("expected first name 'user-0', got %q", names[0])
+	}
+}
+
+func TestGetPoolStats(t *testing.T) {
+	db, _ := InitDB(":memory:", 10, 5, time.Minute)
+	defer db.Close()
+
+	stats := GetPoolStats(db)
+	if stats.OpenConnections != 0 {
+		t.Errorf("expected 0 open connections, got %d", stats.OpenConnections)
+	}
+}
+
+func TestMaxOpenConnsIsRespected(t *testing.T) {
+	db, _ := InitDB(":memory:", 1, 1, 0)
+	defer db.Close()
+
+	SeedData(db, 10)
+	_, _, _ = db.Query("SELECT 1")
+
+	stats := GetPoolStats(db)
+	if stats.OpenConnections > 1 {
+		t.Errorf("expected at most 1 open connection with MaxOpenConns=1, got %d", stats.OpenConnections)
+	}
+}
+
+func TestConcurrentQueries(t *testing.T) {
+	db, _ := InitDB(":memory:", 5, 2, 0)
+	defer db.Close()
+
+	SeedData(db, 100)
+
+	if err := RunConcurrentQueries(db, 5, time.Millisecond); err != nil {
+		t.Fatalf("RunConcurrentQueries: %v", err)
+	}
+
+	stats := GetPoolStats(db)
+	if stats.OpenConnections > 5 {
+		t.Errorf("expected at most 5 open connections with MaxOpenConns=5, got %d", stats.OpenConnections)
+	}
+}
+
+func TestPoolStatsAfterQuery(t *testing.T) {
+	db, _ := InitDB(":memory:", 5, 2, 0)
+	defer db.Close()
+
+	SeedData(db, 50)
+	QueryAll(db)
+
+	stats := GetPoolStats(db)
+	_ = stats
+}

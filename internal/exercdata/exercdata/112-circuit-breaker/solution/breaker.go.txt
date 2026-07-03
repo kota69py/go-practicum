@@ -1,0 +1,97 @@
+package main
+
+import (
+	"errors"
+	"sync/atomic"
+	"time"
+)
+
+type State int32
+
+const (
+	StateClosed   State = 0
+	StateOpen     State = 1
+	StateHalfOpen State = 2
+)
+
+func (s State) String() string {
+	switch s {
+	case StateClosed:
+		return "closed"
+	case StateOpen:
+		return "open"
+	case StateHalfOpen:
+		return "half-open"
+	default:
+		return "unknown"
+	}
+}
+
+type CircuitBreaker struct {
+	state       atomic.Int32
+	failures    atomic.Int32
+	threshold   int32
+	timeout     time.Duration
+	lastFailure atomic.Int64
+}
+
+func NewCircuitBreaker(threshold int, timeout time.Duration) *CircuitBreaker {
+	return &CircuitBreaker{threshold: int32(threshold), timeout: timeout}
+}
+
+func (cb *CircuitBreaker) Execute(fn func() error) error {
+	cb.attemptReset()
+
+	switch State(cb.state.Load()) {
+	case StateOpen:
+		return ErrOpen
+	case StateHalfOpen:
+		err := fn()
+		if err == nil {
+			cb.reset()
+			return nil
+		}
+		cb.trip()
+		return err
+	default:
+		err := fn()
+		if err == nil {
+			cb.failures.Store(0)
+			return nil
+		}
+		cb.failures.Add(1)
+		if cb.failures.Load() >= cb.threshold {
+			cb.trip()
+		}
+		return err
+	}
+}
+
+func (cb *CircuitBreaker) State() State {
+	return State(cb.state.Load())
+}
+
+var ErrOpen = errors.New("circuit breaker is open")
+
+func (cb *CircuitBreaker) reset() {
+	cb.failures.Store(0)
+	cb.state.Store(int32(StateClosed))
+}
+
+func (cb *CircuitBreaker) trip() {
+	cb.state.Store(int32(StateOpen))
+	cb.lastFailure.Store(time.Now().UnixNano())
+}
+
+func (cb *CircuitBreaker) attemptReset() {
+	last := cb.lastFailure.Load()
+	if last == 0 {
+		return
+	}
+	if State(cb.state.Load()) != StateOpen {
+		return
+	}
+	if time.Duration(time.Now().UnixNano()-last) >= cb.timeout {
+		cb.state.Store(int32(StateHalfOpen))
+	}
+}

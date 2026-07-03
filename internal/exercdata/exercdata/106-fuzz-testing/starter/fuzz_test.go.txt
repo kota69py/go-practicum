@@ -1,0 +1,25 @@
+package main
+
+import (
+	"testing"
+	"unicode/utf8"
+)
+
+// FuzzHexDecode は HexDecode 関数の fuzz test です。
+// TODO: シードコーパスを追加し、ファジングロジックを実装してください。
+// ヒント:
+//   - f.Add("48656c6c6f") などでシードコーパスを追加
+//   - f.Fuzz(func(t *testing.T, s string) { ... })
+//   - HexDecode の結果を HexEncode で元に戻して一致確認
+//   - 復元結果が有効な UTF-8 であることを確認
+func FuzzHexDecode(f *testing.F) {
+	// TODO: シードコーパスを追加
+	// TODO: ファジングロジックを実装
+}
+
+func FuzzReverse(f *testing.F) {
+	// おまけ: 文字列反転関数の fuzz test
+	// TODO: 実装
+}
+
+var _ = utf8.ValidString

@@ -1,0 +1,136 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestExtractInject(t *testing.T) {
+	tc := TraceContext{TraceID: "abc123", SpanID: "def456"}
+	req := httptest.NewRequest("GET", "/", nil)
+	InjectTraceContext(req, tc)
+
+	got, ok := ExtractTraceContext(req)
+	if !ok {
+		t.Fatal("expected to extract trace context")
+	}
+	if got.TraceID != "abc123" {
+		t.Errorf("TraceID: got %q, want %q", got.TraceID, "abc123")
+	}
+	if got.SpanID != "def456" {
+		t.Errorf("SpanID: got %q, want %q", got.SpanID, "def456")
+	}
+}
+
+func TestExtractMissingHeader(t *testing.T) {
+	req := httptest.NewRequest("GET", "/", nil)
+	_, ok := ExtractTraceContext(req)
+	if ok {
+		t.Error("expected false for missing header")
+	}
+}
+
+func TestContextRoundTrip(t *testing.T) {
+	tc := TraceContext{TraceID: "trace1", SpanID: "span1"}
+	ctx := ContextWithTrace(context.Background(), tc)
+
+	got, ok := TraceFromContext(ctx)
+	if !ok {
+		t.Fatal("expected trace in context")
+	}
+	if got != tc {
+		t.Errorf("got %+v, want %+v", got, tc)
+	}
+}
+
+func TestContextWithoutTrace(t *testing.T) {
+	_, ok := TraceFromContext(context.Background())
+	if ok {
+		t.Error("expected false for context without trace")
+	}
+}
+
+func TestServerMiddleware(t *testing.T) {
+	var capturedTraceID string
+	handler := ServerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedTraceID = GetTraceID(r.Context())
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if capturedTraceID == "" {
+		t.Error("expected non-empty TraceID from middleware")
+	}
+}
+
+func TestServerMiddlewarePreservesHeader(t *testing.T) {
+	var capturedTraceID string
+	handler := ServerMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedTraceID = GetTraceID(r.Context())
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set(traceHeader, "incoming-trace:incoming-span")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if capturedTraceID != "incoming-trace" {
+		t.Errorf("got TraceID %q, want %q", capturedTraceID, "incoming-trace")
+	}
+}
+
+func TestClientMiddleware(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tc, ok := ExtractTraceContext(r)
+		if !ok {
+			t.Error("client middleware did not inject header")
+			return
+		}
+		if tc.TraceID != "client-trace" || tc.SpanID != "client-span" {
+			t.Errorf("got %+v, want {TraceID:client-trace SpanID:client-span}", tc)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	tc := TraceContext{TraceID: "client-trace", SpanID: "client-span"}
+	ctx := ContextWithTrace(context.Background(), tc)
+	req, _ := http.NewRequestWithContext(ctx, "GET", server.URL, nil)
+	req.RequestURI = ""
+
+	client := &http.Client{
+		Transport: ClientMiddleware(http.DefaultTransport),
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+}
+
+func TestExtractMalformedHeader(t *testing.T) {
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set(traceHeader, "malformed-no-colon")
+	_, ok := ExtractTraceContext(req)
+	if ok {
+		t.Error("expected false for malformed header")
+	}
+}
+
+func TestExtractEmptyParts(t *testing.T) {
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set(traceHeader, ":")
+	_, ok := ExtractTraceContext(req)
+	if ok {
+		t.Error("expected false for empty parts")
+	}
+}
+
+var _ = strings.Contains // suppress unused import warning

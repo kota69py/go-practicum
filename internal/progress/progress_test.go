@@ -1,6 +1,7 @@
 package progress
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -36,7 +37,7 @@ func TestSaveAndLoad(t *testing.T) {
 	testHomeDir(t)
 
 	d := &Data{Completed: []string{"ex1", "ex2"}, InProgress: "ex3"}
-	if err := d.Save(); err != nil {
+	if err := Save(d); err != nil {
 		t.Fatalf("Save() error: %v", err)
 	}
 
@@ -92,5 +93,38 @@ func TestIsCompleted(t *testing.T) {
 	}
 	if !d.IsCompleted("ex3") {
 		t.Error("IsCompleted('ex3') = false, want true")
+	}
+}
+
+func TestLoadCorruptedJSON_WithInProgress(t *testing.T) {
+	dir := testHomeDir(t)
+	os.MkdirAll(filepath.Join(dir, ".go-practicum"), 0755)
+	// Corrupted JSON that also has an in_progress field
+	os.WriteFile(filepath.Join(dir, ".go-practicum", "progress.json"), []byte(`{"completed":["ex1"],"in_progress":"ex2"`), 0644)
+
+	d, err := Load()
+	if err != nil {
+		t.Fatalf("Load() on corrupted file should return empty: %v", err)
+	}
+	if d == nil {
+		t.Fatal("Load() returned nil")
+	}
+	if len(d.Completed) != 0 {
+		t.Errorf("Completed = %v on corrupted JSON, want empty", d.Completed)
+	}
+	if d.InProgress != "" {
+		t.Errorf("InProgress = %q on corrupted JSON, want empty", d.InProgress)
+	}
+}
+
+func BenchmarkIsCompleted(b *testing.B) {
+	names := make([]string, 80)
+	for i := range names {
+		names[i] = fmt.Sprintf("ex-%02d", i)
+	}
+	d := &Data{Completed: names}
+	b.ResetTimer()
+	for range b.N {
+		d.IsCompleted("ex-79")
 	}
 }

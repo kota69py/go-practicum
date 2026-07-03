@@ -1,0 +1,151 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
+)
+
+func newTestClient() (*redis.Client, *miniredis.Miniredis, func()) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		panic(fmt.Sprintf("miniredis.Run: %v", err))
+	}
+	client := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	return client, mr, func() { client.Close(); mr.Close() }
+}
+
+func TestPipelineSet(t *testing.T) {
+	client, mr, cleanup := newTestClient()
+	defer cleanup()
+	ctx := context.Background()
+
+	err := PipelineSet(ctx, client, map[string]string{"a": "1", "b": "2", "c": "3"})
+	if err != nil {
+		t.Fatalf("PipelineSet: %v", err)
+	}
+
+	if got, _ := mr.Get("a"); got != "1" {
+		t.Errorf("a: got %q, want 1", got)
+	}
+	if got, _ := mr.Get("b"); got != "2" {
+		t.Errorf("b: got %q, want 2", got)
+	}
+	if got, _ := mr.Get("c"); got != "3" {
+		t.Errorf("c: got %q, want 3", got)
+	}
+}
+
+func TestTransactionSet(t *testing.T) {
+	client, mr, cleanup := newTestClient()
+	defer cleanup()
+	ctx := context.Background()
+
+	err := TransactionSet(ctx, client, map[string]string{"x": "10", "y": "20"})
+	if err != nil {
+		t.Fatalf("TransactionSet: %v", err)
+	}
+
+	if got, _ := mr.Get("x"); got != "10" {
+		t.Errorf("x: got %q, want 10", got)
+	}
+	if got, _ := mr.Get("y"); got != "20" {
+		t.Errorf("y: got %q, want 20", got)
+	}
+}
+
+func TestPubSub(t *testing.T) {
+	client, mr, cleanup := newTestClient()
+	defer cleanup()
+	ctx := context.Background()
+
+	done := make(chan struct{})
+	var received string
+	go func() {
+		var err error
+		received, err = SubscribeMessages(ctx, client, "test-channel")
+		if err != nil {
+			t.Errorf("SubscribeMessages: %v", err)
+		}
+		close(done)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	err := PublishMessage(ctx, client, "test-channel", "hello redis")
+	if err != nil {
+		t.Fatalf("PublishMessage: %v", err)
+	}
+
+	select {
+	case <-done:
+		if received != "hello redis" {
+			t.Errorf("got %q, want %q", received, "hello redis")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for message")
+	}
+}
+
+func TestAtomicIncrement(t *testing.T) {
+	client, _, cleanup := newTestClient()
+	defer cleanup()
+	ctx := context.Background()
+
+	client.Set(ctx, "counter", 5, 0)
+
+	val, err := AtomicIncrement(ctx, client, "counter")
+	if err != nil {
+		t.Fatalf("AtomicIncrement: %v", err)
+	}
+	if val != 6 {
+		t.Errorf("got %d, want 6", val)
+	}
+
+	val, err = AtomicIncrement(ctx, client, "counter")
+	if err != nil {
+		t.Fatalf("AtomicIncrement: %v", err)
+	}
+	if val != 7 {
+		t.Errorf("got %d, want 7", val)
+	}
+}
+
+func TestAtomicIncrementNew(t *testing.T) {
+	client, _, cleanup := newTestClient()
+	defer cleanup()
+	ctx := context.Background()
+
+	val, err := AtomicIncrement(ctx, client, "new-counter")
+	if err != nil {
+		t.Fatalf("AtomicIncrement: %v", err)
+	}
+	if val != 1 {
+		t.Errorf("got %d, want 1", val)
+	}
+}
+
+func TestGetKeys(t *testing.T) {
+	client, mr, cleanup := newTestClient()
+	defer cleanup()
+	ctx := context.Background()
+
+	mr.Set("k1", "v1")
+	mr.Set("k2", "v2")
+	mr.Set("k3", "v3")
+
+	result, err := GetKeys(ctx, client, "k1", "k2", "k3", "missing")
+	if err != nil {
+		t.Fatalf("GetKeys: %v", err)
+	}
+	if result["k1"] != "v1" {
+		t.Errorf("k1: got %q, want v1", result["k1"])
+	}
+	if result["missing"] != "" {
+		t.Errorf("missing: got %q, want empty", result["missing"])
+	}
+}

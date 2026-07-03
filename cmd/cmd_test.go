@@ -7,7 +7,6 @@ import (
 	"github.com/kota69py/go-practicum/internal/exercise"
 	"github.com/kota69py/go-practicum/internal/progress"
 )
-
 func TestStars(t *testing.T) {
 	tests := []struct {
 		n    int
@@ -122,6 +121,47 @@ func TestMatchExercise(t *testing.T) {
 		got := matchExercise(ex, tt.query)
 		if got != tt.expected {
 			t.Errorf("match(%q, %q) = %v, want %v", ex.Name, tt.query, got, tt.expected)
+		}
+	}
+}
+
+func BenchmarkMatchExercise(b *testing.B) {
+	ex := exercise.Exercise{
+		Name:     "01-goroutine-basics",
+		Title:    "Goroutine 基礎",
+		Category: "concurrency",
+		Topics:   []string{"goroutine", "channel", "sync"},
+	}
+	b.ResetTimer()
+	for range b.N {
+		matchExercise(ex, "goroutine")
+	}
+}
+
+func BenchmarkStars(b *testing.B) {
+	for range b.N {
+		stars(3)
+	}
+}
+
+func TestLevenshtein(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want int
+	}{
+		{"", "", 0},
+		{"abc", "", 3},
+		{"", "abc", 3},
+		{"abc", "abc", 0},
+		{"abc", "abd", 1},
+		{"interfce-design", "interface-design", 1},
+		{"01-interfce-design", "01-interface-design", 1},
+		{"gorutine", "goroutine", 1},
+	}
+	for _, tt := range tests {
+		got := exercise.Levenshtein(tt.a, tt.b)
+		if got != tt.want {
+			t.Errorf("levenshtein(%q, %q) = %d, want %d", tt.a, tt.b, got, tt.want)
 		}
 	}
 }

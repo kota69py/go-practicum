@@ -1,0 +1,116 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
+)
+
+type PostgresConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+}
+
+func (c PostgresConfig) ConnString() string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		c.Host, c.Port, c.User, c.Password, c.DBName)
+}
+
+func LoadDefaultConfigFromEnv() PostgresConfig {
+	port, _ := strconv.Atoi(os.Getenv("DB_PORT"))
+	if port == 0 {
+		port = 5432
+	}
+	host := os.Getenv("DB_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+	user := os.Getenv("DB_USER")
+	if user == "" {
+		user = "test"
+	}
+	return PostgresConfig{
+		Host:     host,
+		Port:     port,
+		User:     user,
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   os.Getenv("DB_NAME"),
+	}
+}
+
+const SchemaSQL = `
+CREATE TABLE IF NOT EXISTS users (
+    id    SERIAL PRIMARY KEY,
+    name  TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER REFERENCES users(id),
+    product    TEXT NOT NULL,
+    quantity   INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+`
+
+func StartPostgresContainer(ctx context.Context) (*pgxpool.Pool, func(), error) {
+	ctr, err := postgres.Run(ctx,
+		"postgres:16-alpine",
+		postgres.WithDatabase("testdb"),
+		postgres.WithUsername("testuser"),
+		postgres.WithPassword("testpass"),
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("start container: %w", err)
+	}
+
+	connStr, err := ctr.ConnectionString(ctx, "sslmode=disable")
+	if err != nil {
+		ctr.Terminate(ctx)
+		return nil, nil, fmt.Errorf("connection string: %w", err)
+	}
+
+	db, err := pgxpool.New(ctx, connStr)
+	if err != nil {
+		ctr.Terminate(ctx)
+		return nil, nil, fmt.Errorf("connect: %w", err)
+	}
+
+	if _, err := db.Exec(ctx, SchemaSQL); err != nil {
+		db.Close()
+		ctr.Terminate(ctx)
+		return nil, nil, fmt.Errorf("migrate: %w", err)
+	}
+
+	cleanup := func() {
+		db.Close()
+		ctr.Terminate(ctx)
+	}
+
+	return db, cleanup, nil
+}
+
+func InsertUser(ctx context.Context, db *pgxpool.Pool, name, email string) (int, error) {
+	var id int
+	err := db.QueryRow(ctx, "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id", name, email).Scan(&id)
+	return id, err
+}
+
+func GetUserCount(ctx context.Context, db *pgxpool.Pool) (int, error) {
+	var count int
+	err := db.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&count)
+	return count, err
+}
+
+var _ = sql.Open
+var _ = time.Now

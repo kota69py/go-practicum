@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"sort"
 
 	"github.com/kota69py/go-practicum/internal/exercise"
@@ -14,15 +13,14 @@ func (r *Runner) newGraphCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "graph",
 		Short: "カテゴリ別の学習マップを表示",
-		Run: func(cmd *cobra.Command, args []string) {
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if r.exercFS == nil {
-				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-				os.Exit(1)
+				return fmt.Errorf("演習データが見つかりません")
 			}
 			all, err := exercise.ListFromFS(r.exercFS)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("%v", err)
 			}
 
 			prog, _ := progress.Load()
@@ -36,8 +34,8 @@ func (r *Runner) newGraphCmd() *cobra.Command {
 			}
 			sort.Strings(cats)
 
-			fmt.Println("📚 " + colorCyan("学習マップ (カテゴリ別)"))
-			fmt.Println()
+			cmd.Println("📚 " + colorCyan("学習マップ (カテゴリ別)"))
+			cmd.Println()
 
 			for _, c := range cats {
 				exs := byCat[c]
@@ -54,15 +52,15 @@ func (r *Runner) newGraphCmd() *cobra.Command {
 						done++
 					}
 				}
-				fmt.Printf("  %s (%d/%d)\n", colorYellow(c), done, len(exs))
+				cmd.Printf("  %s (%d/%d)\n", colorYellow(c), done, len(exs))
 				for _, ex := range exs {
 					status := "  "
 					if prog.IsCompleted(ex.Name) {
 						status = "✅"
 					}
-					fmt.Printf("    %s %s %s\n", status, stars(ex.Difficulty), ex.Title)
+					cmd.Printf("    %s %s %s\n", status, stars(ex.Difficulty), ex.Title)
 				}
-				fmt.Println()
+				cmd.Println()
 			}
 
 			total, comp := countProgress(all, prog)
@@ -70,7 +68,8 @@ func (r *Runner) newGraphCmd() *cobra.Command {
 			if total > 0 {
 				pct = comp * 100 / total
 			}
-			fmt.Printf("  合計: %d/%d (%d%%)\n", comp, total, pct)
+			cmd.Printf("  合計: %d/%d (%d%%)\n", comp, total, pct)
+			return nil
 		},
 	}
 }

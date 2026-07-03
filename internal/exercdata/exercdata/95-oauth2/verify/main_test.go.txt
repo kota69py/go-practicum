@@ -1,0 +1,124 @@
+package main
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"golang.org/x/oauth2"
+)
+
+func TestMockOAuth2Provider(t *testing.T) {
+	config, providerURL, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	if config == nil {
+		t.Fatal("config is nil")
+	}
+	if providerURL == "" {
+		t.Fatal("providerURL is empty")
+	}
+}
+
+func TestAuthorize(t *testing.T) {
+	config, providerURL, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	ctx := context.Background()
+	token, err := Authorize(ctx, config, providerURL)
+	if err != nil {
+		t.Fatalf("Authorize: %v", err)
+	}
+	if token == nil {
+		t.Fatal("token is nil")
+	}
+	if token.AccessToken != "access-token-abc" {
+		t.Errorf("AccessToken: got %q, want %q", token.AccessToken, "access-token-abc")
+	}
+	if token.RefreshToken != "refresh-token-xyz" {
+		t.Errorf("RefreshToken: got %q, want %q", token.RefreshToken, "refresh-token-xyz")
+	}
+}
+
+func TestGetAuthenticatedClient(t *testing.T) {
+	config, _, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	token := &oauth2.Token{AccessToken: "test-token"}
+	client := GetAuthenticatedClient(context.Background(), config, token)
+	if client == nil {
+		t.Fatal("client is nil")
+	}
+}
+
+func TestRefreshTokenIfNeededValid(t *testing.T) {
+	config, _, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	token := &oauth2.Token{
+		AccessToken: "valid-token",
+		Expiry:      time.Now().Add(time.Hour),
+	}
+	result, err := RefreshTokenIfNeeded(context.Background(), config, token)
+	if err != nil {
+		t.Fatalf("RefreshTokenIfNeeded: %v", err)
+	}
+	if result.AccessToken != "valid-token" {
+		t.Error("expected same token for valid token")
+	}
+}
+
+func TestRefreshTokenIfNeededExpired(t *testing.T) {
+	config, _, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	token := &oauth2.Token{
+		AccessToken:  "expired-token",
+		RefreshToken: "refresh-token-xyz",
+		Expiry:       time.Now().Add(-time.Hour),
+	}
+	result, err := RefreshTokenIfNeeded(context.Background(), config, token)
+	if err != nil {
+		t.Fatalf("RefreshTokenIfNeeded: %v", err)
+	}
+	if result.AccessToken == "expired-token" {
+		t.Error("expected new token after refresh")
+	}
+}
+
+func TestFetchUserInfo(t *testing.T) {
+	config, providerURL, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	token := &oauth2.Token{AccessToken: "test-token"}
+	client := GetAuthenticatedClient(context.Background(), config, token)
+
+	info, err := FetchUserInfo(context.Background(), client, providerURL)
+	if err != nil {
+		t.Fatalf("FetchUserInfo: %v", err)
+	}
+	if len(info) == 0 {
+		t.Error("expected non-empty user info")
+	}
+}
+
+func TestEndToEnd(t *testing.T) {
+	config, providerURL, cleanup := MockOAuth2Provider()
+	defer cleanup()
+
+	ctx := context.Background()
+
+	token, err := Authorize(ctx, config, providerURL)
+	if err != nil {
+		t.Fatalf("Authorize: %v", err)
+	}
+
+	client := GetAuthenticatedClient(ctx, config, token)
+	info, err := FetchUserInfo(ctx, client, providerURL)
+	if err != nil {
+		t.Fatalf("FetchUserInfo: %v", err)
+	}
+	if len(info) == 0 {
+		t.Error("expected non-empty user info")
+	}
+}

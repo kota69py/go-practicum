@@ -1,0 +1,18 @@
+{
+  "name": "94-tls-mtls",
+  "title": "TLS / mTLS — crypto/tls によるセキュアな通信",
+  "category": "security",
+  "difficulty": 4,
+  "description": "Go の crypto/tls パッケージを使って TLS サーバー・クライアントを構築し、相互 TLS (mTLS) 認証を実装します。自己署名証明書の生成、CA 証明書を使った検証、TLS 設定のベストプラクティスを学びます。",
+  "hints": [
+    "crypto/x509 と crypto/rand で自己署名証明書を生成",
+    "x509.CreateCertificate で CA 証明書とサーバー証明書を作成",
+    "tls.X509KeyPair(certPEM, keyPEM) で証明書ペアを読み込み",
+    "tls.Config{Certificates: []tls.Certificate{cert}} でサーバー設定",
+    "mTLS は server 側で ClientAuth: tls.RequireAndVerifyClientCert",
+    "ClientCAs に CA 証明書プールを設定してクライアント証明書を検証",
+    "tls.Config{InsecureSkipVerify: true} は本番では絶対に使わない",
+    "tls.Dial(\"tcp\", addr, config) で TLS クライアント接続"
+  ],
+  "files": ["tls.go.txt"]
+}

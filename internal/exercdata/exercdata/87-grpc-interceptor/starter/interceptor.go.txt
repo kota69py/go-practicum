@@ -1,0 +1,66 @@
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+)
+
+// LoggingInterceptor はリクエスト情報と呼び出し時間をログ出力するインターセプターを実装してください。
+func LoggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// TODO: 開始時刻を記録
+	// TODO: メソッド名とリクエスト内容をログ出力
+	// TODO: handler を呼び出し
+	// TODO: 経過時間をログ出力
+	return handler(ctx, req)
+}
+
+// RecoveryInterceptor は panic をキャッチし Internal エラーに変換するインターセプターを実装してください。
+func RecoveryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	// TODO: defer で panic を recover
+	// TODO: panic 時は status.Errorf(codes.Internal, ...) を返す
+	return handler(ctx, req)
+}
+
+// AuthInterceptor はメタデータから認証トークンを検証するインターセプターを実装してください。
+// メタデータキー "authorization" の値が "valid-token" の場合のみ通過、それ以外は Unauthenticated。
+func AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// TODO: metadata.FromIncomingContext(ctx) でメタデータ取得
+	// TODO: md["authorization"] からトークン取得
+	// TODO: トークンが "valid-token" か検証
+	// TODO: 不正な場合は status.Errorf(codes.Unauthenticated, ...) を返す
+	return handler(ctx, req)
+}
+
+// RateLimitInterceptor は1秒間のリクエスト数を制限するインターセプターを実装してください。
+// (簡易版: 同時に1リクエストしか処理しない)
+var rateLimitCh = make(chan struct{}, 1)
+
+func init() {
+	rateLimitCh <- struct{}{}
+}
+
+func RateLimitInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// TODO: select で rateLimitCh からトークン取得を試みる
+	// TODO: デフォルトで即座に取得できない場合は ResourceExhausted を返す
+	// TODO: 取得できたら handler 実行後チャネルに返却
+	return handler(ctx, req)
+}
+
+// contextKey は検証済みユーザー情報を context に保存するためのキーです。
+type ctxKeyUser struct{}
+
+// UserFromContext は context からユーザー情報を取得します。
+func UserFromContext(ctx context.Context) (string, bool) {
+	u, ok := ctx.Value(ctxKeyUser{}).(string)
+	return u, ok
+}
+
+var _ = log.Printf
+var _ = time.Now
+var _ = metadata.FromIncomingContext

@@ -1,0 +1,18 @@
+{
+  "name": "107-slog-basics",
+  "title": "slog 構造化ロギング — 基礎と実践",
+  "category": "logging",
+  "difficulty": 2,
+  "description": "Go 1.21 で標準化された log/slog パッケージを使った構造化ロギングを学びます。JSON/Text ハンドラー、ログレベル、グループ、属性、コンテキストを使ったロギングパターンを実装します。",
+  "hints": [
+    "slog.New(handler) で Logger を作成",
+    "slog.NewJSONHandler(w, nil) で JSON 出力",
+    "slog.NewTextHandler(w, nil) でテキスト出力",
+    "logger.Info(\"msg\", \"key\", val) でキー・バリューペア",
+    "slog.Group(\"group\", attrs...) でグループ化",
+    "slog.Level は Debug (-4), Info (0), Warn (4), Error (8)",
+    "slog.Log(ctx, level, \"msg\", attrs...) でコンテキスト付き",
+    "slog.SetDefault(logger) でデフォルト設定"
+  ],
+  "files": ["slog.go.txt"]
+}

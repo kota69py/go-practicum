@@ -1,0 +1,61 @@
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"strings"
+)
+
+type Platform struct {
+	OS   string
+	Arch string
+}
+
+func SupportedPlatforms() []Platform {
+	return []Platform{
+		{OS: "linux", Arch: "amd64"},
+		{OS: "linux", Arch: "arm64"},
+		{OS: "darwin", Arch: "amd64"},
+		{OS: "darwin", Arch: "arm64"},
+		{OS: "windows", Arch: "amd64"},
+	}
+}
+
+func CurrentPlatform() Platform {
+	return Platform{OS: runtime.GOOS, Arch: runtime.GOARCH}
+}
+
+func CrossCompileCommand(target Platform, output string) string {
+	ext := ""
+	if target.OS == "windows" {
+		ext = ".exe"
+	}
+	return fmt.Sprintf("CGO_ENABLED=0 GOOS=%s GOARCH=%s go build -o %s%s", target.OS, target.Arch, output, ext)
+}
+
+func Dockerfile(appName, targetOS, targetArch string) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf(`FROM --platform=$BUILDPLATFORM golang:alpine AS builder
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+ARG TARGETOS=%s
+ARG TARGETARCH=%s
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /%s
+
+FROM scratch
+COPY --from=builder /%s /%s
+ENTRYPOINT ["/%s"]
+`, targetOS, targetArch, appName, appName, appName, appName))
+	return b.String()
+}
+
+func IsSupported(os, arch string) bool {
+	for _, p := range SupportedPlatforms() {
+		if p.OS == os && p.Arch == arch {
+			return true
+		}
+	}
+	return false
+}

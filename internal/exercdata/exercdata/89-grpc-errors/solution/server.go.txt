@@ -1,0 +1,32 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	pb "grpc-errors/proto/echo"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type errorServer struct {
+	pb.UnimplementedEchoServiceServer
+}
+
+func (s *errorServer) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	switch req.Message {
+	case "not_found":
+		return nil, status.Error(codes.NotFound, "resource not found")
+	case "invalid":
+		return nil, status.Errorf(codes.InvalidArgument, "invalid message: %s", req.Message)
+	case "conflict":
+		return nil, status.Error(codes.AlreadyExists, "resource already exists")
+	case "internal":
+		return nil, status.Error(codes.Internal, "internal server error")
+	case "unavailable":
+		return nil, status.Error(codes.Unavailable, "service temporarily unavailable")
+	default:
+		return &pb.EchoResponse{Message: fmt.Sprintf("ok: %s", req.Message)}, nil
+	}
+}

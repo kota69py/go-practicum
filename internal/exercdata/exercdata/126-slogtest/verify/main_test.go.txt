@@ -1,0 +1,122 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"testing"
+	"testing/slogtest"
+)
+
+func TestHandlerWithSlogtest(t *testing.T) {
+	var buf bytes.Buffer
+	newHandler := func(t *testing.T) slog.Handler {
+		buf.Reset()
+		return NewMapHandler(&buf)
+	}
+	result := func(t *testing.T) map[string]string {
+		line := bytes.TrimSpace(buf.Bytes())
+		if len(line) == 0 {
+			return nil
+		}
+		var m map[string]any
+		if err := json.Unmarshal(line, &m); err != nil {
+			t.Fatalf("json unmarshal: %v", err)
+		}
+		out := make(map[string]string, len(m))
+		for k, v := range m {
+			out[k] = fmt.Sprint(v)
+		}
+		return out
+	}
+	slogtest.TestHandler(t, newHandler, result)
+}
+
+func TestEnabled(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewMapHandler(&buf)
+	if !h.Enabled(nil, slog.LevelDebug) {
+		t.Error("Enabled should return true for Debug")
+	}
+	if !h.Enabled(nil, slog.LevelInfo) {
+		t.Error("Enabled should return true for Info")
+	}
+	if !h.Enabled(nil, slog.LevelError) {
+		t.Error("Enabled should return true for Error")
+	}
+}
+
+func TestHandle(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewMapHandler(&buf)
+	logger := slog.New(h)
+	logger.Info("hello", "key1", "value1", "key2", 42)
+
+	line := bytes.TrimSpace(buf.Bytes())
+	var m map[string]any
+	if err := json.Unmarshal(line, &m); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
+	if m["key1"] != "value1" {
+		t.Errorf("key1 = %v, want %q", m["key1"], "value1")
+	}
+	if m["key2"] != float64(42) {
+		t.Errorf("key2 = %v, want %v", m["key2"], 42)
+	}
+}
+
+func TestWithAttrs(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewMapHandler(&buf)
+	h = h.WithAttrs([]slog.Attr{slog.String("env", "test")}).(*MapHandler)
+	logger := slog.New(h)
+	logger.Info("msg")
+
+	line := bytes.TrimSpace(buf.Bytes())
+	var m map[string]any
+	if err := json.Unmarshal(line, &m); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
+	if m["env"] != "test" {
+		t.Errorf("env = %v, want %q", m["env"], "test")
+	}
+}
+
+func TestWithGroup(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewMapHandler(&buf)
+	h = h.WithGroup("request").(*MapHandler)
+	logger := slog.New(h)
+	logger.Info("msg", "method", "GET")
+
+	line := bytes.TrimSpace(buf.Bytes())
+	var m map[string]any
+	if err := json.Unmarshal(line, &m); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
+	if m["request.method"] != "GET" {
+		t.Errorf("request.method = %v, want %q", m["request.method"], "GET")
+	}
+}
+
+func TestWithAttrsAndGroup(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewMapHandler(&buf)
+	h = h.WithAttrs([]slog.Attr{slog.String("service", "api")}).(*MapHandler)
+	h = h.WithGroup("request").(*MapHandler)
+	logger := slog.New(h)
+	logger.Info("msg", "method", "POST")
+
+	line := bytes.TrimSpace(buf.Bytes())
+	var m map[string]any
+	if err := json.Unmarshal(line, &m); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
+	if m["service"] != "api" {
+		t.Errorf("service = %v, want %q", m["service"], "api")
+	}
+	if m["request.method"] != "POST" {
+		t.Errorf("request.method = %v, want %q", m["request.method"], "POST")
+	}
+}

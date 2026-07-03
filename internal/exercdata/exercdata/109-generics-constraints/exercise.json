@@ -1,0 +1,17 @@
+{
+  "name": "109-generics-constraints",
+  "title": "Generics 深掘り — 型制約と型推論",
+  "category": "language",
+  "difficulty": 3,
+  "description": "Go 1.18 で導入されたジェネリクスの応用を学びます。カスタム型制約（~tilde 型, 複合インターフェース）、型推論の境界ケース、constraints パッケージ、型パラメーター付きメソッドと型の設計パターンを理解します。",
+  "hints": [
+    "type Number interface { ~int | ~float64 } で tilde 制約",
+    "comparable は == と != をサポートする制約",
+    "cmp.Ordered は < > <= >= をサポート",
+    "type inference: 関数呼び出し時に型引数を省略できる",
+    "func Foo[T any](t T) {} と Foo(42) で int に推論",
+    "型制約にメソッドも含められる (interface { String() string; ~int })",
+    "Go 1.18 では型パラメーターを持つメソッドは定義不可"
+  ],
+  "files": ["generics.go.txt"]
+}

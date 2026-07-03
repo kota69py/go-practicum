@@ -1,0 +1,17 @@
+{
+  "name": "123-sse",
+  "title": "Server-Sent Events — サーバープッシュ配信",
+  "category": "net",
+  "difficulty": 3,
+  "description": "Server-Sent Events (SSE) を使ったサーバープッシュ通信を学びます。WebSocket より軽量な一方向ストリーミングを実装し、http.Flusher によるチャンク転送、イベントストリームのフォーマット、再接続ロジックを理解します。",
+  "hints": [
+    "Content-Type: text/event-stream で SSE を開始",
+    "http.Flusher でデータを即座にフラッシュ",
+    "data: フィールドでメッセージ本文を送信",
+    "event: フィールドでイベントタイプを指定",
+    "id: フィールドで Last-Event-ID による再開",
+    "retry: フィールドでクライアントの再接続間隔を指定",
+    "net/http/httptest で SSE エンドポイントをテスト"
+  ],
+  "files": ["sse.go.txt"]
+}

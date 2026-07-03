@@ -1,0 +1,53 @@
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var jwtSecret = []byte("my-secret-key-12345")
+
+// UserClaims はカスタムクレームです。
+type UserClaims struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	jwt.RegisteredClaims
+}
+
+// CreateToken はユーザー情報から JWT を生成してください。
+// 有効期限は duration 後、発行者は "go-practicum"、対象者は "api" とします。
+func CreateToken(userID, username, role string, duration time.Duration) (string, error) {
+	// TODO: UserClaims を作成（UserID, Username, Role）
+	// TODO: RegisteredClaims に ExpiresAt, Issuer, Audience を設定
+	// TODO: jwt.NewWithClaims でトークン作成
+	// TODO: token.SignedString(jwtSecret) で署名
+	return "", nil
+}
+
+// ValidateToken は JWT を検証し、クレームを返してください。
+// 署名検証・有効期限・発行者・対象者をチェックします。
+func ValidateToken(tokenString string) (*UserClaims, error) {
+	// TODO: jwt.ParseWithClaims でトークンをパース
+	// TODO: keyFunc で jwtSecret を返す
+	// TODO: jwt.WithIssuer("go-practicum") / jwt.WithAudience("api") で検証オプション
+	// TODO: claims.(*UserClaims) でキャストして返す
+	return nil, nil
+}
+
+// RefreshToken は有効期限内のトークンを新しいトークンにリフレッシュしてください。
+// 元のトークンが期限内であることを確認し、新しい duration で再発行します。
+func RefreshToken(tokenString string, duration time.Duration) (string, error) {
+	// TODO: ValidateToken で検証
+	// TODO: 有効なら同じクレームで CreateToken
+	return "", nil
+}
+
+// GetSecret は外部テスト用に現在のシークレットを返します。
+func GetSecret() []byte {
+	return jwtSecret
+}
+
+var _ = fmt.Sprintf

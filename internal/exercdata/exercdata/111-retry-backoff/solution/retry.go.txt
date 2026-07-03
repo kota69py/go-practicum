@@ -1,0 +1,127 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"math/rand/v2"
+	"time"
+)
+
+type RetryError struct {
+	Attempts int
+	Errors   []error
+}
+
+func (e *RetryError) Error() string {
+	return fmt.Sprintf("retry failed after %d attempts: %v", e.Attempts, e.Errors[len(e.Errors)-1])
+}
+
+type BackoffStrategy int
+
+const (
+	StrategyExponential BackoffStrategy = iota
+	StrategyFullJitter
+	StrategyEqualJitter
+	StrategyDecorrelatedJitter
+)
+
+type RetryConfig struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
+	Strategy    BackoffStrategy
+}
+
+func DefaultRetryConfig() RetryConfig {
+	return RetryConfig{
+		MaxAttempts: 3,
+		BaseDelay:   100 * time.Millisecond,
+		MaxDelay:    5 * time.Second,
+		Strategy:    StrategyExponential,
+	}
+}
+
+func Retry(ctx context.Context, config RetryConfig, fn func(context.Context) error) error {
+	var errs []error
+	var prevDelay time.Duration
+
+	for attempt := 0; attempt < config.MaxAttempts; attempt++ {
+		if err := fn(ctx); err == nil {
+			return nil
+		} else {
+			errs = append(errs, err)
+		}
+
+		if attempt == config.MaxAttempts-1 {
+			break
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		delay := calculateDelay(attempt, config, prevDelay)
+		prevDelay = delay
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+
+	return &RetryError{Attempts: config.MaxAttempts, Errors: errs}
+}
+
+func calculateDelay(attempt int, config RetryConfig, prevDelay time.Duration) time.Duration {
+	delay := config.BaseDelay
+	for i := 0; i < attempt; i++ {
+		delay *= 2
+		if delay > config.MaxDelay {
+			delay = config.MaxDelay
+			break
+		}
+	}
+
+	switch config.Strategy {
+	case StrategyFullJitter:
+		delay = FullJitter(delay)
+	case StrategyEqualJitter:
+		delay = EqualJitter(delay)
+	case StrategyDecorrelatedJitter:
+		delay = DecorrelatedJitter(prevDelay, config.MaxDelay)
+	}
+
+	if delay > config.MaxDelay {
+		delay = config.MaxDelay
+	}
+	return delay
+}
+
+func FullJitter(delay time.Duration) time.Duration {
+	if delay <= 0 {
+		return 0
+	}
+	return time.Duration(rand.Int64N(int64(delay)))
+}
+
+func EqualJitter(delay time.Duration) time.Duration {
+	if delay <= 0 {
+		return 0
+	}
+	half := delay / 2
+	return half + time.Duration(rand.Int64N(int64(half)))
+}
+
+func DecorrelatedJitter(prevDelay, cap time.Duration) time.Duration {
+	if prevDelay <= 0 {
+		return time.Duration(rand.Int64N(int64(cap)))
+	}
+	max := prevDelay * 3
+	if max > cap {
+		max = cap
+	}
+	return time.Duration(rand.Int64N(int64(max)))
+}

@@ -1,0 +1,30 @@
+package main
+
+import "iter"
+
+// Node は二分木のノードを表します。
+type Node struct {
+	Value int
+	Left  *Node
+	Right *Node
+}
+
+// Inorder は二分木を inorder（左→根→右）で巡回するイテレータを返してください。
+func (n *Node) Inorder() iter.Seq[int] {
+	return nil
+}
+
+// BFS は二分木を幅優先（レベル順）で巡回するイテレータを返してください。
+func (n *Node) BFS() iter.Seq[int] {
+	return nil
+}
+
+// Paths は根から葉までのすべてのパスをスライスとして返すイテレータを返してください。
+func (n *Node) Paths() iter.Seq[[]int] {
+	return nil
+}
+
+// helper: DFS で値を収集（Inorder の内部実装に使えます）
+func inorder(n *Node, yield func(int) bool) bool {
+	return true
+}

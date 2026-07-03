@@ -1,0 +1,16 @@
+{
+  "name": "100-docker-multiarch",
+  "title": "Docker マルチアーキテクチャ — クロスコンパイルとマルチステージビルド",
+  "category": "os",
+  "difficulty": 2,
+  "description": "Go アプリケーションの Docker マルチステージビルドとマルチアーキテクチャ対応を学びます。runtime.GOOS/GOARCH によるプラットフォーム検出、docker buildx でのクロスプラットフォームビルド、軽量な distroless イメージの作成方法を理解します。",
+  "hints": [
+    "runtime.GOOS と runtime.GOARCH で現在のプラットフォームを取得",
+    "マルチステージビルド: builder ステージ + 実行ステージ",
+    "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build でクロスコンパイル",
+    "distroless/base や alpine:latest を実行イメージに使用",
+    "docker buildx build --platform linux/amd64,linux/arm64 でマルチアーキ",
+    "FROM --platform=$BUILDPLATFORM golang:alpine AS builder"
+  ],
+  "files": ["platform.go.txt"]
+}

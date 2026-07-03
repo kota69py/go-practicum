@@ -1,0 +1,78 @@
+package main
+
+import (
+	"os"
+	"testing"
+)
+
+func TestAdd(t *testing.T) {
+	if os.Getenv("CGO_ENABLED") == "0" {
+		t.Skip("CGO is disabled")
+	}
+	tests := []struct{ a, b, want int }{
+		{1, 2, 3},
+		{0, 0, 0},
+		{-1, 1, 0},
+		{100, 200, 300},
+	}
+	for _, tc := range tests {
+		got := Add(tc.a, tc.b)
+		if got != tc.want {
+			t.Errorf("Add(%d, %d) = %d, want %d", tc.a, tc.b, got, tc.want)
+		}
+	}
+}
+
+func TestMultiply(t *testing.T) {
+	if os.Getenv("CGO_ENABLED") == "0" {
+		t.Skip("CGO is disabled")
+	}
+	tests := []struct{ a, b, want float64 }{
+		{2.0, 3.0, 6.0},
+		{0, 5, 0},
+		{-2, 3, -6},
+		{1.5, 2, 3},
+	}
+	for _, tc := range tests {
+		got := Multiply(tc.a, tc.b)
+		if got != tc.want {
+			t.Errorf("Multiply(%v, %v) = %v, want %v", tc.a, tc.b, got, tc.want)
+		}
+	}
+}
+
+func TestStringLength(t *testing.T) {
+	if os.Getenv("CGO_ENABLED") == "0" {
+		t.Skip("CGO is disabled")
+	}
+	tests := []struct{ s string; want int }{
+		{"hello", 5},
+		{"", 0},
+		{"abc", 3},
+		{"こんにちは", 15}, // UTF-8 bytes
+	}
+	for _, tc := range tests {
+		got := StringLength(tc.s)
+		if got != tc.want {
+			t.Errorf("StringLength(%q) = %d, want %d", tc.s, got, tc.want)
+		}
+	}
+}
+
+func TestConcat(t *testing.T) {
+	if os.Getenv("CGO_ENABLED") == "0" {
+		t.Skip("CGO is disabled")
+	}
+	tests := []struct{ a, b, want string }{
+		{"Hello ", "World!", "Hello World!"},
+		{"", "", ""},
+		{"foo", "bar", "foobar"},
+		{"a", "b", "ab"},
+	}
+	for _, tc := range tests {
+		got := Concat(tc.a, tc.b)
+		if got != tc.want {
+			t.Errorf("Concat(%q, %q) = %q, want %q", tc.a, tc.b, got, tc.want)
+		}
+	}
+}

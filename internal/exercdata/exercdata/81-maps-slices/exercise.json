@@ -1,0 +1,18 @@
+{
+  "name": "81-maps-slices",
+  "title": "maps / slices — 標準化されたコレクション操作",
+  "category": "language",
+  "difficulty": 2,
+  "description": "Go 1.21 で標準化された maps / slices / cmp パッケージの実践的な使い方を学びます。slices.Sort / maps.Clone / cmp.Compare など、標準ライブラリに統合された便利な関数を実戦で使いこなしましょう。",
+  "hints": [
+    "slices.Sort(s) でスライスを破壊的にソート",
+    "slices.Index(s, v) で線形探索（なければ -1）",
+    "slices.Compact(s) で連続した同一要素を除去",
+    "slices.Clone(s) でスライスのシャローコピー",
+    "maps.Clone(m) でマップのシャローコピー",
+    "maps.Keys(m) / maps.Values(m) でキー・値のスライス取得",
+    "cmp.Compare(a, b) で -1/0/1 の比較結果",
+    "cmp.Or(a, b) で最初の非ゼロ値を返す"
+  ],
+  "files": ["main.go.txt"]
+}

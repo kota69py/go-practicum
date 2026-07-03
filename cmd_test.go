@@ -210,7 +210,7 @@ func TestBinaryExportJSON(t *testing.T) {
 
 func TestBinaryExportInvalidFormat(t *testing.T) {
 	bin := buildTestBinary(t)
-	out, _ := exec.Command(bin, "export", "csv").CombinedOutput()
+	out, _ := exec.Command(bin, "export", "xml").CombinedOutput()
 	output := string(out)
 	if !strings.Contains(output, "未対応") {
 		t.Errorf("expected '未対応' error, got:\n%s", output)

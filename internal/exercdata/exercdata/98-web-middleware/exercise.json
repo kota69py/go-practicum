@@ -1,0 +1,16 @@
+{
+  "name": "98-web-middleware",
+  "title": "Web ミドルウェア — ロギング・リカバリー・認可",
+  "category": "web",
+  "difficulty": 2,
+  "description": "Go の net/http におけるミドルウェアパターンを学びます。http.Handler をラップする関数型ミドルウェアのチェーン、リクエストロギング、パニックリカバリー、簡単な認可処理を実装します。",
+  "hints": [
+    "type Middleware func(http.Handler) http.Handler を定義",
+    "ミドルウェアは next.ServeHTTP(w, r) を呼ぶ前後に処理を挿入",
+    "ロギング: time.Now() で開始時刻を記録、終了後に経過時間を出力",
+    "リカバリー: defer + recover() でパニックをキャッチ、500 を返す",
+    "認可: r.Header.Get(\"Authorization\") でトークン取得",
+    "middleware.Chain(h, m1, m2, m3) でチェーン実行"
+  ],
+  "files": ["middleware.go.txt"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "97-web-router",
+  "title": "Web ルーター — Go 1.22+ ServeMux ルーティング",
+  "category": "web",
+  "difficulty": 2,
+  "description": "Go 1.22 で強化された net/http.ServeMux のルーティング機能を学びます。メソッドベースルーティング、パスパラメータ、ワイルドカードパターンを実装し、RESTful API のルーティングを構築します。",
+  "hints": [
+    "mux.HandleFunc(\"GET /api/users/{id}\", handler) でメソッド+パス指定",
+    "{id} でパスパラメータをキャプチャ",
+    "r.PathValue(\"id\") でパラメータ値を取得",
+    "{\" ...} でワイルドカードマッチ（末尾）",
+    "http.Handler を返す関数を作ってルーティングをカプセル化",
+    "404 ハンドリングは mux.HandleFunc(\"/\", notFoundHandler) で実現"
+  ],
+  "files": ["router.go.txt"]
+}

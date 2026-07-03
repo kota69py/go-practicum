@@ -1,0 +1,113 @@
+package main
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func okHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
+}
+
+func panicHandler(w http.ResponseWriter, r *http.Request) {
+	panic("test panic")
+}
+
+func TestLoggerMiddleware(t *testing.T) {
+	h := Logger(http.HandlerFunc(okHandler))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/test")
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestRecoveryMiddleware(t *testing.T) {
+	h := Recovery(http.HandlerFunc(panicHandler))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/panic")
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusInternalServerError)
+	}
+}
+
+func TestAuthMiddlewareValid(t *testing.T) {
+	mw := Auth("mysecrettoken")
+	h := mw(http.HandlerFunc(okHandler))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	req, _ := http.NewRequest("GET", srv.URL+"/protected", nil)
+	req.Header.Set("Authorization", "Bearer mysecrettoken")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestAuthMiddlewareInvalid(t *testing.T) {
+	mw := Auth("mysecrettoken")
+	h := mw(http.HandlerFunc(okHandler))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/protected")
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusUnauthorized)
+	}
+}
+
+func TestChain(t *testing.T) {
+	h := Chain(http.HandlerFunc(okHandler), Logger, Recovery)
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/chain")
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestChainWithAuth(t *testing.T) {
+	mwAuth := Auth("token123")
+	h := Chain(http.HandlerFunc(okHandler), Logger, Recovery, mwAuth)
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	req, _ := http.NewRequest("GET", srv.URL+"/protected", nil)
+	req.Header.Set("Authorization", "Bearer token123")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}

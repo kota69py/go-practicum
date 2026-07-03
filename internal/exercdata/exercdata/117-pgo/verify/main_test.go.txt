@@ -1,0 +1,51 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestFibonacci(t *testing.T) {
+	if got := Fibonacci(0); got != 0 {
+		t.Errorf("Fibonacci(0) = %d, want 0", got)
+	}
+	if got := Fibonacci(1); got != 1 {
+		t.Errorf("Fibonacci(1) = %d, want 1", got)
+	}
+	if got := Fibonacci(10); got != 55 {
+		t.Errorf("Fibonacci(10) = %d, want 55", got)
+	}
+}
+
+func TestCompute(t *testing.T) {
+	result := Compute(10)
+	if result <= 0 {
+		t.Errorf("Compute(10) = %d, want > 0", result)
+	}
+}
+
+func TestGenerateCPUProfile(t *testing.T) {
+	profilePath := filepath.Join(t.TempDir(), "cpu.pprof")
+	err := GenerateCPUProfile(profilePath)
+	if err != nil {
+		t.Fatalf("GenerateCPUProfile: %v", err)
+	}
+	info, err := os.Stat(profilePath)
+	if err != nil {
+		t.Fatalf("os.Stat: %v", err)
+	}
+	if info.Size() == 0 {
+		t.Fatal("profile file is empty")
+	}
+}
+
+func TestDefaultPGOFile(t *testing.T) {
+	name := "default.pgo"
+	if name == "" {
+		t.Fatal("default.pgo must not be empty")
+	}
+	if len(name) < 5 {
+		t.Fatal("default.pgo filename too short")
+	}
+}

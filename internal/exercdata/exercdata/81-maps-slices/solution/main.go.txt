@@ -1,0 +1,60 @@
+package main
+
+import (
+	"cmp"
+	"maps"
+	"slices"
+)
+
+func SortStrings(s []string) []string {
+	slices.Sort(s)
+	return s
+}
+
+func SortDesc(n []int) []int {
+	slices.SortFunc(n, func(a, b int) int {
+		return cmp.Compare(b, a)
+	})
+	return n
+}
+
+func FindIndex[T comparable](s []T, v T) int {
+	return slices.Index(s, v)
+}
+
+func CompactCopy[T comparable](s []T) []T {
+	s = slices.Clone(s)
+	return slices.Compact(s)
+}
+
+func MergeUnique(a, b []int) []int {
+	m := make(map[int]struct{})
+	for _, v := range a {
+		m[v] = struct{}{}
+	}
+	for _, v := range b {
+		m[v] = struct{}{}
+	}
+	return slices.Collect(maps.Keys(m))
+}
+
+func MaxValueKey(m map[string]int) string {
+	if len(m) == 0 {
+		return ""
+	}
+	var bestKey string
+	var bestVal int
+	first := true
+	for k, v := range m {
+		if first || cmp.Compare(v, bestVal) > 0 {
+			bestKey = k
+			bestVal = v
+			first = false
+		}
+	}
+	return bestKey
+}
+
+func FirstNonZero(vals ...int) int {
+	return cmp.Or(vals...)
+}

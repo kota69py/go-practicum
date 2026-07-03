@@ -1,0 +1,16 @@
+{
+  "name": "83-servemux-routing",
+  "title": "ServeMux — メソッドベースルーティングとパスパラメータ",
+  "category": "net",
+  "difficulty": 3,
+  "description": "Go 1.22 で強化された net/http.ServeMux を使って、RESTful な API を構築します。メソッドベースルーティング（GET / POST）、パスパラメータ（{id}）など、新しい ServeMux の機能をマスターしましょう。",
+  "hints": [
+    "mux.HandleFunc(\"GET /api/users/{id}\", handler) でメソッドとパスを指定",
+    "パスパラメータは r.PathValue(\"id\") で取得",
+    "go 1.22 以降の ServeMux は完全互換",
+    "POST / DELETE / PUT など主要な HTTP メソッドが使える",
+    "{id...} で末尾の全セグメントにマッチ",
+    "存在しないユーザには 404 を返す"
+  ],
+  "files": ["handler.go.txt"]
+}

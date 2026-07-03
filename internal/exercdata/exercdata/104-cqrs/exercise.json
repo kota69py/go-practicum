@@ -1,0 +1,16 @@
+{
+  "name": "104-cqrs",
+  "title": "CQRS — コマンド・クエリ責務分離",
+  "category": "architecture",
+  "difficulty": 3,
+  "description": "CQRS（Command Query Responsibility Segregation）パターンを Go で実装します。書き込みモデル（Command）と読み取りモデル（Query）を分離し、それぞれに最適化されたデータ構造とインターフェースを設計します。",
+  "hints": [
+    "Command: 状態を変更する操作（Create, Update, Delete）",
+    "Query: 状態を読み取る操作（Get, List）",
+    "異なるモデルで同じデータを異なる視点で表現",
+    "Command は void または ID を返す、値を返さない",
+    "Query は値を返す、状態を変更しない",
+    "InMemory 実装では異なるデータ構造で read/write を最適化"
+  ],
+  "files": ["cqrs.go.txt"]
+}

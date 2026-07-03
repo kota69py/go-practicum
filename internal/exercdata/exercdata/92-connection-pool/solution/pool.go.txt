@@ -1,0 +1,117 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"sync"
+	"time"
+
+	_ "modernc.org/sqlite"
+)
+
+func InitDB(dsn string, maxOpen, maxIdle int, maxLifetime time.Duration) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("sql.Open: %w", err)
+	}
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
+	db.SetConnMaxLifetime(maxLifetime)
+	return db, nil
+}
+
+func SeedData(db *sql.DB, count int) error {
+	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)"); err != nil {
+		return err
+	}
+	batchSize := 100
+	for i := 0; i < count; i += batchSize {
+		end := i + batchSize
+		if end > count {
+			end = count
+		}
+		tx, err := db.Begin()
+		if err != nil {
+			return err
+		}
+		stmt, err := tx.Prepare("INSERT INTO users (name) VALUES (?)")
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		for j := i; j < end; j++ {
+			if _, err := stmt.Exec(fmt.Sprintf("user-%d", j)); err != nil {
+				stmt.Close()
+				tx.Rollback()
+				return err
+			}
+		}
+		stmt.Close()
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func QueryAll(db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT name FROM users ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
+}
+
+type PoolStats struct {
+	OpenConnections   int
+	InUse             int
+	Idle              int
+	WaitCount         int64
+	WaitDuration      time.Duration
+	MaxIdleClosed     int64
+	MaxLifetimeClosed int64
+}
+
+func GetPoolStats(db *sql.DB) PoolStats {
+	s := db.Stats()
+	return PoolStats{
+		OpenConnections:   s.OpenConnections,
+		InUse:             s.InUse,
+		Idle:              s.Idle,
+		WaitCount:         s.WaitCount,
+		WaitDuration:      s.WaitDuration,
+		MaxIdleClosed:     s.MaxIdleClosed,
+		MaxLifetimeClosed: s.MaxLifetimeClosed,
+	}
+}
+
+func RunConcurrentQueries(db *sql.DB, n int, simulateWork time.Duration) error {
+	var wg sync.WaitGroup
+	errs := make(chan error, n)
+	for range n {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := QueryAll(db)
+			if err != nil {
+				errs <- err
+			}
+			time.Sleep(simulateWork)
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		return err
+	}
+	return nil
+}

@@ -1,0 +1,17 @@
+{
+  "name": "112-circuit-breaker",
+  "title": "Circuit Breaker — 障害分離パターン",
+  "category": "error-handling",
+  "difficulty": 3,
+  "description": "Circuit Breaker パターンを実装します。Closed（通常）/ Open（遮断）/ Half-Open（プローブ）の 3-state マシンで、失敗しきい値・回復タイムアウト・Half-Open プローブリクエストを管理します。",
+  "hints": [
+    "状態は Closed, Open, HalfOpen の3つ",
+    "atomic.Int32 か独自型で状態を管理",
+    "失敗カウンターが閾値を超えると Closed → Open",
+    "Open 状態は RecoveryTimeout 後に HalfOpen に遷移",
+    "HalfOpen でプローブ成功 → Closed, 失敗 → Open",
+    "Open 時は即座にエラーを返す（ショートサーキット）",
+    "sync.RWMutex より atomic 操作のほうが効率的"
+  ],
+  "files": ["breaker.go.txt"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "85-context-propagation",
+  "title": "コンテキスト伝搬 — HTTP を越えたトレース連携",
+  "category": "observability",
+  "difficulty": 4,
+  "description": "分散トレーシングにおいて、異なるサービス間でトレースコンテキストを伝搬する方法を学びます。HTTP ヘッダーを介した Trace ID / Span ID の伝搬、ミドルウェアによる抽出・注入、下流サービスでのスパン継続を実装します。",
+  "hints": [
+    "トレースコンテキストを HTTP ヘッダーで伝搬する（traceparent 形式）",
+    "サーバ側のミドルウェアでヘッダーからトレースコンテキストを抽出",
+    "抽出したコンテキストを context.Context に格納",
+    "送信側（HTTP クライアント）で context からトレースコンテキストを取り出しヘッダーに設定",
+    "親スパンのコンテキストを使って子スパンを作成すると継続関係が表現できる",
+    "context.WithValue でトレースコンテキストを伝搬"
+  ],
+  "files": ["propagation.go.txt"]
+}

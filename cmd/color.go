@@ -1,16 +1,19 @@
 package cmd
 
 import (
+	"os"
 	"runtime"
 	"strings"
+
+	"golang.org/x/term"
 )
 
 var (
-	useColor = runtime.GOOS != "windows" || isModernTerminal()
+	useColor = (runtime.GOOS != "windows" || isModernTerminal()) && term.IsTerminal(int(os.Stdout.Fd()))
 )
 
 func isModernTerminal() bool {
-	return true
+	return os.Getenv("WT_SESSION") != "" || os.Getenv("TERM_PROGRAM") != ""
 }
 
 func colorGreen(s string) string {

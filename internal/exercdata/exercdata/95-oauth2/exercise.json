@@ -1,0 +1,18 @@
+{
+  "name": "95-oauth2",
+  "title": "OAuth2 認可コードフロー — トークン取得とリフレッシュ",
+  "category": "security",
+  "difficulty": 3,
+  "description": "OAuth2 認可コードフローを実装します。golang.org/x/oauth2 パッケージを使って認可リクエスト、トークン交換、アクセストークンとリフレッシュトークンの管理、トークンの自動リフレッシュを学びます。",
+  "hints": [
+    "oauth2.Config に ClientID, ClientSecret, Endpoint, RedirectURL を設定",
+    "config.AuthCodeURL(state) で認可URLを生成",
+    "config.Exchange(ctx, code) で認可コードをトークンに交換",
+    "oauth2.Token は AccessToken, RefreshToken, Expiry を持つ",
+    "token.Valid() でトークンの有効性を確認",
+    "tokenSource := config.TokenSource(ctx, token) で自動リフレッシュ",
+    "oauth2.NewClient(ctx, tokenSource) で認証済みHTTPクライアント",
+    "httptest.NewServer でモックOAuth2プロバイダーを実装"
+  ],
+  "files": ["oauth.go.txt"]
+}

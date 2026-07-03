@@ -1,0 +1,125 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestEncryptDecrypt(t *testing.T) {
+	key := make([]byte, 32)
+	plaintext := "my-secret-api-key-12345"
+
+	encrypted, err := Encrypt(key, plaintext)
+	if err != nil {
+		t.Fatalf("Encrypt: %v", err)
+	}
+	if encrypted == "" {
+		t.Fatal("expected non-empty ciphertext")
+	}
+
+	decrypted, err := Decrypt(key, encrypted)
+	if err != nil {
+		t.Fatalf("Decrypt: %v", err)
+	}
+	if decrypted != plaintext {
+		t.Errorf("got %q, want %q", decrypted, plaintext)
+	}
+}
+
+func TestEncryptDifferentKey(t *testing.T) {
+	key1 := make([]byte, 32)
+	key1[0] = 1
+	key2 := make([]byte, 32)
+	key2[0] = 2
+
+	encrypted, _ := Encrypt(key1, "secret")
+	_, err := Decrypt(key2, encrypted)
+	if err == nil {
+		t.Fatal("expected error decrypting with wrong key")
+	}
+}
+
+func TestSecretStoreSetGet(t *testing.T) {
+	store, err := NewSecretStore()
+	if err != nil {
+		t.Fatalf("NewSecretStore: %v", err)
+	}
+
+	store.Set("api-key", "sk-123456")
+	if got := store.Get("api-key"); got != "sk-123456" {
+		t.Errorf("got %q, want %q", got, "sk-123456")
+	}
+}
+
+func TestSecretStoreDelete(t *testing.T) {
+	store, _ := NewSecretStore()
+	store.Set("key", "value")
+	store.Delete("key")
+	if got := store.Get("key"); got != "" {
+		t.Errorf("expected empty, got %q", got)
+	}
+}
+
+func TestSaveLoad(t *testing.T) {
+	store, _ := NewSecretStore()
+	store.Set("db-password", "p@ssw0rd")
+	store.Set("api-key", "sk-abcdef")
+
+	path := filepath.Join(t.TempDir(), "secrets.enc")
+	if err := store.SaveToFile(path); err != nil {
+		t.Fatalf("SaveToFile: %v", err)
+	}
+
+	loaded, err := LoadFromFile(path)
+	if err != nil {
+		t.Fatalf("LoadFromFile: %v", err)
+	}
+
+	if got := loaded.Get("db-password"); got != "p@ssw0rd" {
+		t.Errorf("db-password: got %q, want %q", got, "p@ssw0rd")
+	}
+	if got := loaded.Get("api-key"); got != "sk-abcdef" {
+		t.Errorf("api-key: got %q, want %q", got, "sk-abcdef")
+	}
+}
+
+func TestGetEnvSecret(t *testing.T) {
+	os.Setenv("TEST_MY_SECRET", "super-secret-value")
+	defer os.Unsetenv("TEST_MY_SECRET")
+
+	val, err := GetEnvSecret("TEST_MY_SECRET")
+	if err != nil {
+		t.Fatalf("GetEnvSecret: %v", err)
+	}
+	if val != "super-secret-value" {
+		t.Errorf("got %q, want %q", val, "super-secret-value")
+	}
+}
+
+func TestGetEnvSecretNotFound(t *testing.T) {
+	_, err := GetEnvSecret("NONEXISTENT_VARIABLE_XYZ")
+	if err != ErrSecretNotFound {
+		t.Errorf("expected ErrSecretNotFound, got %v", err)
+	}
+}
+
+func TestClear(t *testing.T) {
+	b := []byte{1, 2, 3, 4, 5}
+	Clear(b)
+	for i, v := range b {
+		if v != 0 {
+			t.Errorf("b[%d] = %d, want 0", i, v)
+		}
+	}
+}
+
+func TestNewSecretStore(t *testing.T) {
+	store, err := NewSecretStore()
+	if err != nil {
+		t.Fatalf("NewSecretStore: %v", err)
+	}
+	if store == nil {
+		t.Fatal("store is nil")
+	}
+}

@@ -1,0 +1,31 @@
+package main
+
+import (
+	"context"
+	"time"
+
+	pb "grpc-deadline/proto/echo"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+// CallWithDeadline は context にタイムアウトを設定して Echo RPC を呼び出します。
+// deadline に 0 以下の値が渡された場合はタイムアウトなしで呼び出します。
+func CallWithDeadline(client pb.EchoServiceClient, message string, timeout time.Duration) (string, error) {
+	// TODO: timeout > 0 の場合、context.WithTimeout で ctx を作成
+	// TODO: defer cancel() でリソース解放
+	// TODO: client.Echo(ctx, req) を呼び出す
+	// TODO: 正常応答 → レスポンスの Message と nil を返す
+	// TODO: DeadlineExceeded → エラーをラップして返す
+	return "", nil
+}
+
+// CallWithRetry は DeadlineExceeded の場合にリトライを試みます。
+func CallWithRetry(client pb.EchoServiceClient, message string, timeout time.Duration, maxRetries int) (string, error) {
+	// TODO: maxRetries 回までリトライ
+	// TODO: 初回とリトライは同じタイムアウト
+	// TODO: DeadlineExceeded 以外のエラーは即座に返す
+	return "", nil
+}

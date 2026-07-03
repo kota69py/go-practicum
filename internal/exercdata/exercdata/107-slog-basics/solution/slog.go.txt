@@ -1,0 +1,33 @@
+package main
+
+import (
+	"context"
+	"io"
+	"log/slog"
+)
+
+func NewJSONLogger(w io.Writer) *slog.Logger {
+	return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: slog.LevelInfo}))
+}
+
+func NewTextLogger(w io.Writer) *slog.Logger {
+	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: slog.LevelDebug}))
+}
+
+func LogUserActivity(logger *slog.Logger, userID, action string, durationMs int64) {
+	logger.Info("user activity",
+		slog.Group("user",
+			slog.String("id", userID),
+			slog.String("action", action),
+			slog.Int64("duration_ms", durationMs),
+		),
+	)
+}
+
+func LogWithContext(ctx context.Context, logger *slog.Logger, msg string) {
+	slog.Log(ctx, slog.LevelInfo, msg)
+}
+
+func SetDefaultJSON(w io.Writer) {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(w, nil)))
+}

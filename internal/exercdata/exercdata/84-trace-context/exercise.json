@@ -1,0 +1,17 @@
+{
+  "name": "84-trace-context",
+  "title": "トレーシングコンテキスト — 分散トレーシングの基礎",
+  "category": "observability",
+  "difficulty": 3,
+  "description": "OpenTelemetry のコアコンセプトである Trace / Span / SpanContext / TracerProvider を、軽量な自作実装で学びます。トレース ID の生成、スパン階層の管理、属性・イベントの記録を実装し、JSON 形式でエクスポートします。",
+  "hints": [
+    "TraceID は 16 バイト (128bit) のランダム値、16進数エンコードして 32 文字",
+    "SpanID は 8 バイト (64bit) のランダム値、16進数エンコードして 16 文字",
+    "スパンは子→親の階層（Parent Span ID）を持つ",
+    "TracerProvider は Tracer を作成するファクトリ",
+    "Tracer は Start メソッドで新しいスパンを開始する",
+    "スパンの終了時にエクスポータに出力する",
+    "イベント（Log/Error）はタイムスタンプ付きでスパンに追加"
+  ],
+  "files": ["trace.go.txt"]
+}

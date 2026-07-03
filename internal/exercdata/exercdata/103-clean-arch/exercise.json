@@ -1,0 +1,16 @@
+{
+  "name": "103-clean-arch",
+  "title": "クリーンアーキテクチャ — Entity → UseCase → Repository → Handler",
+  "category": "architecture",
+  "difficulty": 3,
+  "description": "クリーンアーキテクチャの各レイヤー（Entity → UseCase → Repository → Handler）を Go で実装します。依存関係の方向を内側（Entity）から外側（Handler）に向け、依存性逆転の原則（DIP）を適用してテスタブルなアーキテクチャを構築します。",
+  "hints": [
+    "Entity: ビジネスロジックの中核、外部依存なし",
+    "UseCase: アプリケーション固有のビジネスルール",
+    "Repository: データアクセスのインターフェース（DIP）",
+    "Handler: HTTP/CLI などの外部インターフェース",
+    "依存性は常に内側に向かう（Entity←UseCase←Repository←Handler）",
+    "インターフェースは利用する側（UseCase）で定義する"
+  ],
+  "files": ["cleanarch.go.txt"]
+}

@@ -1,0 +1,143 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestCreateOrder(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+
+	id, err := cmdSvc.CreateOrder(CreateOrderCommand{
+		Customer: "Alice",
+		Items: []OrderItem{
+			{ProductID: "p1", Quantity: 2, Price: 10.0},
+			{ProductID: "p2", Quantity: 1, Price: 5.0},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateOrder: %v", err)
+	}
+	if id == "" {
+		t.Fatal("expected non-empty ID")
+	}
+}
+
+func TestQueryOrder(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+	querySvc := NewOrderQueryService(store)
+
+	id, _ := cmdSvc.CreateOrder(CreateOrderCommand{
+		Customer: "Bob",
+		Items:    []OrderItem{{ProductID: "p1", Quantity: 1, Price: 100.0}},
+	})
+
+	detail, err := querySvc.GetOrder(id)
+	if err != nil {
+		t.Fatalf("GetOrder: %v", err)
+	}
+	if detail.Customer != "Bob" {
+		t.Errorf("customer: got %q, want %q", detail.Customer, "Bob")
+	}
+	if detail.Total != 100.0 {
+		t.Errorf("total: got %f, want %f", detail.Total, 100.0)
+	}
+	if detail.Status != "pending" {
+		t.Errorf("status: got %q, want %q", detail.Status, "pending")
+	}
+	if len(detail.Items) != 1 {
+		t.Errorf("items: got %d, want 1", len(detail.Items))
+	}
+}
+
+func TestListOrders(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+	querySvc := NewOrderQueryService(store)
+
+	cmdSvc.CreateOrder(CreateOrderCommand{Customer: "Alice", Items: []OrderItem{{ProductID: "p1", Quantity: 1, Price: 10.0}}})
+	cmdSvc.CreateOrder(CreateOrderCommand{Customer: "Bob", Items: []OrderItem{{ProductID: "p2", Quantity: 1, Price: 20.0}}})
+
+	orders, err := querySvc.ListOrders()
+	if err != nil {
+		t.Fatalf("ListOrders: %v", err)
+	}
+	if len(orders) != 2 {
+		t.Errorf("orders: got %d, want 2", len(orders))
+	}
+}
+
+func TestShipOrder(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+	querySvc := NewOrderQueryService(store)
+
+	id, _ := cmdSvc.CreateOrder(CreateOrderCommand{
+		Customer: "Charlie", Items: []OrderItem{{ProductID: "p1", Quantity: 1, Price: 10.0}},
+	})
+
+	if err := cmdSvc.ShipOrder(ShipOrderCommand{OrderID: id}); err != nil {
+		t.Fatalf("ShipOrder: %v", err)
+	}
+
+	detail, _ := querySvc.GetOrder(id)
+	if detail.Status != "shipped" {
+		t.Errorf("status: got %q, want %q", detail.Status, "shipped")
+	}
+}
+
+func TestCancelOrder(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+	querySvc := NewOrderQueryService(store)
+
+	id, _ := cmdSvc.CreateOrder(CreateOrderCommand{
+		Customer: "Dave", Items: []OrderItem{{ProductID: "p1", Quantity: 1, Price: 10.0}},
+	})
+
+	if err := cmdSvc.CancelOrder(CancelOrderCommand{OrderID: id}); err != nil {
+		t.Fatalf("CancelOrder: %v", err)
+	}
+
+	detail, _ := querySvc.GetOrder(id)
+	if detail.Status != "cancelled" {
+		t.Errorf("status: got %q, want %q", detail.Status, "cancelled")
+	}
+}
+
+func TestListOrdersByStatus(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+	querySvc := NewOrderQueryService(store)
+
+	cmdSvc.CreateOrder(CreateOrderCommand{Customer: "A", Items: []OrderItem{{ProductID: "p1", Quantity: 1, Price: 10.0}}})
+	id2, _ := cmdSvc.CreateOrder(CreateOrderCommand{Customer: "B", Items: []OrderItem{{ProductID: "p2", Quantity: 1, Price: 20.0}}})
+	cmdSvc.ShipOrder(ShipOrderCommand{OrderID: id2})
+
+	pendingOrders, _ := querySvc.ListOrdersByStatus("pending")
+	shippedOrders, _ := querySvc.ListOrdersByStatus("shipped")
+
+	if len(pendingOrders) != 1 {
+		t.Errorf("pending: got %d, want 1", len(pendingOrders))
+	}
+	if len(shippedOrders) != 1 {
+		t.Errorf("shipped: got %d, want 1", len(shippedOrders))
+	}
+}
+
+func TestCommandQuerySeparation(t *testing.T) {
+	store := NewInMemoryOrderStore()
+	cmdSvc := NewOrderCommandService(store)
+	querySvc := NewOrderQueryService(store)
+
+	_, err := querySvc.GetOrder("999")
+	if err == nil {
+		t.Error("expected error for non-existent order")
+	}
+
+	_, errCmd := cmdSvc.ShipOrder(ShipOrderCommand{OrderID: "999"})
+	if errCmd == nil {
+		t.Error("expected error for shipping non-existent order")
+	}
+}

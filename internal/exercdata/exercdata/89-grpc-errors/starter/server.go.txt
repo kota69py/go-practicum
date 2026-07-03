@@ -1,0 +1,29 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	pb "grpc-errors/proto/echo"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+// errorServer は様々なステータスコードのエラーを返すサーバーです。
+type errorServer struct {
+	pb.UnimplementedEchoServiceServer
+}
+
+// Echo はメッセージの内容に応じてエラーを返します。
+// - "not_found" → NotFound
+// - "invalid" → InvalidArgument
+// - "conflict" → AlreadyExists
+// - "internal" → Internal
+// - "unavailable" → Unavailable
+// - それ以外 → 正常応答
+func (s *errorServer) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	// TODO: req.Message の値に応じてエラーを返す
+	// switch/case で実装
+	return &pb.EchoResponse{Message: fmt.Sprintf("ok: %s", req.Message)}, nil
+}

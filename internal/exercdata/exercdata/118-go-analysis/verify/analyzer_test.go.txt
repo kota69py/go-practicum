@@ -1,0 +1,15 @@
+package main
+
+import (
+	"testing"
+
+	"golang.org/x/tools/go/analysis/analysistest"
+)
+
+func TestMagicNumberAnalyzer(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), MagicNumberAnalyzer, "magicnumber")
+}
+
+func TestOSExitAnalyzer(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), OSExitAnalyzer, "osexit")
+}

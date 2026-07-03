@@ -1,0 +1,18 @@
+{
+  "name": "86-red-metrics",
+  "title": "RED メトリクス — レイテンシ・エラー・レート計測",
+  "category": "observability",
+  "difficulty": 3,
+  "description": "RED（Rate / Errors / Duration）メトリクスパターンを実装します。リクエスト数、エラー数、レイテンシを sync/atomic で高精度に計測し、/metrics エンドポイントで公開します。ヒストグラム近似としてレイテンシバケットも実装します。",
+  "hints": [
+    "Rate = リクエスト総数の atomic カウンタ",
+    "Errors = エラー回数の atomic カウンタ",
+    "Duration = レイテンシの計測と累積・最大値の記録",
+    "time.Since(start) で経過時間を計測",
+    "atomic.AddInt64 でスレッドセーフなカウンタ更新",
+    "sync/atomic の Load/Store で値を安全に読み書き",
+    "ヒストグラム: レイテンシバケット（<5ms, <10ms, <50ms, <100ms, <500ms, >=500ms）のカウンタ",
+    "/metrics は text/plain で人間可読な形式で出力"
+  ],
+  "files": ["metrics.go.txt"]
+}

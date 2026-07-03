@@ -1,0 +1,16 @@
+{
+  "name": "106-fuzz-testing",
+  "title": "Fuzz Testing — ファジングでバグを発見",
+  "category": "testing",
+  "difficulty": 2,
+  "description": "Go 1.18 で導入された fuzz testing を学びます。ファジングを使ってエッジケースを自動発見し、セキュリティクラッシュや境界値バグを見つけ出す手法を実践します。",
+  "hints": [
+    "Fuzz テストは func FuzzXxx(f *testing.F) で定義",
+    "f.Add() でシードコーパスを追加",
+    "f.Fuzz(func(t *testing.T, data type) { ... }) でファジングロジック",
+    "go test -fuzz=FuzzXxx -fuzztime=10s で実行",
+    "f.TempDir() で一時ディレクトリを作成",
+    "ファジングは予期せぬパニックやアサーション失敗を探す"
+  ],
+  "files": ["fuzz.go.txt", "fuzz_test.go.txt"]
+}

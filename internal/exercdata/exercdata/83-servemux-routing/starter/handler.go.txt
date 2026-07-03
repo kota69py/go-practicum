@@ -1,0 +1,37 @@
+package main
+
+import (
+	"net/http"
+)
+
+// User はユーザ情報を表します。
+type User struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// Users はインメモリのユーザストアです（課題ではグローバルで構いません）。
+var Users = map[string]User{}
+
+// handleListUsers は全ユーザのリストを JSON で返してください（GET /api/users）。
+func handleListUsers(w http.ResponseWriter, r *http.Request) {
+	// TODO: Users マップの全エントリをスライスに変換し、JSON エンコードして返す
+}
+
+// handleCreateUser はボディの JSON を受け取り新規ユーザを作成してください（POST /api/users）。
+// ヒント: ID は len(Users)+1 を strconv.Itoa で文字列化する
+func handleCreateUser(w http.ResponseWriter, r *http.Request) {
+	// TODO: リクエストボディを User にデコード → ID を採番 → Users に追加 → 201 Created で返す
+}
+
+// handleGetUser はパスパラメータ {id} のユーザを返してください（GET /api/users/{id}）。
+// 存在しない場合は 404。
+func handleGetUser(w http.ResponseWriter, r *http.Request) {
+	// TODO: r.PathValue("id") で ID 取得 → Users から検索 → JSON で返す
+}
+
+// handleDeleteUser はパスパラメータ {id} のユーザを削除してください（DELETE /api/users/{id}）。
+// 存在しない場合は 404、成功時は 204 No Content。
+func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	// TODO: r.PathValue("id") で ID 取得 → Users から削除 → 204 で返す
+}

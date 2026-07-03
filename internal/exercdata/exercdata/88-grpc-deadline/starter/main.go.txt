@@ -1,0 +1,46 @@
+package main
+
+import (
+	"log"
+	"net"
+	"time"
+
+	pb "grpc-deadline/proto/echo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+func main() {
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	s := grpc.NewServer()
+	pb.RegisterEchoServiceServer(s, &slowServer{simulateLatency: 50 * time.Millisecond})
+	go s.Serve(lis)
+	defer s.Stop()
+
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to dial: %v", err)
+	}
+	defer conn.Close()
+
+	client := pb.NewEchoServiceClient(conn)
+
+	result, err := CallWithDeadline(client, "hello", 100*time.Millisecond)
+	if err != nil {
+		log.Printf("error: %v", err)
+	} else {
+		log.Printf("success: %s", result)
+	}
+
+	result, err = CallWithDeadline(client, "slow", 10*time.Millisecond)
+	if err != nil {
+		log.Printf("expected timeout: %v", err)
+	} else {
+		log.Printf("unexpected success: %s", result)
+	}
+
+	_ = time.Nanosecond
+}

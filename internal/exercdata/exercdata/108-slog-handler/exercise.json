@@ -1,0 +1,18 @@
+{
+  "name": "108-slog-handler",
+  "title": "slog カスタムハンドラー — 実装と応用",
+  "category": "logging",
+  "difficulty": 3,
+  "description": "log/slog の Handler インターフェースを実装し、カスタムのログハンドラーを作成します。レベルフィルター、カスタムフォーマット、コンテキスト属性の注入、ルーティングを学びます。",
+  "hints": [
+    "slog.Handler は Enabled, Handle, WithAttrs, WithGroup を実装",
+    "Enabled(ctx, level) でこのハンドラーが処理するレベルを判断",
+    "Handle(ctx, record) でログレコードを出力",
+    "record.Level, record.Message, record.Time, record.PC で情報取得",
+    "record.Attrs(func(a slog.Attr) bool) で属性をイテレート",
+    "slog.NewRecord(time, level, msg, pc) で新規レコード作成",
+    "WithAttrs(attrs) で事前属性を持つハンドラーを返す",
+    "WithGroup(name) でグループ化されたハンドラーを返す"
+  ],
+  "files": ["handler.go.txt"]
+}

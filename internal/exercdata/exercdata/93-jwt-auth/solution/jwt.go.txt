@@ -1,0 +1,64 @@
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var jwtSecret = []byte("my-secret-key-12345")
+
+type UserClaims struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	jwt.RegisteredClaims
+}
+
+func CreateToken(userID, username, role string, duration time.Duration) (string, error) {
+	claims := UserClaims{
+		UserID:   userID,
+		Username: username,
+		Role:     role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+			Issuer:    "go-practicum",
+			Audience:  jwt.ClaimStrings{"api"},
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
+}
+
+func ValidateToken(tokenString string) (*UserClaims, error) {
+	claims := &UserClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtSecret, nil
+	},
+		jwt.WithIssuer("go-practicum"),
+		jwt.WithAudience("api"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+	return claims, nil
+}
+
+func RefreshToken(tokenString string, duration time.Duration) (string, error) {
+	claims, err := ValidateToken(tokenString)
+	if err != nil {
+		return "", err
+	}
+	return CreateToken(claims.UserID, claims.Username, claims.Role, duration)
+}
+
+func GetSecret() []byte {
+	return jwtSecret
+}

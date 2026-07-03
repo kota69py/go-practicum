@@ -1,0 +1,17 @@
+{
+  "name": "121-advanced-testing",
+  "title": "高度なテストテクニック — iotest・fstest・テスト設計",
+  "category": "testing",
+  "difficulty": 3,
+  "description": "Go のテスト用ユーティリティパッケージを活用した高度なテスト手法を学びます。testing/iotest で Reader/Writer のテスト、testing/fstest でファイルシステムの検証、t.Cleanup/t.Setenv/t.TempDir などのテストライフサイクル管理を習得します。",
+  "hints": [
+    "testing/iotest.DataErrReader でエラー付き Reader をシミュレート",
+    "testing/iotest.HalfReader で部分読み取りをテスト",
+    "testing/iotest.TimeoutReader でタイムアウトをテスト",
+    "testing/fstest.TestFS でファイルシステム実装を検証",
+    "t.Cleanup でテスト終了時の後処理を登録",
+    "t.Setenv で環境変数をテストケース限定で設定",
+    "t.TempDir で自動削除される一時ディレクトリを作成"
+  ],
+  "files": ["testing_util.go.txt"]
+}

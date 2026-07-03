@@ -1,0 +1,74 @@
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"sync"
+)
+
+// Message はチャットメッセージを表します。
+type Message struct {
+	Type    string `json:"type"`    // "join", "leave", "message"
+	User    string `json:"user"`
+	Content string `json:"content,omitempty"`
+}
+
+// Client は WebSocket 接続を表します。
+type Client struct {
+	// TODO: hub  *Hub
+	// TODO: conn *websocket.Conn
+	// TODO: send chan []byte
+	// TODO: user string
+}
+
+// Hub はチャットルームを管理します。
+type Hub struct {
+	// TODO: clients    map[*Client]bool
+	// TODO: broadcast  chan []byte
+	// TODO: register   chan *Client
+	// TODO: unregister chan *Client
+	// TODO: mu         sync.RWMutex
+}
+
+// NewHub は新しい Hub を作成します。
+func NewHub() *Hub {
+	// TODO: 初期化
+	return nil
+}
+
+// Run は Hub のメインループを開始します。
+func (h *Hub) Run() {
+	// TODO: select で register/broadcast/unregister チャネルを処理
+	// TODO: register: clients に追加、入室メッセージをブロードキャスト
+	// TODO: unregister: clients から削除、退出メッセージをブロードキャスト
+	// TODO: broadcast: 全クライアントにメッセージ送信
+}
+
+func (h *Hub) broadcastMessage(msg Message) {
+	// TODO: JSON エンコードして h.broadcast に送信
+}
+
+// ServeWs は HTTP リクエストを WebSocket にアップグレードします。
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	// TODO: upgrader.Upgrade(w, r, nil) で WebSocket 接続
+	// TODO: Client を作成して hub.register に送信
+	// TODO: goroutine で ReadPump / WritePump を起動
+}
+
+func (c *Client) ReadPump() {
+	// TODO: メッセージを読み取り Hub に送信
+	// TODO: SetReadDeadline + SetPongHandler でハートビート
+}
+
+func (c *Client) WritePump() {
+	// TODO: send チャネルからメッセージを読み取り書き込み
+}
+
+var upgrader = struct {
+	Upgrade func(w http.ResponseWriter, r *http.Request, responseHeader http.Header) (*struct{}, error)
+}{}
+
+var _ = json.Marshal
+var _ = log.Printf
+var _ = sync.RWMutex{}

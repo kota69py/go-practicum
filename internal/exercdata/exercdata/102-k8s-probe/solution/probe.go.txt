@@ -1,0 +1,77 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"os/signal"
+	"sync/atomic"
+	"syscall"
+)
+
+type ProbeServer struct {
+	server  *http.Server
+	ready   atomic.Bool
+	started atomic.Bool
+}
+
+func NewProbeServer(addr string) *ProbeServer {
+	ps := &ProbeServer{}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", ps.healthzHandler)
+	mux.HandleFunc("GET /readyz", ps.readyzHandler)
+	mux.HandleFunc("GET /startupz", ps.startupzHandler)
+	ps.server = &http.Server{Addr: addr, Handler: mux}
+	return ps
+}
+
+func (ps *ProbeServer) SetReady(r bool) {
+	ps.ready.Store(r)
+}
+
+func (ps *ProbeServer) SetStarted(s bool) {
+	ps.started.Store(s)
+}
+
+func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+func (ps *ProbeServer) healthzHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (ps *ProbeServer) readyzHandler(w http.ResponseWriter, r *http.Request) {
+	if ps.ready.Load() {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+	} else {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "not ready"})
+	}
+}
+
+func (ps *ProbeServer) startupzHandler(w http.ResponseWriter, r *http.Request) {
+	if ps.started.Load() {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "started"})
+	} else {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "starting"})
+	}
+}
+
+func (ps *ProbeServer) ListenAndServe() error {
+	ps.SetStarted(true)
+	return ps.server.ListenAndServe()
+}
+
+func (ps *ProbeServer) Shutdown(ctx context.Context) error {
+	ps.SetReady(false)
+	return ps.server.Shutdown(ctx)
+}
+
+func WaitForShutdown(ps *ProbeServer) error {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+	return ps.Shutdown(context.Background())
+}

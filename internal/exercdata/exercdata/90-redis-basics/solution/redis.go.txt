@@ -1,0 +1,77 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+)
+
+func PipelineSet(ctx context.Context, client *redis.Client, pairs map[string]string) error {
+	pipe := client.Pipeline()
+	for k, v := range pairs {
+		pipe.Set(ctx, k, v, 0)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+func TransactionSet(ctx context.Context, client *redis.Client, pairs map[string]string) error {
+	_, err := client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		for k, v := range pairs {
+			pipe.Set(ctx, k, v, 0)
+		}
+		return nil
+	})
+	return err
+}
+
+func PublishMessage(ctx context.Context, client *redis.Client, channel, message string) error {
+	return client.Publish(ctx, channel, message).Err()
+}
+
+const SubscribeTimeout = 3
+
+func SubscribeMessages(ctx context.Context, client *redis.Client, channel string) (string, error) {
+	sub := client.Subscribe(ctx, channel)
+	defer sub.Close()
+
+	ch := sub.Channel()
+	select {
+	case msg := <-ch:
+		return msg.Payload, nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+}
+
+func AtomicIncrement(ctx context.Context, client *redis.Client, key string) (int64, error) {
+	var newVal int64
+	err := client.Watch(ctx, func(tx *redis.Tx) error {
+		val, err := tx.Get(ctx, key).Int64()
+		if err != nil && err != redis.Nil {
+			return err
+		}
+		newVal = val + 1
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			pipe.Set(ctx, key, newVal, 0)
+			return nil
+		})
+		return err
+	}, key)
+	return newVal, err
+}
+
+func GetKeys(ctx context.Context, client *redis.Client, keys ...string) (map[string]string, error) {
+	vals, err := client.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]string, len(keys))
+	for i, key := range keys {
+		if vals[i] != nil {
+			result[key] = fmt.Sprint(vals[i])
+		}
+	}
+	return result, nil
+}

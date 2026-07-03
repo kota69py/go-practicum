@@ -1,0 +1,100 @@
+package main
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/gorilla/websocket"
+)
+
+func TestNewHub(t *testing.T) {
+	hub := NewHub()
+	if hub == nil {
+		t.Fatal("hub is nil")
+	}
+}
+
+func TestWebSocketUpgrade(t *testing.T) {
+	hub := NewHub()
+	go hub.Run()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ServeWs(hub, w, r)
+	})
+
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	url := "ws" + strings.TrimPrefix(ts.URL, "http") + "/ws?user=alice"
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		t.Fatalf("Dial error: %v", err)
+	}
+	defer conn.Close()
+
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage error: %v", err)
+	}
+	if !strings.Contains(string(msg), "alice") {
+		t.Errorf("expected join message with alice, got %q", string(msg))
+	}
+}
+
+func TestWebSocketBroadcast(t *testing.T) {
+	hub := NewHub()
+	go hub.Run()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ServeWs(hub, w, r)
+	})
+
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+	time.Sleep(50 * time.Millisecond)
+
+	baseURL := "ws" + strings.TrimPrefix(ts.URL, "http")
+
+	alice, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws?user=alice", nil)
+	if err != nil {
+		t.Fatalf("alice dial: %v", err)
+	}
+	defer alice.Close()
+	_, _, _ = alice.ReadMessage()
+
+	bob, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws?user=bob", nil)
+	if err != nil {
+		t.Fatalf("bob dial: %v", err)
+	}
+	defer bob.Close()
+	_, _, _ = bob.ReadMessage()
+
+	alice.WriteMessage(websocket.TextMessage, []byte(`{"type":"message","content":"hello"}`))
+
+	bob.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_, msg, err := bob.ReadMessage()
+	if err != nil {
+		t.Fatalf("bob read: %v", err)
+	}
+	if !strings.Contains(string(msg), "hello") {
+		t.Errorf("expected hello in bob msg, got %q", string(msg))
+	}
+}
+
+func TestServeWsFunction(t *testing.T) {
+	hub := NewHub()
+	go hub.Run()
+
+	req := httptest.NewRequest("GET", "/ws?user=test", nil)
+	w := httptest.NewRecorder()
+	ServeWs(hub, w, req)
+
+	if w.Code != http.StatusSwitchingProtocols {
+		t.Errorf("expected 101, got %d", w.Code)
+	}
+}

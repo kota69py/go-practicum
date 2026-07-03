@@ -1,0 +1,80 @@
+package main
+
+import (
+	"context"
+	"io"
+	"os"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
+	specs "github.com/opencontainers/image-spec/specs-go/v1"
+)
+
+// ContainerClient は Docker コンテナ操作に必要なメソッドを定義するインターフェースです。
+type ContainerClient interface {
+	ImagePull(ctx context.Context, ref string, options types.ImagePullOptions) (io.ReadCloser, error)
+	ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *specs.Platform, containerName string) (container.CreateResponse, error)
+	ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error
+	ContainerStop(ctx context.Context, containerID string, options container.StopOptions) error
+	ContainerLogs(ctx context.Context, containerID string, options container.LogsOptions) (io.ReadCloser, error)
+	Close() error
+}
+
+// NewDockerClient creates a new Docker client using environment variables.
+func NewDockerClient() (ContainerClient, error) {
+	cli, err := client.NewClientWithOpts(
+		client.FromEnv,
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return cli, nil
+}
+
+// PullImage pulls a Docker image from a registry and prints progress to stdout.
+func PullImage(ctx context.Context, cli ContainerClient, image string) error {
+	reader, err := cli.ImagePull(ctx, image, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	io.Copy(os.Stdout, reader)
+	return nil
+}
+
+// RunContainer creates and starts a container with the given configuration.
+func RunContainer(ctx context.Context, cli ContainerClient, cfg *container.Config, hostCfg *container.HostConfig) (string, error) {
+	resp, err := cli.ContainerCreate(ctx, cfg, hostCfg, nil, nil, "")
+	if err != nil {
+		return "", err
+	}
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+		return "", err
+	}
+	return resp.ID, nil
+}
+
+// StopContainer stops a running container.
+func StopContainer(ctx context.Context, cli ContainerClient, containerID string) error {
+	return cli.ContainerStop(ctx, containerID, container.StopOptions{})
+}
+
+// GetContainerLogs retrieves the logs of a container and returns them as a string.
+func GetContainerLogs(ctx context.Context, cli ContainerClient, containerID string) (string, error) {
+	reader, err := cli.ContainerLogs(ctx, containerID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+	})
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+	b, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}

@@ -1,0 +1,75 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"sort"
+	"strings"
+
+	_ "modernc.org/sqlite"
+)
+
+// Migration は1つのマイグレーションを表します。
+type Migration struct {
+	Version int
+	Name    string
+	UpSQL   string
+	DownSQL string
+}
+
+// Migrator はマイグレーションを管理します。
+type Migrator struct {
+	db         *sql.DB
+	migrations []Migration
+}
+
+// NewMigrator はデータベース接続とマイグレーション一覧から Migrator を作成します。
+// migrations は Version の昇順でソートしてください。
+func NewMigrator(db *sql.DB, migrations []Migration) *Migrator {
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i].Version < migrations[j].Version
+	})
+	return &Migrator{db: db, migrations: migrations}
+}
+
+// EnsureSchemaTable は schema_migrations テーブルを作成します。
+func EnsureSchemaTable(db *sql.DB) error {
+	// TODO: CREATE TABLE IF NOT EXISTS schema_migrations (version INT PRIMARY KEY, applied_at TEXT)
+	return nil
+}
+
+// AppliedVersions は既に適用されたマイグレーションのバージョン一覧を返します。
+func AppliedVersions(db *sql.DB) (map[int]bool, error) {
+	// TODO: SELECT version FROM schema_migrations ORDER BY version
+	// TODO: 結果を map[int]bool に詰めて返す
+	return nil, nil
+}
+
+// Up は未適用のマイグレーションを順に実行してください。
+// 各マイグレーションはトランザクション内で実行し、成功時に schema_migrations に記録します。
+func (m *Migrator) Up() error {
+	// TODO: AppliedVersions を取得
+	// TODO: migrations を順にチェック、未適用なら UpSQL をトランザクション内で実行
+	// TODO: 成功後 INSERT INTO schema_migrations
+	return nil
+}
+
+// Down は最後に適用したマイグレーションを1つ戻してください。
+func (m *Migrator) Down() error {
+	// TODO: AppliedVersions を取得
+	// TODO: 最大バージョンの DownSQL をトランザクション内で実行
+	// TODO: DELETE FROM schema_migrations
+	return nil
+}
+
+// ParseMigration は1つのマイグレーションファイルの内容をパースし、UpSQL と DownSQL に分割します。
+// "--- down" 区切りを想定しています。
+func ParseMigration(content string) (up, down string) {
+	// TODO: strings.Cut(content, "--- down") で分割
+	// TODO: 前後をトリムして返す
+	return "", ""
+}
+
+var _ = sort.Ints
+var _ = strings.Cut
+var _ = fmt.Sprintf

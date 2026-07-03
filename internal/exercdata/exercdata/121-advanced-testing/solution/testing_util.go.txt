@@ -1,0 +1,179 @@
+package testingutil
+
+import (
+	"errors"
+	"io"
+	"io/fs"
+	"time"
+)
+
+type SlowReader struct {
+	data    []byte
+	pos     int
+	chunkSz int
+}
+
+func NewSlowReader(data string, chunkSize int) *SlowReader {
+	return &SlowReader{
+		data:    []byte(data),
+		chunkSz: chunkSize,
+	}
+}
+
+func (r *SlowReader) Read(buf []byte) (int, error) {
+	if r.pos >= len(r.data) {
+		return 0, io.EOF
+	}
+	n := r.chunkSz
+	if n > len(buf) {
+		n = len(buf)
+	}
+	if r.pos+n > len(r.data) {
+		n = len(r.data) - r.pos
+	}
+	n = copy(buf, r.data[r.pos:r.pos+n])
+	r.pos += n
+	if r.pos >= len(r.data) {
+		return n, io.EOF
+	}
+	return n, nil
+}
+
+type ErrorReader struct {
+	data      []byte
+	pos       int
+	errAt     int
+	err       error
+	returnEOF bool
+}
+
+func NewErrorReader(data string, errPosition int, err error) *ErrorReader {
+	return &ErrorReader{
+		data:  []byte(data),
+		errAt: errPosition,
+		err:   err,
+	}
+}
+
+func (r *ErrorReader) Read(buf []byte) (int, error) {
+	if r.returnEOF {
+		return 0, io.EOF
+	}
+	if r.pos >= r.errAt && r.err != nil {
+		r.returnEOF = true
+		return 0, r.err
+	}
+	if r.pos >= len(r.data) {
+		return 0, io.EOF
+	}
+	n := copy(buf, r.data[r.pos:])
+	r.pos += n
+	return n, nil
+}
+
+func CountReaderBytes(r io.Reader) (int, error) {
+	total := 0
+	buf := make([]byte, 32)
+	for {
+		n, err := r.Read(buf)
+		total += n
+		if errors.Is(err, io.EOF) {
+			return total, nil
+		}
+		if err != nil {
+			return total, err
+		}
+	}
+}
+
+type MemFile struct {
+	name    string
+	content []byte
+}
+
+func (f *MemFile) Stat() (fs.FileInfo, error) {
+	return &memFileInfo{name: f.name, size: int64(len(f.content))}, nil
+}
+
+func (f *MemFile) Read(buf []byte) (int, error) {
+	if len(f.content) == 0 {
+		return 0, io.EOF
+	}
+	n := copy(buf, f.content)
+	f.content = f.content[n:]
+	return n, nil
+}
+
+func (f *MemFile) Close() error {
+	return nil
+}
+
+type memFileInfo struct {
+	name string
+	size int64
+}
+
+func (fi *memFileInfo) Name() string      { return fi.name }
+func (fi *memFileInfo) Size() int64       { return fi.size }
+func (fi *memFileInfo) Mode() fs.FileMode { return 0644 }
+func (fi *memFileInfo) ModTime() time.Time {
+	return time.Time{}
+}
+func (fi *memFileInfo) IsDir() bool      { return false }
+func (fi *memFileInfo) Sys() interface{} { return nil }
+
+type MemFS struct {
+	files map[string]*MemFile
+}
+
+func NewMemFS() *MemFS {
+	return &MemFS{files: map[string]*MemFile{}}
+}
+
+func (mfs *MemFS) Add(name, content string) {
+	mfs.files[name] = &MemFile{name: name, content: []byte(content)}
+}
+
+func (mfs *MemFS) Open(name string) (fs.File, error) {
+	f, ok := mfs.files[name]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+	return &MemFile{name: f.name, content: append([]byte{}, f.content...)}, nil
+}
+
+func (mfs *MemFS) ReadFile(name string) ([]byte, error) {
+	f, ok := mfs.files[name]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+	return append([]byte{}, f.content...), nil
+}
+
+type StringWriter struct {
+	result string
+}
+
+func NewStringWriter() *StringWriter {
+	return &StringWriter{}
+}
+
+func (w *StringWriter) Write(buf []byte) (int, error) {
+	w.result += string(buf)
+	return len(buf), nil
+}
+
+func (w *StringWriter) String() string {
+	return w.result
+}
+
+func SetupCleanupData(t interface {
+	Cleanup(func())
+}) (string, func()) {
+	tmpData := "temporary-data"
+	cleaned := false
+	t.Cleanup(func() {
+		cleaned = true
+	})
+	return tmpData, func() bool { return cleaned }
+}

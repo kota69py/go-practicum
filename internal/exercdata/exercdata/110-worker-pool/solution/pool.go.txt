@@ -1,0 +1,76 @@
+package main
+
+import (
+	"context"
+	"sync"
+)
+
+type Job struct {
+	ID   int
+	Task func() (interface{}, error)
+}
+
+type Result struct {
+	JobID int
+	Value interface{}
+	Err   error
+}
+
+type Pool struct {
+	jobCh    chan Job
+	resultCh chan Result
+	workers  int
+	wg       sync.WaitGroup
+	ctx      context.Context
+	cancel   context.CancelFunc
+}
+
+func NewPool(workers int) *Pool {
+	ctx, cancel := context.WithCancel(context.Background())
+	p := &Pool{
+		jobCh:    make(chan Job, 100),
+		resultCh: make(chan Result, 100),
+		workers:  workers,
+		ctx:      ctx,
+		cancel:   cancel,
+	}
+	for i := 0; i < workers; i++ {
+		p.wg.Add(1)
+		go p.worker(i)
+	}
+	return p
+}
+
+func (p *Pool) worker(id int) {
+	defer p.wg.Done()
+	for {
+		select {
+		case <-p.ctx.Done():
+			return
+		case job, ok := <-p.jobCh:
+			if !ok {
+				return
+			}
+			val, err := job.Task()
+			p.resultCh <- Result{JobID: job.ID, Value: val, Err: err}
+		}
+	}
+}
+
+func (p *Pool) Submit(job Job) {
+	select {
+	case p.jobCh <- job:
+	case <-p.ctx.Done():
+	}
+}
+
+func (p *Pool) Results() <-chan Result {
+	return p.resultCh
+}
+
+func (p *Pool) Stop() {
+	p.cancel()
+	close(p.jobCh)
+	p.wg.Wait()
+	close(p.resultCh)
+}

@@ -1,0 +1,16 @@
+{
+  "name": "87-grpc-interceptor",
+  "title": "gRPC インターセプター — Unary インターセプターチェーン",
+  "category": "net",
+  "difficulty": 4,
+  "description": "gRPC の Unary サーバーインターセプターを実装し、ロギング・リカバリー・レート制限・認証のインターセプターチェーンを構築します。grpc.UnaryServerInterceptor のシグネチャと、チェーン内でのコンテキスト伝搬の仕組みを理解しましょう。",
+  "hints": [
+    "grpc.UnaryServerInterceptor は func(ctx, req, info, handler) (resp, error)",
+    "logging interceptor: リクエスト内容と呼び出し時間をログ出力",
+    "recovery interceptor: panic を recover し Internal エラーに変換",
+    "auth interceptor: ctx からメタデータを取得しトークンを検証",
+    "chain: 複数の interceptor を nested に組み合わせる",
+    "interceptor は context に値を追加して次の interceptor に渡せる"
+  ],
+  "files": ["interceptor.go.txt"]
+}

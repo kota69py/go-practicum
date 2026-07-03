@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
-	"os"
 	"strings"
 
 	"github.com/kota69py/go-practicum/internal/exercise"
@@ -15,33 +14,32 @@ func (r *Runner) newSolutionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "solution",
 		Short: "解答例を表示",
-		Run: func(cmd *cobra.Command, args []string) {
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			prog, _ := progress.Load()
 			if prog.InProgress == "" {
-				fmt.Fprintln(os.Stderr, "エラー: 進行中の演習がありません")
-				os.Exit(1)
+				return fmt.Errorf("進行中の演習がありません")
 			}
 			if r.exercFS == nil {
-				fmt.Fprintln(os.Stderr, "エラー: 解答データが見つかりません")
-				os.Exit(1)
+				return fmt.Errorf("解答データが見つかりません")
 			}
 			ex, err := exercise.LoadFromFS(r.exercFS, prog.InProgress)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: 演習 %q が見つかりません\n", prog.InProgress)
-				os.Exit(1)
+				return fmt.Errorf("演習 %q が見つかりません", prog.InProgress)
 			}
 
 			for _, f := range ex.Files {
 				data, err := fs.ReadFile(r.exercFS, prog.InProgress+"/solution/"+f)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "  解答 %s が見つかりません\n", f)
+					cmd.PrintErrf("  解答 %s が見つかりません\n", f)
 					continue
 				}
 				displayName := strings.TrimSuffix(f, ".txt")
-				fmt.Printf("=== %s ===\n", colorCyan(displayName))
-				fmt.Println(string(data))
-				fmt.Println()
+				cmd.Printf("=== %s ===\n", colorCyan(displayName))
+				cmd.Println(string(data))
+				cmd.Println()
 			}
+			return nil
 		},
 	}
 }

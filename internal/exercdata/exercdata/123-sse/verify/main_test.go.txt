@@ -1,0 +1,222 @@
+package main
+
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestFormatEvent_dataOnly(t *testing.T) {
+	ev := Event{Data: "hello"}
+	got := FormatEvent(ev)
+	want := "data: hello\n\n"
+	if got != want {
+		t.Errorf("FormatEvent(%+v) = %q, want %q", ev, got, want)
+	}
+}
+
+func TestFormatEvent_multilineData(t *testing.T) {
+	ev := Event{Data: "line1\nline2"}
+	got := FormatEvent(ev)
+	want := "data: line1\ndata: line2\n\n"
+	if got != want {
+		t.Errorf("FormatEvent(%+v) = %q, want %q", ev, got, want)
+	}
+}
+
+func TestFormatEvent_allFields(t *testing.T) {
+	ev := Event{Data: "msg", Event: "update", ID: "42", Retry: 3000}
+	got := FormatEvent(ev)
+	want := "data: msg\nevent: update\nid: 42\nretry: 3000\n\n"
+	if got != want {
+		t.Errorf("FormatEvent(%+v) = %q, want %q", ev, got, want)
+	}
+}
+
+func TestSendEvent(t *testing.T) {
+	var buf strings.Builder
+	ev := Event{Data: "test", ID: "1"}
+	err := SendEvent(&buf, ev)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "data: test\nid: 1\n\n"
+	if buf.String() != want {
+		t.Errorf("SendEvent wrote %q, want %q", buf.String(), want)
+	}
+}
+
+func TestSSEHandler_headers(t *testing.T) {
+	handler := http.HandlerFunc(SSEHandler)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("Content-Type = %q, want %q", ct, "text/event-stream")
+	}
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
+		t.Errorf("Cache-Control = %q, want %q", cc, "no-cache")
+	}
+}
+
+func TestSSEHandler_streamsEvents(t *testing.T) {
+	handler := http.HandlerFunc(SSEHandler)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	lines := strings.Split(strings.TrimSpace(body), "\n")
+
+	gotData := false
+	gotEventStart := false
+	gotEventEnd := false
+	for _, line := range lines {
+		if strings.HasPrefix(line, "data:") {
+			gotData = true
+		}
+		if line == "event: start" {
+			gotEventStart = true
+		}
+		if line == "event: end" {
+			gotEventEnd = true
+		}
+	}
+	if !gotData {
+		t.Error("expected at least one 'data:' line")
+	}
+	if !gotEventStart {
+		t.Error("expected 'event: start'")
+	}
+	if !gotEventEnd {
+		t.Error("expected 'event: end'")
+	}
+}
+
+func TestSSEHandler_eventsCount(t *testing.T) {
+	handler := http.HandlerFunc(SSEHandler)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	// Count events by looking for blank-line separators
+	scanner := bufio.NewScanner(strings.NewReader(rec.Body.String()))
+	eventCount := 0
+	for scanner.Scan() {
+		if scanner.Text() == "" {
+			eventCount++
+		}
+	}
+	// Expect 5 events (each ends with blank line)
+	if eventCount != 5 {
+		t.Errorf("got %d events, want 5", eventCount)
+	}
+}
+
+func TestSSEHandler_lastEventID(t *testing.T) {
+	handler := http.HandlerFunc(SSEHandler)
+	req := httptest.NewRequest(http.MethodGet, "/?last=3", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "restart from 3") {
+		t.Errorf("expected reset event mentioning 'restart from 3', got body:\n%s", body)
+	}
+}
+
+func TestSSEHandler_flusherRequired(t *testing.T) {
+	// A ResponseWriter that does NOT implement http.Flusher
+	handler := http.HandlerFunc(SSEHandler)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := &nonFlushResponseWriter{ResponseRecorder: httptest.NewRecorder()}
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotImplemented {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusNotImplemented)
+	}
+}
+
+// nonFlushResponseWriter wraps httptest.ResponseRecorder without Flush.
+type nonFlushResponseWriter struct {
+	*httptest.ResponseRecorder
+}
+
+func TestSendEventWriteError(t *testing.T) {
+	ev := Event{Data: "hello"}
+	err := SendEvent(&errorWriter{}, ev)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+type errorWriter struct{}
+
+func (w *errorWriter) Write(p []byte) (int, error) {
+	return 0, fmt.Errorf("write error")
+}
+
+func TestFormatEvent_retryZero(t *testing.T) {
+	ev := Event{Data: "x", Retry: 0}
+	got := FormatEvent(ev)
+	if strings.Contains(got, "retry:") {
+		t.Errorf("expected no retry line for Retry=0, got %q", got)
+	}
+}
+
+func TestFormatEvent_emptyID(t *testing.T) {
+	ev := Event{Data: "x", ID: ""}
+	got := FormatEvent(ev)
+	if strings.Contains(got, "id:") {
+		t.Errorf("expected no id line for empty ID, got %q", got)
+	}
+}
+
+func TestSSEHandler_contextCancel(t *testing.T) {
+	handler := http.HandlerFunc(SSEHandler)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	cancelCtx, cancel := context.WithCancel(req.Context())
+	req = req.WithContext(cancelCtx)
+	rec := httptest.NewRecorder()
+
+	// Cancel immediately to test graceful shutdown
+	cancel()
+
+	handler.ServeHTTP(rec, req)
+	// Should not panic, should return quickly
+}
+
+func TestRealSSEOverHTTP(t *testing.T) {
+	handler := http.HandlerFunc(SSEHandler)
+	ts := httptest.NewServer(handler)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if ct := resp.Header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("Content-Type = %q, want %q", ct, "text/event-stream")
+	}
+
+	// Read at least the first event
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), "data:") {
+		t.Error("response body contains no data: lines")
+	}
+}

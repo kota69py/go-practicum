@@ -1,0 +1,54 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+)
+
+// Middleware は HTTP ハンドラーをラップする関数型です。
+type Middleware func(next http.Handler) http.Handler
+
+// Chain は複数のミドルウェアを一つの Handler に適用します。
+// 最初のミドルウェアが最も外側（最初に実行）になります。
+func Chain(h http.Handler, middlewares ...Middleware) http.Handler {
+	// TODO: ミドルウェアを順次適用（最後のミドルウェアが内側）
+	return h
+}
+
+// Logger はリクエストメソッド、パス、ステータスコード、処理時間をログ出力するミドルウェアです。
+func Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: 開始時刻を記録
+		// TODO: ResponseWriter ラッパーでステータスコードをキャプチャ
+		// TODO: next.ServeHTTP を呼び出し
+		// TODO: 経過時間をログ出力
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Recovery はパニックをキャッチして 500 Internal Server Error を返すミドルウェアです。
+func Recovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: defer + recover() でパニックをキャッチ
+		// TODO: パニック時は 500 を返す
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Auth はベアラートークンによる簡易認可を行うミドルウェアです。
+// Authorization ヘッダーが "Bearer "+token と一致しない場合は 401 を返します。
+func Auth(token string) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// TODO: Authorization ヘッダーのチェック
+			// TODO: "Bearer "+token と比較、不一致なら 401
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+var _ = fmt.Sprintf
+var _ = log.Printf
+var _ = time.Now

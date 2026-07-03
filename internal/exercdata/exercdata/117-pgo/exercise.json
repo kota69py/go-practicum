@@ -1,0 +1,17 @@
+{
+  "name": "117-pgo",
+  "title": "PGO — Profile-Guided Optimization",
+  "category": "performance",
+  "difficulty": 3,
+  "description": "Go 1.21 で安定化された Profile-Guided Optimization (PGO) を学びます。CPU プロファイルを収集し、その情報を元にコンパイラが最適化を行う仕組みを理解し、実際にベンチマークで効果を検証します。",
+  "hints": [
+    "default.pgo ファイルを main パッケージに配置すると自動適用",
+    "go build -pgo=auto で明示的に PGO を有効化",
+    "runtime/pprof で CPU プロファイルを生成",
+    "go test -bench=. -cpuprofile=cpu.pprof でベンチマークプロファイル",
+    "PGO はインライン展開や分岐予測の最適化に有効",
+    "プロファイルは本番稼働後に生成すると効果的",
+    "pprof でプロファイルを可視化: go tool pprof cpu.pprof"
+  ],
+  "files": ["pgo.go.txt", "pgo_test.go.txt"]
+}

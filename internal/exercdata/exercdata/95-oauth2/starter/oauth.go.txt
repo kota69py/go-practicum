@@ -1,0 +1,57 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/url"
+
+	"golang.org/x/oauth2"
+)
+
+// MockOAuth2Provider はテスト用の簡易 OAuth2 プロバイダーを返します。
+// 認可エンドポイントとトークンエンドポイントを httptest でシミュレートします。
+func MockOAuth2Provider() (config *oauth2.Config, providerURL string, cleanup func()) {
+	// TODO: httptest.NewServer でモックサーバー作成
+	// TODO: /auth エンドポイント: 認可コードを返す
+	// TODO: /token エンドポイント: アクセストークン + リフレッシュトークンを返す
+	// TODO: oauth2.Config を作成（providerURL の /auth と /token をエンドポイントに）
+	return nil, "", nil
+}
+
+// Authorize は認可コードフローを実行します。
+// 認可URL を生成し、モックプロバイダーから認可コードを取得、トークンと交換します。
+func Authorize(ctx context.Context, config *oauth2.Config, providerURL string) (*oauth2.Token, error) {
+	// TODO: config.AuthCodeURL("state-123") で認可URL生成
+	// TODO: providerURL + "/authorize?code=..." から認可コードをフェッチ
+	// TODO: 実際の実装ではブラウザリダイレクトだが、ここでは直接コードを取得
+	// TODO: config.Exchange(ctx, code) でトークンに交換
+	return nil, nil
+}
+
+// GetAuthenticatedClient はトークンを使って認証済み HTTP クライアントを作成します。
+// トークンが期限切れの場合は自動的にリフレッシュします。
+func GetAuthenticatedClient(ctx context.Context, config *oauth2.Config, token *oauth2.Token) *http.Client {
+	// TODO: config.TokenSource(ctx, token) で TokenSource を作成
+	// TODO: oauth2.NewClient(ctx, tokenSource) でクライアント作成
+	return nil
+}
+
+// RefreshTokenIfNeeded はトークンが期限切れの場合にリフレッシュを試みます。
+// 有効な場合は元のトークンをそのまま返します。
+func RefreshTokenIfNeeded(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (*oauth2.Token, error) {
+	// TODO: token.Valid() で有効性チェック
+	// TODO: 有効ならそのまま返す
+	// TODO: 無効なら config.TokenSource(ctx, token).Token() でリフレッシュ
+	return nil, nil
+}
+
+// FetchUserInfo は認証済みクライアントを使ってユーザー情報を取得します。
+func FetchUserInfo(ctx context.Context, client *http.Client, apiURL string) (string, error) {
+	// TODO: client.Get(apiURL) でリクエスト
+	// TODO: レスポンスボディを文字列で返す
+	return "", nil
+}
+
+var _ = fmt.Sprintf
+var _ = url.URL{}

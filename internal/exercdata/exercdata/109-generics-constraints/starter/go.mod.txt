@@ -1,0 +1,3 @@
+module go-practicum-generics
+
+go 1.25

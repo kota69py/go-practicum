@@ -1,0 +1,16 @@
+{
+  "name": "90-redis-basics",
+  "title": "Redis 基礎 — パイプライン・トランザクション・Pub/Sub",
+  "category": "datastore",
+  "difficulty": 3,
+  "description": "Redis クライアント go-redis/v9 を使って、パイプラインによるバッチ処理、MULTI/EXEC トランザクション、Pub/Sub メッセージングの基本パターンを学びます。テストは miniredis（インメモリ Redis 実装）を使って実行します。",
+  "hints": [
+    "go-redis のパイプライン: pipe := client.Pipeline() で作成、pipe.Exec(ctx) で一括実行",
+    "Pipelined(fn)：関数内で連続したコマンドを1回のラウンドトリップで送信",
+    "トランザクション: TxPipelined で MULTI/EXEC をラップ",
+    "watch: client.Watch(ctx, fn, keys) で楽観的ロック (CAS)",
+    "Pub/Sub: client.Subscribe でサブスクライブ、client.Publish で発行",
+    "miniredis: miniredis.Run() でインメモリ Redis サーバー起動"
+  ],
+  "files": ["redis.go.txt"]
+}

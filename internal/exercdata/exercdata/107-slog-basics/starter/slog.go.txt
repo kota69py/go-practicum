@@ -1,0 +1,41 @@
+package main
+
+import (
+	"context"
+	"io"
+	"log/slog"
+)
+
+// NewJSONLogger は io.Writer に JSON 形式で出力する slog.Logger を作成します。
+// レベル: Info 以上のみ出力
+func NewJSONLogger(w io.Writer) *slog.Logger {
+	// TODO: slog.NewJSONHandler + slog.New で作成
+	return nil
+}
+
+// NewTextLogger は io.Writer にテキスト形式で出力する slog.Logger を作成します。
+// レベル: Debug 以上（すべてのレベル）
+func NewTextLogger(w io.Writer) *slog.Logger {
+	// TODO: slog.NewTextHandler + slog.New で作成
+	return nil
+}
+
+// LogUserActivity はユーザーアクティビティを構造化ログで出力します。
+// userID, action, duration を属性として含め、グループ化も使用してください。
+func LogUserActivity(logger *slog.Logger, userID, action string, durationMs int64) {
+	// TODO: logger.Info で構造化ログ出力
+	// TODO: slog.Group でグループ化
+	// 期待される出力例: {"level":"INFO","msg":"user activity","user":{"id":"u1","action":"login","duration_ms":150}}
+}
+
+// LogWithContext はコンテキストに保管された属性を付与してログ出力します。
+func LogWithContext(ctx context.Context, logger *slog.Logger, msg string) {
+	// TODO: slog.Log(ctx, slog.LevelInfo, msg) で出力
+}
+
+// SetDefaultJSON はデフォルトロガーを JSON 形式に設定します。
+func SetDefaultJSON(w io.Writer) {
+	// TODO: slog.SetDefault で設定
+}
+
+var _ = context.Background

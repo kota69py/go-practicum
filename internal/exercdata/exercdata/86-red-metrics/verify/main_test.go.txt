@@ -1,0 +1,144 @@
+package main
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestIncRequest(t *testing.T) {
+	m := &REDMetrics{}
+	m.IncRequest()
+	if got := m.requestCount.Load(); got != 1 {
+		t.Errorf("got %d, want 1", got)
+	}
+}
+
+func TestIncError(t *testing.T) {
+	m := &REDMetrics{}
+	m.IncError()
+	if got := m.errorCount.Load(); got != 1 {
+		t.Errorf("got %d, want 1", got)
+	}
+}
+
+func TestRecordLatency(t *testing.T) {
+	m := &REDMetrics{}
+	m.RecordLatency(10_000)
+	m.RecordLatency(100_000)
+	m.RecordLatency(50_000)
+
+	if got := m.totalLatency.Load(); got != 160_000 {
+		t.Errorf("totalLatency: got %d, want 160000", got)
+	}
+	if got := m.maxLatency.Load(); got != 100_000 {
+		t.Errorf("maxLatency: got %d, want 100000", got)
+	}
+}
+
+func TestLatencyBucket(t *testing.T) {
+	m := &REDMetrics{}
+	m.RecordLatency(1_000)   // <5ms
+	m.RecordLatency(7_000)   // <10ms
+	m.RecordLatency(600_000) // >=500ms
+
+	if got := m.latencyBuckets[0].Load(); got != 1 {
+		t.Errorf("bucket[<5ms]: got %d, want 1", got)
+	}
+	if got := m.latencyBuckets[1].Load(); got != 1 {
+		t.Errorf("bucket[<10ms]: got %d, want 1", got)
+	}
+	if got := m.latencyBuckets[5].Load(); got != 1 {
+		t.Errorf("bucket[>=500ms]: got %d, want 1", got)
+	}
+}
+
+func TestInstrument(t *testing.T) {
+	m := &REDMetrics{}
+	handler := m.Instrument(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if got := m.requestCount.Load(); got != 1 {
+		t.Errorf("requestCount: got %d, want 1", got)
+	}
+}
+
+func TestInstrumentError(t *testing.T) {
+	m := &REDMetrics{}
+	handler := m.Instrument(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if got := m.errorCount.Load(); got != 1 {
+		t.Errorf("errorCount: got %d, want 1", got)
+	}
+}
+
+func TestMetricsEndpoint(t *testing.T) {
+	m := &REDMetrics{}
+	m.IncRequest()
+	m.IncRequest()
+	m.IncError()
+	m.RecordLatency(42_000)
+
+	handler := m.MetricsHandler()
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "go_requests_total 2") {
+		t.Errorf("expected go_requests_total 2 in output:\n%s", body)
+	}
+	if !strings.Contains(body, "go_errors_total 1") {
+		t.Errorf("expected go_errors_total 1 in output:\n%s", body)
+	}
+}
+
+func TestMetricsContentType(t *testing.T) {
+	m := &REDMetrics{}
+	handler := m.MetricsHandler()
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	ct := rec.Header().Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/plain") {
+		t.Errorf("got Content-Type %q, want text/plain", ct)
+	}
+}
+
+func TestConcurrentSafety(t *testing.T) {
+	m := &REDMetrics{}
+	done := make(chan struct{})
+	go func() {
+		for i := 0; i < 100; i++ {
+			m.IncRequest()
+			m.RecordLatency(1000)
+		}
+		done <- struct{}{}
+	}()
+	go func() {
+		for i := 0; i < 100; i++ {
+			m.IncRequest()
+			m.RecordLatency(2000)
+		}
+		done <- struct{}{}
+	}()
+	<-done
+	<-done
+
+	if got := m.requestCount.Load(); got != 200 {
+		t.Errorf("requestCount: got %d, want 200", got)
+	}
+}

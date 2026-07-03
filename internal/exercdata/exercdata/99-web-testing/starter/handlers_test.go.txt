@@ -1,0 +1,60 @@
+package main
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+// === テスト対象のハンドラー ===
+// 1. GET /echo?msg=hello → {"message":"hello"}
+// 2. POST /uppercase → リクエストボディを大文字にして返す
+// 3. GET /counter → {"count":N}
+
+// TestEchoHandler は /echo エンドポイントをテストします。
+func TestEchoHandler(t *testing.T) {
+	// TODO: httptest.NewServer(NewServer()) でテストサーバー作成
+	// TODO: GET /echo?msg=hello を実行
+	// TODO: ステータスコードが 200 であることを確認
+	// TODO: レスポンスボディが {"message":"hello"} であることを確認
+	// TODO: msg が空の場合は空文字を返すことを確認
+}
+
+// TestUppercaseHandler は /uppercase エンドポイントをテストします。
+func TestUppercaseHandler(t *testing.T) {
+	// TODO: POST /uppercase に "hello world" を送信
+	// TODO: レスポンスが "HELLO WORLD" であることを確認
+	// TODO: 空文字列を送信した場合もテスト
+}
+
+// TestCounterHandler は /counter エンドポイントをテストします。
+func TestCounterHandler(t *testing.T) {
+	// TODO: テストサーバーを作成
+	// TODO: 3回リクエストを送信
+	// TODO: 最後のレスポンスで count が 3 であることを確認
+}
+
+// TestEchoHandlerTableDriven はテーブル駆動テストで /echo を網羅します。
+func TestEchoHandlerTableDriven(t *testing.T) {
+	tests := []struct {
+		name   string
+		msg    string
+		want   string
+		status int
+	}{
+		// TODO: 正常系・異常系のテストケースを追加
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// TODO: テスト実行
+		})
+	}
+}
+
+var _ = json.Marshal
+var _ = io.ReadAll
+var _ = httptest.NewServer
+var _ = strings.ToUpper

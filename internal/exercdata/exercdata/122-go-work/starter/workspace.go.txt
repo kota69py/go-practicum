@@ -1,0 +1,34 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+)
+
+// InitWorkspace は指定ディレクトリに go.work ファイルを作成します。
+func InitWorkspace(dir string) error {
+	// TODO: dir が存在するか確認する
+	// TODO: dir/go.work ファイルを作成し "go 1.23" を書き込む
+	return nil
+}
+
+// UseModule は go.work の use ディレクティブにモジュールを追加します。
+func UseModule(workDir, moduleDir string) error {
+	// TODO: workDir/go.work を読み込む
+	// TODO: 既存の use セクションがあれば追跡する
+	// TODO: moduleDir を use に追加する
+	// TODO: 更新した内容を go.work に書き戻す
+	return nil
+}
+
+// BuildAll はワークスペース内の全モジュールをビルドします。
+func BuildAll(workDir string) error {
+	// TODO: workDir/go.work を読み込む
+	// TODO: use ディレクティブで指定されたモジュールディレクトリを抽出する
+	// TODO: 各モジュールディレクトリで "go build ./..." を実行する
+	return nil
+}

@@ -1,0 +1,18 @@
+{
+  "name": "92-connection-pool",
+  "title": "コネクションプール — database/sql のチューニング",
+  "category": "datastore",
+  "difficulty": 3,
+  "description": "database/sql のコネクションプール設定（MaxOpenConns / MaxIdleConns / ConnMaxLifetime）を理解し、適切なチューニング方法を学びます。SQLite をインメモリで使用し、プールの状態を監視しながらベンチマークで効果を検証します。",
+  "hints": [
+    "db.SetMaxOpenConns(n) で最大オープン接続数を制限",
+    "db.SetMaxIdleConns(n) でアイドル接続の最大数を設定",
+    "db.SetConnMaxLifetime(d) で接続の再利用期間を制限",
+    "db.Stats() でプールの状態（OpenConnections / InUse / Idle）を取得",
+    "MaxOpenConns=1 は逐次実行、大きい値は並列クエリに対応",
+    "MaxIdleConns が多いとコネクションの作成・破棄コストを削減",
+    "SQLite は同時書き込みが排他的なので注意",
+    "ベンチマークで異なる設定値を比較する"
+  ],
+  "files": ["pool.go.txt"]
+}

@@ -1,0 +1,155 @@
+package main
+
+import (
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestRecoveryMiddleware_Panic(t *testing.T) {
+	panicHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("something went wrong")
+	})
+	h := RecoveryMiddleware(panicHandler)
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/panic")
+	if err != nil {
+		t.Fatalf("GET failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusInternalServerError)
+	}
+}
+
+func TestRecoveryMiddleware_OK(t *testing.T) {
+	okHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	h := RecoveryMiddleware(okHandler)
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/ok")
+	if err != nil {
+		t.Fatalf("GET failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestSafeCall_NoPanic(t *testing.T) {
+	err := SafeCall(func() error { return nil })
+	if err != nil {
+		t.Fatalf("SafeCall: %v", err)
+	}
+}
+
+func TestSafeCall_ErrorReturned(t *testing.T) {
+	want := errors.New("business error")
+	err := SafeCall(func() error { return want })
+	if err != want {
+		t.Fatalf("SafeCall = %v, want %v", err, want)
+	}
+}
+
+func TestSafeCall_PanicString(t *testing.T) {
+	err := SafeCall(func() error {
+		panic("crash")
+	})
+	if err == nil {
+		t.Fatal("SafeCall: expected error, got nil")
+	}
+	if err.Error() != "panic: crash" {
+		t.Errorf("SafeCall = %q, want %q", err.Error(), "panic: crash")
+	}
+}
+
+func TestSafeCall_PanicError(t *testing.T) {
+	want := errors.New("wrapped error")
+	err := SafeCall(func() error {
+		panic(want)
+	})
+	if err != want {
+		t.Fatalf("SafeCall = %v, want %v", err, want)
+	}
+}
+
+func TestDeferOrder(t *testing.T) {
+	got := DeferOrder()
+	want := "3-2-1"
+	if got != want {
+		t.Errorf("DeferOrder = %q, want %q", got, want)
+	}
+}
+
+func TestNamedReturnWithDefer(t *testing.T) {
+	got := NamedReturnWithDefer(5)
+	want := 7
+	if got != want {
+		t.Errorf("NamedReturnWithDefer(5) = %d, want %d", got, want)
+	}
+}
+
+func TestNamedReturnWithDefer_Zero(t *testing.T) {
+	got := NamedReturnWithDefer(0)
+	want := 2
+	if got != want {
+		t.Errorf("NamedReturnWithDefer(0) = %d, want %d", got, want)
+	}
+}
+
+func TestPanicToError_Panic(t *testing.T) {
+	err := PanicToError(func() error {
+		panic("test panic")
+	})
+	if err == nil {
+		t.Fatal("PanicToError: expected error, got nil")
+	}
+	if err.Error() != "panic occurred: test panic" {
+		t.Errorf("PanicToError = %q, want %q", err.Error(), "panic occurred: test panic")
+	}
+}
+
+func TestPanicToError_NoPanic(t *testing.T) {
+	err := PanicToError(func() error { return nil })
+	if err != nil {
+		t.Fatalf("PanicToError: %v", err)
+	}
+}
+
+func TestPanicToError_Error(t *testing.T) {
+	want := errors.New("normal error")
+	err := PanicToError(func() error { return want })
+	if err != want {
+		t.Fatalf("PanicToError = %v, want %v", err, want)
+	}
+}
+
+func TestRepanic_Panics(t *testing.T) {
+	defer func() {
+		if rec := recover(); rec == nil {
+			t.Fatal("Repanic: expected panic, got nil")
+		}
+	}()
+	Repanic(func() {
+		panic("repanic test")
+	})
+}
+
+func TestRepanic_NoPanic(t *testing.T) {
+	Repanic(func() {})
+}
+
+func TestDeferArgsEval(t *testing.T) {
+	got := DeferArgsEval()
+	want := "bd"
+	if got != want {
+		t.Errorf("DeferArgsEval = %q, want %q", got, want)
+	}
+}

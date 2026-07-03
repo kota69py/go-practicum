@@ -1,0 +1,99 @@
+package main
+
+import (
+	"errors"
+	"sync"
+)
+
+// ===== ドメインモデル =====
+
+type Order struct {
+	ID       string
+	Customer string
+	Items    []OrderItem
+	Total    float64
+	Status   string // "pending", "shipped", "cancelled"
+}
+
+type OrderItem struct {
+	ProductID string
+	Quantity  int
+	Price     float64
+}
+
+// ===== Command Side (書き込みモデル) =====
+
+type CreateOrderCommand struct {
+	Customer string
+	Items    []OrderItem
+}
+
+type ShipOrderCommand struct {
+	OrderID string
+}
+
+type CancelOrderCommand struct {
+	OrderID string
+}
+
+// OrderCommandService はコマンド操作を定義します。
+type OrderCommandService interface {
+	// TODO: CreateOrder(cmd CreateOrderCommand) (string, error)
+	// TODO: ShipOrder(cmd ShipOrderCommand) error
+	// TODO: CancelOrder(cmd CancelOrderCommand) error
+}
+
+// ===== Query Side (読み取りモデル) =====
+
+type OrderSummary struct {
+	ID       string
+	Customer string
+	Total    float64
+	Status   string
+}
+
+type OrderDetail struct {
+	ID       string
+	Customer string
+	Items    []OrderItem
+	Total    float64
+	Status   string
+}
+
+// OrderQueryService はクエリ操作を定義します。
+type OrderQueryService interface {
+	// TODO: GetOrder(id string) (*OrderDetail, error)
+	// TODO: ListOrders() ([]OrderSummary, error)
+	// TODO: ListOrdersByStatus(status string) ([]OrderSummary, error)
+}
+
+// ===== InMemory 実装 =====
+
+type InMemoryOrderStore struct {
+	// TODO: orders   map[string]*Order
+	// TODO: summaries []OrderSummary  // 読み取り最適化
+	// TODO: mu       sync.RWMutex
+}
+
+func NewInMemoryOrderStore() *InMemoryOrderStore {
+	// TODO: 初期化
+	return nil
+}
+
+// TODO: CreateOrder, ShipOrder, CancelOrder を実装
+// TODO: GetOrder, ListOrders, ListOrdersByStatus を実装
+
+// NewOrderCommandService はコマンドサービスの実装を作成します。
+func NewOrderCommandService(store *InMemoryOrderStore) OrderCommandService {
+	// TODO: 実装を返す
+	return nil
+}
+
+// NewOrderQueryService はクエリサービスの実装を作成します。
+func NewOrderQueryService(store *InMemoryOrderStore) OrderQueryService {
+	// TODO: 実装を返す
+	return nil
+}
+
+var _ = errors.New
+var _ = sync.RWMutex

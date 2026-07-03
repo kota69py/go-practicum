@@ -1,0 +1,143 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"sync"
+)
+
+// ===== Event インターフェース =====
+
+// Event はイベントのインターフェースです。
+type Event interface {
+	Type() string
+	Data() interface{}
+}
+
+// BaseEvent はイベントの基底実装です。
+type BaseEvent struct {
+	eventType string
+	data      interface{}
+}
+
+func (e BaseEvent) Type() string       { return e.eventType }
+func (e BaseEvent) Data() interface{}  { return e.data }
+
+// ===== Event Handler =====
+
+// EventHandler はイベントを処理するハンドラーです。
+type EventHandler interface {
+	Handle(event Event) error
+}
+
+// EventHandlerFunc は関数を EventHandler としてラップします。
+type EventHandlerFunc func(event Event) error
+
+func (f EventHandlerFunc) Handle(event Event) error {
+	return f(event)
+}
+
+// ===== EventBus =====
+
+// EventBus はイベントの購読・発行を管理します。
+type EventBus struct {
+	// TODO: handlers map[string][]EventHandler
+	// TODO: mu       sync.RWMutex
+	// TODO: wg       sync.WaitGroup
+	// TODO: errCh    chan error
+}
+
+// NewEventBus は新しいイベントバスを作成します。
+func NewEventBus() *EventBus {
+	// TODO: 初期化
+	return nil
+}
+
+// Subscribe は特定のイベントタイプのハンドラーを登録します。
+// eventType に "*" を指定すると全イベントを受信します。
+func (eb *EventBus) Subscribe(eventType string, handler EventHandler) {
+	// TODO: handlers[eventType] にハンドラーを追加
+}
+
+// Unsubscribe は特定のイベントタイプのハンドラーを削除します。
+func (eb *EventBus) Unsubscribe(eventType string, handler EventHandler) {
+	// TODO: handlers[eventType] からハンドラーを削除
+}
+
+// Publish はイベントを同期的に発行します。
+func (eb *EventBus) Publish(event Event) {
+	// TODO: 該当するすべてのハンドラーを同期的に呼び出す
+	// TODO: "*" ワイルドカードハンドラーも呼び出す
+}
+
+// PublishAsync はイベントを非同期的に発行します。
+func (eb *EventBus) PublishAsync(event Event) {
+	// TODO: goroutine でハンドラーを呼び出し
+	// TODO: eb.wg.Add(1) して完了を追跡
+	// TODO: エラーは errCh に送信
+}
+
+// Wait は全ての非同期処理の完了を待ちます。
+func (eb *EventBus) Wait() {
+	// TODO: eb.wg.Wait()
+}
+
+// Errors は非同期処理のエラーチャネルを返します。
+func (eb *EventBus) Errors() <-chan error {
+	// TODO: errCh を返す
+	return nil
+}
+
+// Close はエラーチャネルを閉じてクリーンアップします。
+func (eb *EventBus) Close() {
+	// TODO: close(eb.errCh)
+}
+
+// ===== イベント定義 =====
+
+type UserCreatedEvent struct {
+	BaseEvent
+}
+
+func NewUserCreatedEvent(userID, name string) UserCreatedEvent {
+	return UserCreatedEvent{
+		BaseEvent: BaseEvent{
+			eventType: "user.created",
+			data:      map[string]string{"user_id": userID, "name": name},
+		},
+	}
+}
+
+type OrderPlacedEvent struct {
+	BaseEvent
+}
+
+func NewOrderPlacedEvent(orderID, userID string, total float64) OrderPlacedEvent {
+	return OrderPlacedEvent{
+		BaseEvent: BaseEvent{
+			eventType: "order.placed",
+			data:      map[string]interface{}{"order_id": orderID, "user_id": userID, "total": total},
+		},
+	}
+}
+
+// ===== ハンドラー実装例 =====
+
+// LoggingHandler はイベントをログ出力するハンドラーです。
+type LoggingHandler struct{}
+
+func (h LoggingHandler) Handle(event Event) error {
+	fmt.Printf("[EVENT] %s: %v\n", event.Type(), event.Data())
+	return nil
+}
+
+// EmailHandler はユーザー作成時にメール送信をシミュレートします。
+type EmailHandler struct{}
+
+func (h EmailHandler) Handle(event Event) error {
+	// TODO: UserCreatedEvent の場合はメール送信をシミュレート
+	return nil
+}
+
+var _ = errors.New
+var _ = sync.WaitGroup

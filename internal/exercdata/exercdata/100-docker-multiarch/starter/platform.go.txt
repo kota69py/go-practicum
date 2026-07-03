@@ -1,0 +1,50 @@
+package main
+
+import (
+	"fmt"
+	"runtime"
+)
+
+// Platform はターゲットプラットフォームを表します。
+type Platform struct {
+	OS   string
+	Arch string
+}
+
+// SupportedPlatforms はサポートするターゲットプラットフォームの一覧です。
+func SupportedPlatforms() []Platform {
+	// TODO: 以下のプラットフォームを返す
+	//   linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64
+	return nil
+}
+
+// CurrentPlatform は現在実行中のプラットフォームを返します。
+func CurrentPlatform() Platform {
+	// TODO: runtime.GOOS と runtime.GOARCH から Platform を構築
+	return Platform{}
+}
+
+// CrossCompileCommand は指定されたプラットフォーム向けのクロスコンパイルコマンドを生成します。
+// 例: "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o app"
+// 備考: Windows の場合は GOOS=windows で拡張子 .exe を追加
+func CrossCompileCommand(target Platform, output string) string {
+	// TODO: 環境変数 + go build コマンドを生成
+	return ""
+}
+
+// Dockerfile はマルチステージビルドの Dockerfile を生成します。
+// builder ステージでクロスコンパイルし、scratch イメージにバイナリをコピーします。
+// 引数: APP_NAME（バイナリ名）, TARGETOS, TARGETARCH
+func Dockerfile(appName, targetOS, targetArch string) string {
+	// TODO: マルチステージ Dockerfile を文字列で生成
+	return ""
+}
+
+// IsSupported は指定されたプラットフォームがサポート対象かチェックします。
+func IsSupported(os, arch string) bool {
+	// TODO: SupportedPlatforms に含まれるか確認
+	return false
+}
+
+var _ = fmt.Sprintf
+var _ = runtime.GOOS

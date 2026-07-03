@@ -1,0 +1,114 @@
+package main
+
+import (
+	"fmt"
+	"math"
+	"net/http"
+	"sync/atomic"
+	"time"
+)
+
+type REDMetrics struct {
+	requestCount   atomic.Int64
+	errorCount     atomic.Int64
+	totalLatency   atomic.Int64
+	maxLatency     atomic.Int64
+	latencyBuckets [6]atomic.Int64
+}
+
+var bucketThresholds = []int64{5_000, 10_000, 50_000, 100_000, 500_000}
+
+func (m *REDMetrics) IncRequest() {
+	m.requestCount.Add(1)
+}
+
+func (m *REDMetrics) IncError() {
+	m.errorCount.Add(1)
+}
+
+func (m *REDMetrics) RecordLatency(us int64) {
+	m.totalLatency.Add(us)
+
+	for {
+		cur := m.maxLatency.Load()
+		if us <= cur {
+			break
+		}
+		if m.maxLatency.CompareAndSwap(cur, us) {
+			break
+		}
+	}
+
+	for i, threshold := range bucketThresholds {
+		if us < threshold {
+			m.latencyBuckets[i].Add(1)
+			return
+		}
+	}
+	m.latencyBuckets[len(bucketThresholds)].Add(1)
+}
+
+func (m *REDMetrics) Instrument(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		m.IncRequest()
+
+		lw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+		next.ServeHTTP(lw, r)
+
+		us := time.Since(start).Microseconds()
+		m.RecordLatency(us)
+
+		if lw.statusCode >= 500 {
+			m.IncError()
+		}
+	})
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (l *loggingResponseWriter) WriteHeader(code int) {
+	l.statusCode = code
+	l.ResponseWriter.WriteHeader(code)
+}
+
+func (m *REDMetrics) MetricsHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+		reqs := m.requestCount.Load()
+		errs := m.errorCount.Load()
+		total := m.totalLatency.Load()
+		maxLat := m.maxLatency.Load()
+
+		fmt.Fprintf(w, "# HELP go_requests_total Total request count\n")
+		fmt.Fprintf(w, "# TYPE go_requests_total counter\n")
+		fmt.Fprintf(w, "go_requests_total %d\n\n", reqs)
+
+		fmt.Fprintf(w, "# HELP go_errors_total Total error count\n")
+		fmt.Fprintf(w, "# TYPE go_errors_total counter\n")
+		fmt.Fprintf(w, "go_errors_total %d\n\n", errs)
+
+		fmt.Fprintf(w, "# HELP go_request_duration_microseconds Request duration in microseconds\n")
+		fmt.Fprintf(w, "# TYPE go_request_duration_microseconds gauge\n")
+		fmt.Fprintf(w, "go_request_duration_microseconds_max %d\n", maxLat)
+
+		var avg float64
+		if reqs > 0 {
+			avg = float64(total) / float64(reqs)
+		}
+		fmt.Fprintf(w, "go_request_duration_microseconds_avg %.1f\n\n", avg)
+
+		fmt.Fprintf(w, "# HELP go_request_duration_bucket Request duration buckets in microseconds\n")
+		fmt.Fprintf(w, "# TYPE go_request_duration_bucket histogram\n")
+		for i, le := range []string{"5000", "10000", "50000", "100000", "500000", "+Inf"} {
+			count := m.latencyBuckets[i].Load()
+			fmt.Fprintf(w, "go_request_duration_bucket{le=%q} %d\n", le, count)
+		}
+	})
+}
+
+var _ = math.MaxFloat64

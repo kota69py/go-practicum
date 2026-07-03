@@ -1,0 +1,43 @@
+package main
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+	"sync/atomic"
+)
+
+var counter atomic.Int64
+
+func NewServer() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /echo", echoHandler)
+	mux.HandleFunc("POST /uppercase", uppercaseHandler)
+	mux.HandleFunc("GET /counter", counterHandler)
+	return mux
+}
+
+func echoHandler(w http.ResponseWriter, r *http.Request) {
+	msg := r.URL.Query().Get("msg")
+	writeJSON(w, http.StatusOK, map[string]string{"message": msg})
+}
+
+func uppercaseHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := io.ReadAll(r.Body)
+	upper := strings.ToUpper(string(body))
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(upper))
+}
+
+func counterHandler(w http.ResponseWriter, r *http.Request) {
+	n := counter.Add(1)
+	writeJSON(w, http.StatusOK, map[string]int64{"count": n})
+}
+
+func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}

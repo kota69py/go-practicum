@@ -1,0 +1,16 @@
+{
+  "name": "99-web-testing",
+  "title": "Web テスト — httptest によるテスト駆動開発",
+  "category": "testing",
+  "difficulty": 2,
+  "description": "net/http/httptest パッケージを使った HTTP ハンドラーのテスト手法を学びます。httptest.NewServer（結合テスト）、httptest.NewRecorder（単体テスト）、リクエストボディの検証、JSON レスポンスのパース、テストカバレッジの確保を実践します。",
+  "hints": [
+    "httptest.NewRecorder() でハンドラーを直接テスト",
+    "httptest.NewServer(handler) でサーバーレベル結合テスト",
+    "json.NewDecoder(resp.Body).Decode(&v) でJSONレスポンスをパース",
+    "Table Driven Test で複数ケースを網羅",
+    "t.Run(name, fn) でサブテストを構造化",
+    "レスポンスボディは resp.Body.Close() 後に読み取り"
+  ],
+  "files": ["handlers.go.txt", "handlers_test.go.txt"]
+}

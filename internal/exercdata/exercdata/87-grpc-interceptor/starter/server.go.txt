@@ -1,0 +1,16 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	pb "grpc-interceptor/proto/echo"
+)
+
+type echoServer struct {
+	pb.UnimplementedEchoServiceServer
+}
+
+func (s *echoServer) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	return &pb.EchoResponse{Message: fmt.Sprintf("echo: %s", req.Message)}, nil
+}

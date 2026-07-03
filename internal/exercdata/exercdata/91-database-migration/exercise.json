@@ -1,0 +1,17 @@
+{
+  "name": "91-database-migration",
+  "title": "データベースマイグレーション — SQL マイグレーションの実装",
+  "category": "datastore",
+  "difficulty": 4,
+  "description": "SQLite を使ったデータベースマイグレーションの仕組みを実装します。マイグレーションファイルのパース、適用済みマイグレーションの追跡、Up/Down の実行、トランザクション内での安全なマイグレーションを学びます。",
+  "hints": [
+    "sql.Open(\"sqlite\", path) で SQLite データベースを開く（:memory: でインメモリ）",
+    "schema_migrations テーブルで適用済みバージョンを管理",
+    "migrate.Up() は未適用のマイグレーションを順に実行",
+    "migrate.Down() は最後に適用したマイグレーションを1つ戻す",
+    "各マイグレーションはトランザクション内で実行（BEGIN/COMMIT）",
+    "down クエリは up の逆操作（DROP TABLE / ALTER の逆）",
+    "sqlite ドライバ: modernc.org/sqlite（CGo不要）"
+  ],
+  "files": ["migrate.go.txt"]
+}

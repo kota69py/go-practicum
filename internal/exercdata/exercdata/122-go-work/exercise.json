@@ -1,0 +1,17 @@
+{
+  "name": "122-go-work",
+  "title": "go.work — マルチモジュールワークスペース",
+  "category": "configuration",
+  "difficulty": 3,
+  "description": "Go 1.18 で導入されたワークスペースモード（go.work）を学びます。複数の Go モジュールを跨いだ開発、ローカルモジュールの参照、モノレポ構成でのモジュール分割パターンを実践します。",
+  "hints": [
+    "go work init ./mod1 ./mod2 でワークスペース初期化",
+    "go work use ./local-mod でローカルモジュール追加",
+    "go.work は go.mod より優先される",
+    "go.work は .gitignore 推奨（ローカル開発用）",
+    "GOWORK 環境変数でワークスペースファイルを指定",
+    "go.work で replace ディレクティブを代替可能",
+    "複数モジュールで共通のツール管理が容易に"
+  ],
+  "files": ["workspace.go.txt", "workspace_test.go.txt"]
+}

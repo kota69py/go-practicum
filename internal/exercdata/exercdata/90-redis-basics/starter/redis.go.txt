@@ -1,0 +1,61 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+)
+
+// PipelineSet はパイプラインを使って複数のキー・バリューペアを一括でセットしてください。
+// pipe.Set(ctx, key, value, 0) を順に呼び、最後に pipe.Exec(ctx) で一括実行。
+func PipelineSet(ctx context.Context, client *redis.Client, pairs map[string]string) error {
+	// TODO: client.Pipeline() でパイプラインを作成
+	// TODO: 各ペアに対して pipe.Set(ctx, key, value, 0)
+	// TODO: pipe.Exec(ctx) で一括実行
+	return nil
+}
+
+// TransactionSet はトランザクション内で複数のキーをセットしてください。
+// TxPipelined を使います。途中で失敗した場合はロールバックされます。
+func TransactionSet(ctx context.Context, client *redis.Client, pairs map[string]string) error {
+	// TODO: client.TxPipelined(ctx, func(pipe redis.Pipeliner) error { ... })
+	// TODO: 関数内で pipe.Set(ctx, key, value, 0) を順に呼ぶ
+	return nil
+}
+
+// PublishMessage は指定したチャネルにメッセージをパブリッシュしてください。
+func PublishMessage(ctx context.Context, client *redis.Client, channel, message string) error {
+	// TODO: client.Publish(ctx, channel, message).Err()
+	return nil
+}
+
+// SubscribeMessages は指定したチャネルからメッセージを1件だけ受信してください。
+// タイムアウトは SubscribeTimeout を使ってください。
+const SubscribeTimeout = 0
+
+func SubscribeMessages(ctx context.Context, client *redis.Client, channel string) (string, error) {
+	// TODO: client.Subscribe(ctx, channel) でサブスクライブ
+	// TODO: defer sub.Close()
+	// TODO: ch := sub.Channel()
+	// TODO: select / ctx.Done / time.After で1件受信して Return
+	return "", nil
+}
+
+// AtomicIncrement は WATCH + パイプラインを使ってアトミックにカウンターをインクリメントしてください。
+// client.Watch(ctx, fn, key) を使い、トランザクション内で GET して +1 した値を SET する CAS 操作。
+func AtomicIncrement(ctx context.Context, client *redis.Client, key string) (int64, error) {
+	// TODO: client.Watch(ctx, func(tx *redis.Tx) error { ... }, key)
+	// TODO: tx.Get(ctx, key).Int64() で現在値を取得（ない場合は 0）
+	// TODO: tx.TxPipelined で SET key newValue
+	return 0, nil
+}
+
+// GetKeys は指定された複数キーの値を一括取得してください。
+func GetKeys(ctx context.Context, client *redis.Client, keys ...string) (map[string]string, error) {
+	// TODO: client.MGet(ctx, keys...).Result() で一括取得
+	// TODO: 結果を map[string]string に変換
+	return nil, nil
+}
+
+var _ = fmt.Sprintf

@@ -1,0 +1,117 @@
+package main
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"testing"
+)
+
+func TestGenerateCA(t *testing.T) {
+	cert, key, err := GenerateCA()
+	if err != nil {
+		t.Fatalf("GenerateCA: %v", err)
+	}
+	if cert == nil || key == nil {
+		t.Fatal("expected non-nil cert and key")
+	}
+	if !cert.IsCA {
+		t.Error("expected IsCA to be true")
+	}
+}
+
+func TestGenerateCert(t *testing.T) {
+	caCert, caKey, _ := GenerateCA()
+	cert, key, err := GenerateCert(caCert, caKey, "server.test", []string{"localhost", "127.0.0.1"})
+	if err != nil {
+		t.Fatalf("GenerateCert: %v", err)
+	}
+	if cert == nil || key == nil {
+		t.Fatal("expected non-nil cert and key")
+	}
+}
+
+func TestTLSServerBasic(t *testing.T) {
+	caCert, caKey, _ := GenerateCA()
+	serverCert, serverKey, _ := GenerateCert(caCert, caKey, "server", []string{"127.0.0.1"})
+
+	tlsCert, err := tls.X509KeyPair([]byte(CertToPEM(serverCert)), []byte(KeyToPEM(serverKey)))
+	if err != nil {
+		t.Fatalf("X509KeyPair: %v", err)
+	}
+
+	caPool := x509.NewCertPool()
+	caPool.AddCert(caCert)
+
+	addr, err := TLSServer(tlsCert, caPool, false)
+	if err != nil {
+		t.Fatalf("TLSServer: %v", err)
+	}
+	if addr == nil {
+		t.Fatal("expected non-nil addr")
+	}
+}
+
+func TestTLSConnection(t *testing.T) {
+	caCert, caKey, _ := GenerateCA()
+	serverCert, serverKey, _ := GenerateCert(caCert, caKey, "server", []string{"127.0.0.1"})
+
+	tlsServerCert, _ := tls.X509KeyPair([]byte(CertToPEM(serverCert)), []byte(KeyToPEM(serverKey)))
+	caPool := x509.NewCertPool()
+	caPool.AddCert(caCert)
+
+	addr, err := TLSServer(tlsServerCert, caPool, false)
+	if err != nil {
+		t.Fatalf("TLSServer: %v", err)
+	}
+
+	if err := TLSClient(addr.String(), caPool, tls.Certificate{}); err != nil {
+		t.Fatalf("TLSClient: %v", err)
+	}
+}
+
+func TestMTLSConnection(t *testing.T) {
+	caCert, caKey, _ := GenerateCA()
+	serverCert, serverKey, _ := GenerateCert(caCert, caKey, "server", []string{"127.0.0.1"})
+	clientCert, clientKey, _ := GenerateCert(caCert, caKey, "client", nil)
+
+	tlsServerCert, _ := tls.X509KeyPair([]byte(CertToPEM(serverCert)), []byte(KeyToPEM(serverKey)))
+	tlsClientCert, _ := tls.X509KeyPair([]byte(CertToPEM(clientCert)), []byte(KeyToPEM(clientKey)))
+	caPool := x509.NewCertPool()
+	caPool.AddCert(caCert)
+
+	addr, err := TLSServer(tlsServerCert, caPool, true)
+	if err != nil {
+		t.Fatalf("TLSServer: %v", err)
+	}
+
+	if err := TLSClient(addr.String(), caPool, tlsClientCert); err != nil {
+		t.Fatalf("mTLS client: %v", err)
+	}
+}
+
+func TestMTLSWithoutClientCert(t *testing.T) {
+	caCert, caKey, _ := GenerateCA()
+	serverCert, serverKey, _ := GenerateCert(caCert, caKey, "server", []string{"127.0.0.1"})
+
+	tlsServerCert, _ := tls.X509KeyPair([]byte(CertToPEM(serverCert)), []byte(KeyToPEM(serverKey)))
+	caPool := x509.NewCertPool()
+	caPool.AddCert(caCert)
+
+	addr, err := TLSServer(tlsServerCert, caPool, true)
+	if err != nil {
+		t.Fatalf("TLSServer: %v", err)
+	}
+
+	err = TLSClient(addr.String(), caPool, tls.Certificate{})
+	if err == nil {
+		t.Fatal("expected error for mTLS without client cert")
+	}
+}
+
+func TestCertToPEM(t *testing.T) {
+	caCert, _, _ := GenerateCA()
+	pemStr := CertToPEM(caCert)
+	if len(pemStr) == 0 {
+		t.Error("expected non-empty PEM")
+	}
+}

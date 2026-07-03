@@ -1,0 +1,155 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestInitWorkspace(t *testing.T) {
+	dir := t.TempDir()
+
+	if err := InitWorkspace(dir); err != nil {
+		t.Fatalf("InitWorkspace failed: %v", err)
+	}
+
+	workPath := filepath.Join(dir, "go.work")
+	if _, err := os.Stat(workPath); os.IsNotExist(err) {
+		t.Fatal("go.work was not created")
+	}
+
+	data, err := os.ReadFile(workPath)
+	if err != nil {
+		t.Fatalf("failed to read go.work: %v", err)
+	}
+
+	content := string(data)
+	if !contains(content, "go 1.23") {
+		t.Errorf("go.work should contain 'go 1.23', got: %s", content)
+	}
+}
+
+func TestInitWorkspaceInvalidDir(t *testing.T) {
+	err := InitWorkspace("/nonexistent/path")
+	if err == nil {
+		t.Error("expected error for nonexistent directory, got nil")
+	}
+}
+
+func TestUseModule(t *testing.T) {
+	workDir := t.TempDir()
+	if err := InitWorkspace(workDir); err != nil {
+		t.Fatalf("InitWorkspace failed: %v", err)
+	}
+
+	modDir := filepath.Join(workDir, "mymod")
+	if err := os.MkdirAll(modDir, 0755); err != nil {
+		t.Fatalf("mkdir failed: %v", err)
+	}
+
+	if err := UseModule(workDir, "mymod"); err != nil {
+		t.Fatalf("UseModule failed: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(workDir, "go.work"))
+	if err != nil {
+		t.Fatalf("failed to read go.work: %v", err)
+	}
+
+	content := string(data)
+	if !contains(content, "mymod") {
+		t.Errorf("go.work should contain 'mymod', got: %s", content)
+	}
+}
+
+func TestUseModuleMultiple(t *testing.T) {
+	workDir := t.TempDir()
+	if err := InitWorkspace(workDir); err != nil {
+		t.Fatalf("InitWorkspace failed: %v", err)
+	}
+
+	for _, name := range []string{"mod1", "mod2"} {
+		modDir := filepath.Join(workDir, name)
+		if err := os.MkdirAll(modDir, 0755); err != nil {
+			t.Fatalf("mkdir %s failed: %v", name, err)
+		}
+		if err := UseModule(workDir, name); err != nil {
+			t.Fatalf("UseModule(%s) failed: %v", name, err)
+		}
+	}
+
+	data, err := os.ReadFile(filepath.Join(workDir, "go.work"))
+	if err != nil {
+		t.Fatalf("failed to read go.work: %v", err)
+	}
+
+	content := string(data)
+	if !contains(content, "mod1") {
+		t.Errorf("go.work should contain 'mod1', got: %s", content)
+	}
+	if !contains(content, "mod2") {
+		t.Errorf("go.work should contain 'mod2', got: %s", content)
+	}
+}
+
+func TestUseModuleWithoutInit(t *testing.T) {
+	err := UseModule(t.TempDir(), "mymod")
+	if err == nil {
+		t.Error("expected error when go.work does not exist, got nil")
+	}
+}
+
+func TestBuildAll(t *testing.T) {
+	workDir := t.TempDir()
+	if err := InitWorkspace(workDir); err != nil {
+		t.Fatalf("InitWorkspace failed: %v", err)
+	}
+
+	modDir := filepath.Join(workDir, "alpha")
+	if err := os.MkdirAll(modDir, 0755); err != nil {
+		t.Fatalf("mkdir failed: %v", err)
+	}
+
+	modGoMod := `module alpha
+
+go 1.23
+`
+	if err := os.WriteFile(filepath.Join(modDir, "go.mod"), []byte(modGoMod), 0644); err != nil {
+		t.Fatalf("write go.mod failed: %v", err)
+	}
+
+	if err := UseModule(workDir, "alpha"); err != nil {
+		t.Fatalf("UseModule failed: %v", err)
+	}
+
+	err := BuildAll(workDir)
+	if err != nil {
+		t.Fatalf("BuildAll failed: %v", err)
+	}
+}
+
+func TestBuildAllNoModules(t *testing.T) {
+	workDir := t.TempDir()
+	workPath := filepath.Join(workDir, "go.work")
+	if err := os.WriteFile(workPath, []byte("go 1.23\n"), 0644); err != nil {
+		t.Fatalf("write go.work failed: %v", err)
+	}
+
+	err := BuildAll(workDir)
+	if err == nil {
+		t.Error("expected error when no modules in workspace, got nil")
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && containsStr(s, substr)
+}
+
+func containsStr(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

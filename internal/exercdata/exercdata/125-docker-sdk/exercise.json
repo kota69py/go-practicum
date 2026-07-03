@@ -1,0 +1,17 @@
+{
+  "name": "125-docker-sdk",
+  "title": "Docker SDK for Go — コンテナ操作の自動化",
+  "category": "os",
+  "difficulty": 3,
+  "description": "Docker SDK for Go（docker/docker/client）を使ってコンテナ操作を自動化します。イメージのプル、コンテナの作成・起動・停止・削除、ログ取得、コンテナ内コマンド実行など、Docker API を Go から操作する方法を学びます。",
+  "hints": [
+    "client.NewClientWithOpts で Docker クライアント作成",
+    "client.ImagePull でイメージをプル",
+    "client.ContainerCreate でコンテナ作成",
+    "client.ContainerStart / ContainerStop で起動停止",
+    "client.ContainerLogs でログを取得",
+    "container.Config と container.HostConfig で設定",
+    "Docker デーモンがローカルに必要"
+  ],
+  "files": ["docker_ops.go.txt"]
+}

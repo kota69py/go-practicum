@@ -1,0 +1,3 @@
+module go-practicum-iter-seq
+
+go 1.23

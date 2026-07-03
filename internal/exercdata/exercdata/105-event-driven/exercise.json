@@ -1,0 +1,17 @@
+{
+  "name": "105-event-driven",
+  "title": "イベント駆動アーキテクチャ — インメモリイベントバス",
+  "category": "architecture",
+  "difficulty": 3,
+  "description": "イベント駆動アーキテクチャ（EDA）の基本パターンを Go で実装します。インメモリのイベントバス、非同期イベントハンドリング、イベントのルーティングとフィルタリング、エラーハンドリングを学び、疎結合なアーキテクチャを構築します。",
+  "hints": [
+    "Event インターフェースは Type() と Data() を持つ",
+    "EventHandler は Handle(event Event) error を持つ",
+    "EventBus は Subscribe, Publish, Unsubscribe を提供",
+    "go handler.Handle(event) で非同期処理",
+    "sync.WaitGroup で非同期処理の完了を待機",
+    "エラーハンドリング: エラーチャネルでエラーを収集",
+    "Wildcard 購読: \"*\" ですべてのイベントタイプを受信"
+  ],
+  "files": ["eventbus.go.txt"]
+}

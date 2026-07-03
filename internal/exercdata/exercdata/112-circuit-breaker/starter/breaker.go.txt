@@ -1,0 +1,92 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"sync/atomic"
+	"time"
+)
+
+// State は Circuit Breaker の状態を表します。
+type State int32
+
+const (
+	StateClosed   State = 0
+	StateOpen     State = 1
+	StateHalfOpen State = 2
+)
+
+func (s State) String() string {
+	switch s {
+	case StateClosed:
+		return "closed"
+	case StateOpen:
+		return "open"
+	case StateHalfOpen:
+		return "half-open"
+	default:
+		return "unknown"
+	}
+}
+
+// CircuitBreaker はサーキットブレーカーの状態を管理します。
+type CircuitBreaker struct {
+	// TODO: state       atomic.Int32
+	// TODO: failures    atomic.Int32
+	// TODO: threshold   int32
+	// TODO: timeout     time.Duration
+	// TODO: lastFailure atomic.Int64 (UnixNano)
+}
+
+// NewCircuitBreaker は新しい CircuitBreaker を作成します。
+func NewCircuitBreaker(threshold int, timeout time.Duration) *CircuitBreaker {
+	// TODO: 初期化
+	return nil
+}
+
+// Execute は関数を実行し、失敗に応じて状態を遷移します。
+func (cb *CircuitBreaker) Execute(fn func() error) error {
+	// TODO: 現在の状態を確認
+	// TODO: Open なら ErrOpen を返す（ショートサーキット）
+	// TODO: HalfOpen ならプローブ実行
+	// TODO: Closed なら通常実行
+	// TODO: 失敗回数をカウント、閾値超えで Open に遷移
+	// TODO: 成功時にカウンターリセット
+	return nil
+}
+
+// State は現在の状態を返します。
+func (cb *CircuitBreaker) State() State {
+	return State(cb.state.Load())
+}
+
+// ErrOpen はサーキットが開いていることを示すエラーです。
+var ErrOpen = errors.New("circuit breaker is open")
+
+// reset は失敗カウンターをリセットし Closed に遷移します。
+func (cb *CircuitBreaker) reset() {
+	// TODO: failures.Store(0)
+	// TODO: state.Store(int32(StateClosed))
+}
+
+// trip は Open 状態に遷移し、時刻を記録します。
+func (cb *CircuitBreaker) trip() {
+	// TODO: state.Store(int32(StateOpen))
+	// TODO: lastFailure.Store(time.Now().UnixNano())
+}
+
+// attemptReset はタイムアウト経過後に HalfOpen に遷移します。
+func (cb *CircuitBreaker) attemptReset() {
+	// TODO: lastFailure からの経過時間を確認
+	// TODO: timeout を超えていれば HalfOpen に遷移
+}
+
+// fail は失敗を記録し、必要に応じて Open に遷移します。
+func (cb *CircuitBreaker) fail() {
+	// TODO: failures.Add(1)
+	// TODO: failures >= threshold なら trip()
+}
+
+var _ = atomic.Int32{}
+var _ = fmt.Sprintf
+var _ = time.Now

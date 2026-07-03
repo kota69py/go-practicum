@@ -1,0 +1,18 @@
+{
+  "name": "93-jwt-auth",
+  "title": "JWT 認証 — golang-jwt によるトークン発行・検証",
+  "category": "security",
+  "difficulty": 3,
+  "description": "golang-jwt/jwt/v5 ライブラリを使って JWT（JSON Web Token）の発行と検証を実装します。HS256 署名、カスタムクレーム、トークンの有効期限検証、発行者・対象者クレームの検証を学びます。",
+  "hints": [
+    "jwt.NewWithClaims(jwt.SigningMethodHS256, claims) でトークン作成",
+    "jwt.MapClaims かカスタム構造体でクレームを定義",
+    "token.SignedString(secret) で署名済みトークンを生成",
+    "jwt.ParseWithClaims(token, &claims{}, keyFunc) で検証",
+    "keyFunc はトークンを検証するための鍵を返す関数",
+    "exp (expiration), iss (issuer), aud (audience) 等の標準クレーム",
+    "jwt.NewNumericDate(time.Now().Add(hour)) で有効期限設定",
+    "トークン検証時は jwt.WithIssuer / jwt.WithAudience / jwt.WithLeeway で検証オプション"
+  ],
+  "files": ["jwt.go.txt"]
+}

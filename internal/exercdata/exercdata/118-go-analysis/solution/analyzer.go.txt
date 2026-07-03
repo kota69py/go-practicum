@@ -1,0 +1,148 @@
+package main
+
+import (
+	"go/ast"
+	"go/token"
+	"strings"
+
+	"golang.org/x/tools/go/analysis"
+)
+
+var MagicNumberAnalyzer = &analysis.Analyzer{
+	Name: "magicnumber",
+	Doc:  "reports magic number literals",
+	Run:  runMagicNumber,
+}
+
+var OSExitAnalyzer = &analysis.Analyzer{
+	Name: "osexit",
+	Doc:  "reports os.Exit calls in main function",
+	Run:  runOSExit,
+}
+
+func runMagicNumber(pass *analysis.Pass) (any, error) {
+	for _, file := range pass.Files {
+		filename := pass.Fset.Position(file.Pos()).Filename
+		if strings.HasSuffix(filename, "_test.go") {
+			continue
+		}
+		ast.Inspect(file, func(n ast.Node) bool {
+			lit, ok := n.(*ast.BasicLit)
+			if !ok {
+				return true
+			}
+			if lit.Kind != token.INT && lit.Kind != token.FLOAT {
+				return true
+			}
+			if !IsMagicNumber(lit) {
+				return true
+			}
+			pass.Reportf(lit.Pos(), "magic number: %s", lit.Value)
+			return true
+		})
+	}
+	return nil, nil
+}
+
+func runOSExit(pass *analysis.Pass) (any, error) {
+	for _, file := range pass.Files {
+		filename := pass.Fset.Position(file.Pos()).Filename
+		if strings.HasSuffix(filename, "_test.go") {
+			continue
+		}
+		ast.Inspect(file, func(n ast.Node) bool {
+			fn, ok := n.(*ast.FuncDecl)
+			if !ok || fn.Name.Name != "main" {
+				return true
+			}
+			if HasOSExit(fn.Body) {
+				pass.Reportf(fn.Pos(), "os.Exit in main function")
+			}
+			return false
+		})
+	}
+	return nil, nil
+}
+
+func IsMagicNumber(lit *ast.BasicLit) bool {
+	switch lit.Kind {
+	case token.INT:
+		return lit.Value != "0" && lit.Value != "1" && lit.Value != "2"
+	case token.FLOAT:
+		return true
+	}
+	return false
+}
+
+func HasOSExit(block *ast.BlockStmt) bool {
+	if block == nil {
+		return false
+	}
+	for _, stmt := range block.List {
+		switch s := stmt.(type) {
+		case *ast.ExprStmt:
+			call, ok := s.X.(*ast.CallExpr)
+			if !ok {
+				continue
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				continue
+			}
+			id, ok := sel.X.(*ast.Ident)
+			if !ok || id.Name != "os" {
+				continue
+			}
+			if sel.Sel.Name == "Exit" {
+				return true
+			}
+		case *ast.IfStmt:
+			if HasOSExit(s.Body) {
+				return true
+			}
+			if s.Else != nil {
+				if elseBlock, ok := s.Else.(*ast.BlockStmt); ok {
+					if HasOSExit(elseBlock) {
+						return true
+					}
+				}
+			}
+		case *ast.ForStmt:
+			if HasOSExit(s.Body) {
+				return true
+			}
+		case *ast.RangeStmt:
+			if HasOSExit(s.Body) {
+				return true
+			}
+		case *ast.SwitchStmt:
+			for _, cc := range s.Body.List {
+				c := cc.(*ast.CaseClause)
+				for _, n := range c.Body {
+					if es, ok := n.(*ast.ExprStmt); ok {
+						call, ok := es.X.(*ast.CallExpr)
+						if !ok {
+							continue
+						}
+						sel, ok := call.Fun.(*ast.SelectorExpr)
+						if !ok {
+							continue
+						}
+						id, ok := sel.X.(*ast.Ident)
+						if !ok || id.Name != "os" {
+							continue
+						}
+						if sel.Sel.Name == "Exit" {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+func isTestFile(file *ast.File) bool {
+	return false
+}

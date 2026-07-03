@@ -1,0 +1,42 @@
+package main
+
+import (
+	"fmt"
+
+	pb "grpc-errors/proto/echo"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+// ClassifyError は gRPC エラーを分類し、人間可読なメッセージを返してください。
+// - codes.NotFound → "not found: <message>"
+// - codes.InvalidArgument → "bad request: <message>"
+// - codes.AlreadyExists → "conflict: <message>"
+// - codes.Internal → "server error: <message>"
+// - codes.Unavailable → "service unavailable: <message>"
+// - その他 → "unknown error: <message>"
+func ClassifyError(err error) string {
+	// TODO: status.FromError(err) でステータスを取得
+	// TODO: status.Code() でコードを取得
+	// TODO: コードに応じたプレフィックス付きメッセージを返す
+	return fmt.Sprintf("error: %v", err)
+}
+
+// IsRetryable はエラーがリトライ可能か判定してください。
+// リトライ可能: codes.Unavailable, codes.DeadlineExceeded
+// リトライ不可: 上記以外
+func IsRetryable(err error) bool {
+	// TODO: status.Code(err) でコードを取得
+	// TODO: リトライ可能なコードか判定
+	return false
+}
+
+// EchoWithErrorHandling は Echo を呼び出し、エラーを適切にラップして返します。
+// - レスポンス取得成功 → メッセージを返す
+// - エラー発生 → ClassifyError で分類してラップ
+func EchoWithErrorHandling(client pb.EchoServiceClient, message string) (string, error) {
+	// TODO: client.Echo(ctx, req) を呼び出す
+	// TODO: エラー時は ClassifyError の結果を含めて Wrap
+	return "", nil
+}

@@ -1,0 +1,83 @@
+package vfs
+
+import (
+	"io/fs"
+	"testing"
+	"testing/fstest"
+)
+
+func TestFS_OpenAndRead(t *testing.T) {
+	f := NewFS()
+	f.Add("hello.txt", "Hello, World!")
+	f.Add("foo.txt", "bar")
+
+	data, err := fs.ReadFile(f, "hello.txt")
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+	if string(data) != "Hello, World!" {
+		t.Errorf("got %q, want %q", string(data), "Hello, World!")
+	}
+
+	data, err = fs.ReadFile(f, "foo.txt")
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+	if string(data) != "bar" {
+		t.Errorf("got %q, want %q", string(data), "bar")
+	}
+}
+
+func TestFS_NotFound(t *testing.T) {
+	f := NewFS()
+	_, err := f.Open("nonexistent.txt")
+	if err != fs.ErrNotExist {
+		t.Errorf("expected fs.ErrNotExist, got %v", err)
+	}
+}
+
+func TestFS_TestFS(t *testing.T) {
+	f := NewFS()
+	f.Add("file1.txt", "content1")
+	f.Add("subdir/file2.txt", "content2")
+
+	if err := fstest.TestFS(f, "file1.txt", "subdir/file2.txt"); err != nil {
+		t.Fatalf("TestFS failed: %v", err)
+	}
+}
+
+func TestFS_ReadDir(t *testing.T) {
+	f := NewFS()
+	f.Add("a.txt", "aaa")
+	f.Add("b.txt", "bbb")
+
+	entries, err := fs.ReadDir(f, ".")
+	if err != nil {
+		t.Fatalf("ReadDir failed: %v", err)
+	}
+	if len(entries) < 2 {
+		t.Errorf("expected at least 2 entries, got %d", len(entries))
+	}
+}
+
+func TestFS_MultipleFiles(t *testing.T) {
+	f := NewFS()
+	files := map[string]string{
+		"README.md": "# Test",
+		"main.go":   "package main",
+		"go.mod":    "module test",
+	}
+	for name, content := range files {
+		f.Add(name, content)
+	}
+	for name, want := range files {
+		got, err := fs.ReadFile(f, name)
+		if err != nil {
+			t.Errorf("ReadFile(%q) failed: %v", name, err)
+			continue
+		}
+		if string(got) != want {
+			t.Errorf("ReadFile(%q) = %q, want %q", name, string(got), want)
+		}
+	}
+}

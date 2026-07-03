@@ -1,0 +1,101 @@
+package main
+
+import (
+	"runtime"
+	"testing"
+)
+
+func TestSupportedPlatforms(t *testing.T) {
+	platforms := SupportedPlatforms()
+	if len(platforms) == 0 {
+		t.Fatal("expected non-empty platforms")
+	}
+	found := false
+	for _, p := range platforms {
+		if p.OS == "linux" && p.Arch == "amd64" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected linux/amd64 in supported platforms")
+	}
+}
+
+func TestCurrentPlatform(t *testing.T) {
+	p := CurrentPlatform()
+	if p.OS != runtime.GOOS {
+		t.Errorf("OS: got %q, want %q", p.OS, runtime.GOOS)
+	}
+	if p.Arch != runtime.GOARCH {
+		t.Errorf("Arch: got %q, want %q", p.Arch, runtime.GOARCH)
+	}
+}
+
+func TestCrossCompileCommand(t *testing.T) {
+	cmd := CrossCompileCommand(Platform{OS: "linux", Arch: "arm64"}, "app")
+	expected := "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o app"
+	if cmd != expected {
+		t.Errorf("got %q, want %q", cmd, expected)
+	}
+}
+
+func TestCrossCompileCommandWindows(t *testing.T) {
+	cmd := CrossCompileCommand(Platform{OS: "windows", Arch: "amd64"}, "app")
+	expected := "CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o app.exe"
+	if cmd != expected {
+		t.Errorf("got %q, want %q", cmd, expected)
+	}
+}
+
+func TestDockerfile(t *testing.T) {
+	dockerfile := Dockerfile("myapp", "linux", "amd64")
+	if len(dockerfile) == 0 {
+		t.Fatal("expected non-empty dockerfile")
+	}
+	if !contains(dockerfile, "FROM --platform=$BUILDPLATFORM golang:alpine AS builder") {
+		t.Error("expected builder stage")
+	}
+	if !contains(dockerfile, "FROM scratch") {
+		t.Error("expected scratch final stage")
+	}
+	if !contains(dockerfile, "COPY --from=builder /myapp /myapp") {
+		t.Error("expected COPY from builder")
+	}
+}
+
+func TestIsSupported(t *testing.T) {
+	if !IsSupported("linux", "amd64") {
+		t.Error("expected linux/amd64 to be supported")
+	}
+	if IsSupported("linux", "s390x") {
+		t.Error("expected linux/s390x to be unsupported")
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && searchString(s, substr)
+}
+
+func searchString(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		match := true
+		for j := 0; j < len(substr); j++ {
+			if s[i+j] != substr[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+func TestAllSupportedPlatforms(t *testing.T) {
+	for _, p := range SupportedPlatforms() {
+		if !IsSupported(p.OS, p.Arch) {
+			t.Errorf("expected %s/%s to be supported", p.OS, p.Arch)
+		}
+	}
+}

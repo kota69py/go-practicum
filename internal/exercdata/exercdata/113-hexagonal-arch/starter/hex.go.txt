@@ -1,0 +1,76 @@
+package main
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+)
+
+// ===== Core Domain =====
+
+type User struct {
+	ID    string
+	Name  string
+	Email string
+}
+
+// ===== Port (interface) =====
+
+// UserRepository はユーザーの永続化を抽象化するポートです。
+type UserRepository interface {
+	// TODO: FindByID(id string) (*User, error)
+	// TODO: FindAll() ([]*User, error)
+	// TODO: Save(user *User) error
+	// TODO: Delete(id string) error
+}
+
+// UserService はユーザーに関するビジネスロジックを提供します。
+type UserService struct {
+	// TODO: repo UserRepository
+}
+
+// NewUserService は UserService を作成します。
+func NewUserService(repo UserRepository) *UserService {
+	// TODO: 初期化
+	return nil
+}
+
+// TODO: Register, Get, List, Remove メソッドを実装
+
+// ===== Adapter: InMemory =====
+
+type InMemoryUserRepository struct {
+	// TODO: users map[string]*User
+	// TODO: mu    sync.RWMutex
+}
+
+func NewInMemoryUserRepository() *InMemoryUserRepository {
+	// TODO: 初期化
+	return nil
+}
+
+// TODO: FindByID, FindAll, Save, Delete を実装
+
+// ===== Adapter: File =====
+
+type FileUserRepository struct {
+	// TODO: path string
+	// TODO: mu   sync.RWMutex
+}
+
+func NewFileUserRepository(path string) *FileUserRepository {
+	// TODO: 初期化
+	return nil
+}
+
+// TODO: FindByID, FindAll, Save, Delete を実装（JSON ファイルで永続化）
+
+var _ = json.Marshal
+var _ = errors.New
+var _ = sync.RWMutex{}
+var _ = os.ReadFile
+var _ = filepath.Join
+var _ = fmt.Sprintf

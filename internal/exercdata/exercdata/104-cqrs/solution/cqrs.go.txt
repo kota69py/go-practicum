@@ -1,0 +1,191 @@
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+type Order struct {
+	ID       string
+	Customer string
+	Items    []OrderItem
+	Total    float64
+	Status   string
+}
+
+type OrderItem struct {
+	ProductID string
+	Quantity  int
+	Price     float64
+}
+
+type CreateOrderCommand struct {
+	Customer string
+	Items    []OrderItem
+}
+
+type ShipOrderCommand struct {
+	OrderID string
+}
+
+type CancelOrderCommand struct {
+	OrderID string
+}
+
+type OrderCommandService interface {
+	CreateOrder(cmd CreateOrderCommand) (string, error)
+	ShipOrder(cmd ShipOrderCommand) error
+	CancelOrder(cmd CancelOrderCommand) error
+}
+
+type OrderSummary struct {
+	ID       string
+	Customer string
+	Total    float64
+	Status   string
+}
+
+type OrderDetail struct {
+	ID       string
+	Customer string
+	Items    []OrderItem
+	Total    float64
+	Status   string
+}
+
+type OrderQueryService interface {
+	GetOrder(id string) (*OrderDetail, error)
+	ListOrders() ([]OrderSummary, error)
+	ListOrdersByStatus(status string) ([]OrderSummary, error)
+}
+
+type InMemoryOrderStore struct {
+	orders    map[string]*Order
+	summaries []OrderSummary
+	mu        sync.RWMutex
+	nextID    int
+}
+
+func NewInMemoryOrderStore() *InMemoryOrderStore {
+	return &InMemoryOrderStore{
+		orders:    make(map[string]*Order),
+		summaries: make([]OrderSummary, 0),
+		nextID:    1,
+	}
+}
+
+type orderCommandService struct {
+	store *InMemoryOrderStore
+}
+
+type orderQueryService struct {
+	store *InMemoryOrderStore
+}
+
+func NewOrderCommandService(store *InMemoryOrderStore) OrderCommandService {
+	return &orderCommandService{store: store}
+}
+
+func NewOrderQueryService(store *InMemoryOrderStore) OrderQueryService {
+	return &orderQueryService{store: store}
+}
+
+func (s *orderCommandService) CreateOrder(cmd CreateOrderCommand) (string, error) {
+	s.store.mu.Lock()
+	defer s.store.mu.Unlock()
+
+	id := fmt.Sprintf("%d", s.store.nextID)
+	s.store.nextID++
+
+	var total float64
+	for _, item := range cmd.Items {
+		total += float64(item.Quantity) * item.Price
+	}
+
+	order := &Order{
+		ID:       id,
+		Customer: cmd.Customer,
+		Items:    cmd.Items,
+		Total:    total,
+		Status:   "pending",
+	}
+	s.store.orders[id] = order
+	s.store.summaries = append(s.store.summaries, OrderSummary{
+		ID: id, Customer: cmd.Customer, Total: total, Status: "pending",
+	})
+	return id, nil
+}
+
+func (s *orderCommandService) ShipOrder(cmd ShipOrderCommand) error {
+	s.store.mu.Lock()
+	defer s.store.mu.Unlock()
+
+	order, ok := s.store.orders[cmd.OrderID]
+	if !ok {
+		return fmt.Errorf("order %s not found", cmd.OrderID)
+	}
+	order.Status = "shipped"
+	s.updateSummary(cmd.OrderID, "shipped")
+	return nil
+}
+
+func (s *orderCommandService) CancelOrder(cmd CancelOrderCommand) error {
+	s.store.mu.Lock()
+	defer s.store.mu.Unlock()
+
+	order, ok := s.store.orders[cmd.OrderID]
+	if !ok {
+		return fmt.Errorf("order %s not found", cmd.OrderID)
+	}
+	order.Status = "cancelled"
+	s.updateSummary(cmd.OrderID, "cancelled")
+	return nil
+}
+
+func (s *orderCommandService) updateSummary(id, status string) {
+	for i := range s.store.summaries {
+		if s.store.summaries[i].ID == id {
+			s.store.summaries[i].Status = status
+			return
+		}
+	}
+}
+
+func (s *orderQueryService) GetOrder(id string) (*OrderDetail, error) {
+	s.store.mu.RLock()
+	defer s.store.mu.RUnlock()
+
+	order, ok := s.store.orders[id]
+	if !ok {
+		return nil, fmt.Errorf("order %s not found", id)
+	}
+	return &OrderDetail{
+		ID:       order.ID,
+		Customer: order.Customer,
+		Items:    order.Items,
+		Total:    order.Total,
+		Status:   order.Status,
+	}, nil
+}
+
+func (s *orderQueryService) ListOrders() ([]OrderSummary, error) {
+	s.store.mu.RLock()
+	defer s.store.mu.RUnlock()
+
+	result := make([]OrderSummary, len(s.store.summaries))
+	copy(result, s.store.summaries)
+	return result, nil
+}
+
+func (s *orderQueryService) ListOrdersByStatus(status string) ([]OrderSummary, error) {
+	s.store.mu.RLock()
+	defer s.store.mu.RUnlock()
+
+	result := make([]OrderSummary, 0)
+	for _, s := range s.store.summaries {
+		if s.Status == status {
+			result = append(result, s)
+		}
+	}
+	return result, nil
+}

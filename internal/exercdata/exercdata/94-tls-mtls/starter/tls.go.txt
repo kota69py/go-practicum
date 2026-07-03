@@ -1,0 +1,70 @@
+package main
+
+import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"fmt"
+	"math/big"
+	"net"
+	"time"
+)
+
+// GenerateCA は CA 証明書と秘密鍵を生成してください。
+// 有効期限は 10 年、CommonName は "Go Practicum CA" とします。
+func GenerateCA() (*x509.Certificate, *rsa.PrivateKey, error) {
+	// TODO: RSA 2048 ビットの秘密鍵を生成
+	// TODO: x509.Certificate テンプレート作成
+	// TODO: CA フラグ: IsCA = true, KeyUsage に CertSign / CRLSign
+	// TODO: x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, &pub, key)
+	return nil, nil, nil
+}
+
+// GenerateCert は CA 証明書で署名されたサーバー/クライアント証明書を生成してください。
+// 有効期限は 1 年、SAN に指定された DNS 名/IP アドレスを含めます。
+func GenerateCert(caCert *x509.Certificate, caKey *rsa.PrivateKey, commonName string, sans []string) (*x509.Certificate, *rsa.PrivateKey, error) {
+	// TODO: RSA 2048 ビットの秘密鍵を生成
+	// TODO: 証明書テンプレート作成（ExtKeyUsage: ServerAuth or ClientAuth を適宜設定）
+	// TODO: DNSNames / IPAddresses に SANs を設定
+	// TODO: x509.CreateCertificate で CA 署名
+	return nil, nil, nil
+}
+
+// TLSServer は TLS サーバーを起動し、最初の接続を処理してから停止します。
+// サーバー証明書と CA 証明書を使用します。mTLS の場合は clientCert が true。
+func TLSServer(cert tls.Certificate, caCertPool *x509.CertPool, clientCert bool) (net.Addr, error) {
+	// TODO: tls.Config を作成
+	// TODO: Certificates にサーバー証明書を設定
+	// TODO: clientCert=true なら ClientAuth = RequireAndVerifyClientCert, ClientCAs = caCertPool
+	// TODO: tls.Listen("tcp", ":0", config) でリスナー作成
+	// TODO: ゴルーチンで Accept → conn.Close → リスナー停止
+	return nil, nil
+}
+
+// TLSClient は TLS サーバーに接続し、サーバー証明書を検証します。
+// mTLS の場合はクライアント証明書も送信します。
+func TLSClient(addr string, caCertPool *x509.CertPool, clientCert tls.Certificate) error {
+	// TODO: tls.Config を作成
+	// TODO: RootCAs = caCertPool でサーバー証明書検証
+	// TODO: clientCert が空でなければ Certificates に設定
+	// TODO: tls.Dial("tcp", addr, config) で接続
+	// TODO: conn.Close() で切断
+	return nil
+}
+
+// CertToPEM は証明書を PEM エンコードされた文字列に変換します。
+func CertToPEM(cert *x509.Certificate) string {
+	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
+}
+
+// KeyToPEM は秘密鍵を PEM エンコードされた文字列に変換します。
+func KeyToPEM(key *rsa.PrivateKey) string {
+	return string(pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}))
+}
+
+var _ = rand.Reader
+var _ = big.NewInt
+var _ = pkix.Name{}
+var _ = time.Now

@@ -1,0 +1,94 @@
+package main
+
+import (
+	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+func TestCreateToken(t *testing.T) {
+	token, err := CreateToken("user1", "alice", "admin", time.Hour)
+	if err != nil {
+		t.Fatalf("CreateToken: %v", err)
+	}
+	if token == "" {
+		t.Fatal("expected non-empty token")
+	}
+}
+
+func TestValidateToken(t *testing.T) {
+	token, _ := CreateToken("user1", "alice", "admin", time.Hour)
+	claims, err := ValidateToken(token)
+	if err != nil {
+		t.Fatalf("ValidateToken: %v", err)
+	}
+	if claims.UserID != "user1" {
+		t.Errorf("UserID: got %q, want %q", claims.UserID, "user1")
+	}
+	if claims.Username != "alice" {
+		t.Errorf("Username: got %q, want %q", claims.Username, "alice")
+	}
+	if claims.Role != "admin" {
+		t.Errorf("Role: got %q, want %q", claims.Role, "admin")
+	}
+}
+
+func TestValidateExpiredToken(t *testing.T) {
+	token, _ := CreateToken("user1", "alice", "admin", -time.Second)
+	_, err := ValidateToken(token)
+	if err == nil {
+		t.Fatal("expected error for expired token")
+	}
+}
+
+func TestValidateInvalidSignature(t *testing.T) {
+	token, _ := CreateToken("user1", "alice", "admin", time.Hour)
+	tampered := token[:len(token)-5] + "XXXXX"
+	_, err := ValidateToken(tampered)
+	if err == nil {
+		t.Fatal("expected error for invalid signature")
+	}
+}
+
+func TestValidateWrongIssuer(t *testing.T) {
+	claims := UserClaims{
+		UserID: "u1",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			Issuer:    "wrong-issuer",
+		},
+	}
+	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(GetSecret())
+	_, err := ValidateToken(token)
+	if err == nil {
+		t.Fatal("expected error for wrong issuer")
+	}
+}
+
+func TestRefreshToken(t *testing.T) {
+	token, _ := CreateToken("user1", "alice", "admin", time.Hour)
+	newToken, err := RefreshToken(token, 2*time.Hour)
+	if err != nil {
+		t.Fatalf("RefreshToken: %v", err)
+	}
+	if newToken == token {
+		t.Error("expected different token after refresh")
+	}
+
+	claims, err := ValidateToken(newToken)
+	if err != nil {
+		t.Fatalf("ValidateToken after refresh: %v", err)
+	}
+	if claims.UserID != "user1" {
+		t.Errorf("UserID after refresh: got %q, want %q", claims.UserID, "user1")
+	}
+}
+
+func TestRefreshExpiredToken(t *testing.T) {
+	token, _ := CreateToken("user1", "alice", "admin", -time.Second)
+	_, err := RefreshToken(token, time.Hour)
+	if err == nil {
+		t.Fatal("expected error for refreshing expired token")
+	}
+}

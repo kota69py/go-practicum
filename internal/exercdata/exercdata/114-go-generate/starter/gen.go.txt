@@ -1,0 +1,20 @@
+package main
+
+// Pill は薬の種類を表す enum です。
+//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=Pill
+type Pill int
+
+const (
+	Placebo Pill = iota
+	Aspirin
+	Ibuprofen
+	Paracetamol
+	// TODO: 新しい薬の種類を追加: Acetaminophen, Naproxen
+)
+
+// GenerateHello はカスタムコードジェネレーターです。
+// この関数はテンプレートを使って Hello メソッドを生成します。
+// 実際のコード生成はこのファイルのコメントに従って行います。
+//go:generate go run gen_helper.go
+
+var _ = Pill(0)

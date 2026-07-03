@@ -1,0 +1,17 @@
+{
+  "name": "111-retry-backoff",
+  "title": "Exponential Backoff — Retry 戦略と Jitter",
+  "category": "error-handling",
+  "difficulty": 3,
+  "description": "分散システムで必須のリトライ戦略を実装します。指数バックオフ、ジッター（Full/Equal/Decorrelated）、最大リトライ回数、Context によるキャンセル伝搬、エラー集約を学びます。",
+  "hints": [
+    "time.Duration でバックオフ間隔を表現",
+    "基本式: delay = base * 2^attempt",
+    "Full Jitter: delay = rand.Int63n(delay)",
+    "Equal Jitter: delay = delay/2 + rand.Int63n(delay/2)",
+    "Decorrelated Jitter: delay = min(cap, rand.Int63n(prev*3))",
+    "context.Context でリトライの中止を制御",
+    "RetryError で全てのエラーをラップして返す"
+  ],
+  "files": ["retry.go.txt"]
+}

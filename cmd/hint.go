@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/kota69py/go-practicum/internal/exercise"
 	"github.com/kota69py/go-practicum/internal/progress"
@@ -13,32 +12,31 @@ func (r *Runner) newHintCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "hint",
 		Short: "ヒントを表示",
-		Run: func(cmd *cobra.Command, args []string) {
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			prog, _ := progress.Load()
 			if prog.InProgress == "" {
-				fmt.Fprintln(os.Stderr, "エラー: 進行中の演習がありません")
-				os.Exit(1)
+				return fmt.Errorf("進行中の演習がありません")
 			}
 			if r.exercFS == nil {
-				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-				os.Exit(1)
+				return fmt.Errorf("演習データが見つかりません")
 			}
 			ex, err := exercise.LoadFromFS(r.exercFS, prog.InProgress)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: 演習 %q が見つかりません\n", prog.InProgress)
-				os.Exit(1)
+				return fmt.Errorf("演習 %q が見つかりません", prog.InProgress)
 			}
 
 			if len(ex.Hints) == 0 {
-				fmt.Println("ヒントは用意されていません。")
-				return
+				cmd.Println("ヒントは用意されていません。")
+				return nil
 			}
 
-			fmt.Println("💡 " + colorYellow("ヒント:"))
-			fmt.Println()
+			cmd.Println("💡 " + colorYellow("ヒント:"))
+			cmd.Println()
 			for i, h := range ex.Hints {
-				fmt.Printf("  %d. %s\n", i+1, h)
+				cmd.Printf("  %d. %s\n", i+1, h)
 			}
+			return nil
 		},
 	}
 }

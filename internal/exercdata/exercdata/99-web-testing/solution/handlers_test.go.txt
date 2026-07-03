@@ -1,0 +1,135 @@
+package main
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestEchoHandler(t *testing.T) {
+	srv := httptest.NewServer(NewServer())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/echo?msg=hello")
+	if err != nil {
+		t.Fatalf("GET /echo: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	var body map[string]string
+	json.NewDecoder(resp.Body).Decode(&body)
+	if body["message"] != "hello" {
+		t.Errorf("message: got %q, want %q", body["message"], "hello")
+	}
+}
+
+func TestEchoEmptyMsg(t *testing.T) {
+	srv := httptest.NewServer(NewServer())
+	defer srv.Close()
+
+	resp, _ := http.Get(srv.URL + "/echo")
+	defer resp.Body.Close()
+
+	var body map[string]string
+	json.NewDecoder(resp.Body).Decode(&body)
+	if body["message"] != "" {
+		t.Errorf("message: got %q, want %q", body["message"], "")
+	}
+}
+
+func TestUppercaseHandler(t *testing.T) {
+	srv := httptest.NewServer(NewServer())
+	defer srv.Close()
+
+	resp, err := http.Post(srv.URL+"/uppercase", "text/plain", strings.NewReader("hello world"))
+	if err != nil {
+		t.Fatalf("POST /uppercase: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "HELLO WORLD" {
+		t.Errorf("body: got %q, want %q", string(body), "HELLO WORLD")
+	}
+}
+
+func TestUppercaseEmpty(t *testing.T) {
+	srv := httptest.NewServer(NewServer())
+	defer srv.Close()
+
+	resp, _ := http.Post(srv.URL+"/uppercase", "text/plain", strings.NewReader(""))
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "" {
+		t.Errorf("body: got %q, want %q", string(body), "")
+	}
+}
+
+func TestCounterHandler(t *testing.T) {
+	srv := httptest.NewServer(NewServer())
+	defer srv.Close()
+
+	for i := 0; i < 3; i++ {
+		resp, err := http.Get(srv.URL + "/counter")
+		if err != nil {
+			t.Fatalf("GET /counter: %v", err)
+		}
+		resp.Body.Close()
+	}
+
+	resp, _ := http.Get(srv.URL + "/counter")
+	defer resp.Body.Close()
+
+	var body map[string]int64
+	json.NewDecoder(resp.Body).Decode(&body)
+	if body["count"] != 4 {
+		t.Errorf("count: got %d, want %d", body["count"], 4)
+	}
+}
+
+func TestEchoHandlerTableDriven(t *testing.T) {
+	srv := httptest.NewServer(NewServer())
+	defer srv.Close()
+
+	tests := []struct {
+		name   string
+		msg    string
+		want   string
+		status int
+	}{
+		{name: "hello", msg: "hello", want: "hello", status: http.StatusOK},
+		{name: "empty", msg: "", want: "", status: http.StatusOK},
+		{name: "special chars", msg: "a b c", want: "a b c", status: http.StatusOK},
+		{name: "numbers", msg: "123", want: "123", status: http.StatusOK},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := http.Get(srv.URL + "/echo?msg=" + tt.msg)
+			if err != nil {
+				t.Fatalf("GET /echo: %v", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.status {
+				t.Errorf("status: got %d, want %d", resp.StatusCode, tt.status)
+			}
+			var body map[string]string
+			json.NewDecoder(resp.Body).Decode(&body)
+			if body["message"] != tt.want {
+				t.Errorf("message: got %q, want %q", body["message"], tt.want)
+			}
+		})
+	}
+}

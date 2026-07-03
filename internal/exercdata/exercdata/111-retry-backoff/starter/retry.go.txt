@@ -1,0 +1,85 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"math/rand/v2"
+	"time"
+)
+
+// RetryError は全リトライ試行のエラーを保持します。
+type RetryError struct {
+	Attempts int
+	Errors   []error
+}
+
+func (e *RetryError) Error() string {
+	return fmt.Sprintf("retry failed after %d attempts: %v", e.Attempts, e.Errors[len(e.Errors)-1])
+}
+
+// BackoffStrategy はバックオフ戦略の種類です。
+type BackoffStrategy int
+
+const (
+	StrategyExponential BackoffStrategy = iota
+	StrategyFullJitter
+	StrategyEqualJitter
+	StrategyDecorrelatedJitter
+)
+
+// RetryConfig はリトライの設定を表します。
+type RetryConfig struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
+	Strategy    BackoffStrategy
+}
+
+// DefaultRetryConfig はデフォルト設定を返します。
+func DefaultRetryConfig() RetryConfig {
+	return RetryConfig{
+		MaxAttempts: 3,
+		BaseDelay:   100 * time.Millisecond,
+		MaxDelay:    5 * time.Second,
+		Strategy:    StrategyExponential,
+	}
+}
+
+// Retry は設定に基づいて関数をリトライ実行します。
+func Retry(ctx context.Context, config RetryConfig, fn func(context.Context) error) error {
+	// TODO: ループで fn を呼び出し
+	// TODO: 成功したら nil を返す
+	// TODO: 失敗したらバックオフ後にリトライ
+	// TODO: ctx.Done() でコンテキストキャンセルをチェック
+	// TODO: RetryError で全エラーをラップ
+	return nil
+}
+
+// calculateDelay はバックオフ戦略に基づいて遅延時間を計算します。
+func calculateDelay(attempt int, config RetryConfig, prevDelay time.Duration) time.Duration {
+	// TODO: 指数バックオフ: delay = BaseDelay * 2^attempt
+	// TODO: ジッター戦略に応じて調整
+	// TODO: MaxDelay で上限クリップ
+	return 0
+}
+
+// FullJitter は [0, delay) のランダム値を返します。
+func FullJitter(delay time.Duration) time.Duration {
+	// TODO: rand.Int64N(int64(delay)) でランダム化
+	return delay
+}
+
+// EqualJitter は delay/2 + [0, delay/2) のランダム値を返します。
+func EqualJitter(delay time.Duration) time.Duration {
+	// TODO: delay/2 + rand.Int64N(int64(delay/2))
+	return delay
+}
+
+// DecorrelatedJitter は delay と prev*3 の間のランダム値を返します。
+func DecorrelatedJitter(prevDelay, cap time.Duration) time.Duration {
+	// TODO: min(cap, [0, prevDelay*3)) で計算
+	return prevDelay
+}
+
+var _ = rand.Int64N
+var _ = time.Now

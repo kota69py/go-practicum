@@ -1,0 +1,79 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+)
+
+func TestNewJSONLogger(t *testing.T) {
+	var buf bytes.Buffer
+	logger := NewJSONLogger(&buf)
+	logger.Info("test message", "key", "value")
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("JSON unmarshal: %v", err)
+	}
+	if result["msg"] != "test message" {
+		t.Errorf("msg = %v, want %q", result["msg"], "test message")
+	}
+	if result["key"] != "value" {
+		t.Errorf("key = %v, want %q", result["key"], "value")
+	}
+	if result["level"] != "INFO" {
+		t.Errorf("level = %v, want %q", result["level"], "INFO")
+	}
+}
+
+func TestNewTextLogger(t *testing.T) {
+	var buf bytes.Buffer
+	logger := NewTextLogger(&buf)
+	logger.Debug("debug message")
+	if !strings.Contains(buf.String(), "debug message") {
+		t.Errorf("expected debug message in output, got %q", buf.String())
+	}
+}
+
+func TestLogUserActivity(t *testing.T) {
+	var buf bytes.Buffer
+	logger := NewJSONLogger(&buf)
+	LogUserActivity(logger, "u1", "login", 150)
+
+	var result map[string]interface{}
+	json.Unmarshal(buf.Bytes(), &result)
+
+	user, ok := result["user"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected user group, got %+v", result)
+	}
+	if user["id"] != "u1" {
+		t.Errorf("user.id = %v, want %q", user["id"], "u1")
+	}
+	if user["action"] != "login" {
+		t.Errorf("user.action = %v, want %q", user["action"], "login")
+	}
+}
+
+func TestLogWithContext(t *testing.T) {
+	var buf bytes.Buffer
+	logger := NewJSONLogger(&buf)
+	LogWithContext(context.Background(), logger, "ctx msg")
+
+	var result map[string]interface{}
+	json.Unmarshal(buf.Bytes(), &result)
+	if result["msg"] != "ctx msg" {
+		t.Errorf("msg = %v, want %q", result["msg"], "ctx msg")
+	}
+}
+
+func TestSetDefaultJSON(t *testing.T) {
+	var buf bytes.Buffer
+	SetDefaultJSON(&buf)
+	slog.Info("default test")
+	if !bytes.Contains(buf.Bytes(), []byte("default test")) {
+		t.Errorf("expected default test in output")
+	}
+}

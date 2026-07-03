@@ -1,0 +1,31 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	pb "grpc-deadline/proto/echo"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type slowServer struct {
+	pb.UnimplementedEchoServiceServer
+	simulateLatency time.Duration
+}
+
+func (s *slowServer) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if s.simulateLatency > 0 {
+		select {
+		case <-ctx.Done():
+			return nil, status.Error(codes.DeadlineExceeded, ctx.Err().Error())
+		case <-time.After(s.simulateLatency):
+		}
+	}
+	return &pb.EchoResponse{Message: fmt.Sprintf("hello: %s", req.Message)}, nil
+}

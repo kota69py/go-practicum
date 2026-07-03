@@ -17,31 +17,30 @@ func (r *Runner) newCheckCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "check",
 		Short: "現在の演習コードを静的解析 (go vet / gofmt)",
-		Run: func(cmd *cobra.Command, args []string) {
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			prog, _ := progress.Load()
 			if prog.InProgress == "" {
-				fmt.Fprintln(os.Stderr, "エラー: 進行中の演習がありません")
-				os.Exit(1)
+				return fmt.Errorf("進行中の演習がありません")
 			}
 
 			ex, err := exercise.LoadFromFS(r.exercFS, prog.InProgress)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: 演習 %q のデータが見つかりません\n", prog.InProgress)
-				os.Exit(1)
+				return fmt.Errorf("演習 %q のデータが見つかりません", prog.InProgress)
 			}
 
 			cwd, _ := os.Getwd()
 			if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: カレントディレクトリに go.mod が見つかりません。\n")
-				fmt.Fprintf(os.Stderr, "ヒント: 演習 %q のディレクトリで実行していますか？\n", ex.Title)
-				os.Exit(1)
+				cmd.PrintErrf("エラー: カレントディレクトリに go.mod が見つかりません。\n")
+				cmd.PrintErrf("ヒント: 演習 %q のディレクトリで実行していますか？\n", ex.Title)
+				return fmt.Errorf("go.mod not found")
 			}
 
-			fmt.Printf("🔍 %s をチェック中...\n\n", colorCyan(ex.Title))
+			cmd.Printf("🔍 %s をチェック中...\n\n", colorCyan(ex.Title))
 			hasIssues := false
 
 			// gofmt check
-			fmt.Println("🔍 " + colorCyan("gofmt チェック..."))
+			cmd.Println("🔍 " + colorCyan("gofmt チェック..."))
 			var fmtOut bytes.Buffer
 			fmtCmd := exec.Command("gofmt", "-l", ".")
 			fmtCmd.Dir = cwd
@@ -49,44 +48,43 @@ func (r *Runner) newCheckCmd() *cobra.Command {
 			fmtCmd.Stderr = &fmtOut
 			fmtCmd.Run()
 			if strings.TrimSpace(fmtOut.String()) != "" {
-				fmt.Printf("  ❌ フォーマットが必要なファイル:\n")
+				cmd.Printf("  ❌ フォーマットが必要なファイル:\n")
 				for _, f := range strings.Split(strings.TrimSpace(fmtOut.String()), "\n") {
-					fmt.Printf("    - %s\n", f)
+					cmd.Printf("    - %s\n", f)
 				}
 				hasIssues = true
 			} else {
-				fmt.Println("  ✅ フォーマットは適切です")
+				cmd.Println("  ✅ フォーマットは適切です")
 			}
 
 			// go vet check
-			fmt.Println()
-			fmt.Println("🔍 " + colorCyan("go vet 静的解析..."))
+			cmd.Println()
+			cmd.Println("🔍 " + colorCyan("go vet 静的解析..."))
 			var vetOut, vetErr bytes.Buffer
 			vetCmd := exec.Command("go", "vet", "./...")
 			vetCmd.Dir = cwd
 			vetCmd.Stdout = &vetOut
 			vetCmd.Stderr = &vetErr
 			if err := vetCmd.Run(); err != nil {
-				fmt.Println("  ❌ 問題が見つかりました:")
+				cmd.Println("  ❌ 問題が見つかりました:")
 				if s := strings.TrimSpace(vetOut.String()); s != "" {
-					fmt.Println(s)
+					cmd.Println(s)
 				}
 				if s := strings.TrimSpace(vetErr.String()); s != "" {
-					fmt.Println(s)
+					cmd.Println(s)
 				}
 				hasIssues = true
 			} else {
-				fmt.Println("  ✅ 静的解析を通過しました")
+				cmd.Println("  ✅ 静的解析を通過しました")
 			}
 
 			// Summary
-			fmt.Println()
+			cmd.Println()
 			if hasIssues {
-				fmt.Printf("❌ %s に修正が必要です\n", colorRed(ex.Title))
-				os.Exit(1)
-			} else {
-				fmt.Println("✅ " + colorGreen("すべてのチェックを通過しました"))
+				return fmt.Errorf("%s に修正が必要です", colorRed(ex.Title))
 			}
+			cmd.Println("✅ " + colorGreen("すべてのチェックを通過しました"))
+			return nil
 		},
 	}
 }

@@ -1,0 +1,184 @@
+package main
+
+import "fmt"
+
+type ObjectMeta struct {
+	Name      string            `yaml:"name" json:"name"`
+	Namespace string            `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	Labels    map[string]string `yaml:"labels,omitempty" json:"labels,omitempty"`
+}
+
+type Container struct {
+	Name           string          `yaml:"name" json:"name"`
+	Image          string          `yaml:"image" json:"image"`
+	Ports          []ContainerPort `yaml:"ports,omitempty" json:"ports,omitempty"`
+	EnvFrom        []EnvFromSource `yaml:"envFrom,omitempty" json:"envFrom,omitempty"`
+	LivenessProbe  *Probe          `yaml:"livenessProbe,omitempty" json:"livenessProbe,omitempty"`
+	ReadinessProbe *Probe          `yaml:"readinessProbe,omitempty" json:"readinessProbe,omitempty"`
+}
+
+type ContainerPort struct {
+	ContainerPort int    `yaml:"containerPort" json:"containerPort"`
+	Protocol      string `yaml:"protocol,omitempty" json:"protocol,omitempty"`
+}
+
+type EnvFromSource struct {
+	ConfigMapRef *ConfigMapKeyRef `yaml:"configMapRef,omitempty" json:"configMapRef,omitempty"`
+}
+
+type ConfigMapKeyRef struct {
+	Name string `yaml:"name" json:"name"`
+}
+
+type Probe struct {
+	HTTPGet             *HTTPGetAction `yaml:"httpGet,omitempty" json:"httpGet,omitempty"`
+	InitialDelaySeconds int            `yaml:"initialDelaySeconds,omitempty" json:"initialDelaySeconds,omitempty"`
+	PeriodSeconds       int            `yaml:"periodSeconds,omitempty" json:"periodSeconds,omitempty"`
+}
+
+type HTTPGetAction struct {
+	Path string `yaml:"path" json:"path"`
+	Port int    `yaml:"port" json:"port"`
+}
+
+type Deployment struct {
+	APIVersion string         `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string         `yaml:"kind" json:"kind"`
+	Metadata   ObjectMeta     `yaml:"metadata" json:"metadata"`
+	Spec       DeploymentSpec `yaml:"spec" json:"spec"`
+}
+
+type DeploymentSpec struct {
+	Replicas int            `yaml:"replicas" json:"replicas"`
+	Selector *LabelSelector `yaml:"selector" json:"selector"`
+	Template PodTemplateSpec `yaml:"template" json:"template"`
+}
+
+type LabelSelector struct {
+	MatchLabels map[string]string `yaml:"matchLabels" json:"matchLabels"`
+}
+
+type PodTemplateSpec struct {
+	Metadata ObjectMeta `yaml:"metadata" json:"metadata"`
+	Spec     PodSpec    `yaml:"spec" json:"spec"`
+}
+
+type PodSpec struct {
+	Containers []Container `yaml:"containers" json:"containers"`
+}
+
+type Service struct {
+	APIVersion string      `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string      `yaml:"kind" json:"kind"`
+	Metadata   ObjectMeta  `yaml:"metadata" json:"metadata"`
+	Spec       ServiceSpec `yaml:"spec" json:"spec"`
+}
+
+type ServiceSpec struct {
+	Type     string            `yaml:"type,omitempty" json:"type,omitempty"`
+	Selector map[string]string `yaml:"selector" json:"selector"`
+	Ports    []ServicePort     `yaml:"ports" json:"ports"`
+}
+
+type ServicePort struct {
+	Port       int    `yaml:"port" json:"port"`
+	TargetPort int    `yaml:"targetPort,omitempty" json:"targetPort,omitempty"`
+	Protocol   string `yaml:"protocol,omitempty" json:"protocol,omitempty"`
+}
+
+type ConfigMap struct {
+	APIVersion string            `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string            `yaml:"kind" json:"kind"`
+	Metadata   ObjectMeta        `yaml:"metadata" json:"metadata"`
+	Data       map[string]string `yaml:"data" json:"data"`
+}
+
+func NewWebDeployment() Deployment {
+	labels := map[string]string{"app": "web-app"}
+	return Deployment{
+		APIVersion: "apps/v1",
+		Kind:       "Deployment",
+		Metadata:   ObjectMeta{Name: "web-app", Labels: labels},
+		Spec: DeploymentSpec{
+			Replicas: 3,
+			Selector: &LabelSelector{MatchLabels: labels},
+			Template: PodTemplateSpec{
+				Metadata: ObjectMeta{Labels: labels},
+				Spec: PodSpec{
+					Containers: []Container{{
+						Name:  "nginx",
+						Image: "nginx:latest",
+						Ports: []ContainerPort{{ContainerPort: 80, Protocol: "TCP"}},
+						EnvFrom: []EnvFromSource{{
+							ConfigMapRef: &ConfigMapKeyRef{Name: "app-config"},
+						}},
+						LivenessProbe: &Probe{
+							HTTPGet:             &HTTPGetAction{Path: "/healthz", Port: 80},
+							InitialDelaySeconds: 5,
+							PeriodSeconds:       10,
+						},
+						ReadinessProbe: &Probe{
+							HTTPGet:             &HTTPGetAction{Path: "/readyz", Port: 80},
+							InitialDelaySeconds: 3,
+							PeriodSeconds:       5,
+						},
+					}},
+				},
+			},
+		},
+	}
+}
+
+func NewWebService() Service {
+	return Service{
+		APIVersion: "v1",
+		Kind:       "Service",
+		Metadata:   ObjectMeta{Name: "web-service"},
+		Spec: ServiceSpec{
+			Type:     "ClusterIP",
+			Selector: map[string]string{"app": "web-app"},
+			Ports: []ServicePort{{
+				Port:       80,
+				TargetPort: 80,
+				Protocol:   "TCP",
+			}},
+		},
+	}
+}
+
+func NewAppConfigMap() ConfigMap {
+	return ConfigMap{
+		APIVersion: "v1",
+		Kind:       "ConfigMap",
+		Metadata:   ObjectMeta{Name: "app-config"},
+		Data: map[string]string{
+			"APP_ENV":   "production",
+			"LOG_LEVEL": "info",
+			"CACHE_TTL": "300",
+		},
+	}
+}
+
+func ValidateDeployment(d Deployment) error {
+	if d.APIVersion != "apps/v1" {
+		return fmt.Errorf("apiVersion: got %q, want apps/v1", d.APIVersion)
+	}
+	if d.Kind != "Deployment" {
+		return fmt.Errorf("kind: got %q, want Deployment", d.Kind)
+	}
+	if d.Spec.Replicas < 1 {
+		return fmt.Errorf("replicas: %d, want >= 1", d.Spec.Replicas)
+	}
+	if d.Spec.Selector == nil {
+		return fmt.Errorf("selector is nil")
+	}
+	for k, v := range d.Spec.Selector.MatchLabels {
+		if d.Spec.Template.Metadata.Labels[k] != v {
+			return fmt.Errorf("label mismatch: selector %s=%s, template %s=%s", k, v, k, d.Spec.Template.Metadata.Labels[k])
+		}
+	}
+	if len(d.Spec.Template.Spec.Containers) == 0 {
+		return fmt.Errorf("no containers defined")
+	}
+	return nil
+}

@@ -1,0 +1,17 @@
+{
+  "name": "119-io-fs",
+  "title": "io/fs — 仮想ファイルシステムの実装",
+  "category": "io",
+  "difficulty": 3,
+  "description": "Go 1.16 で導入された io/fs パッケージを学びます。fs.FS インターフェースを実装してカスタムファイルシステムを作成し、testing/fstest で検証します。メモリ上・zip・埋め込みファイルシステムを実装します。",
+  "hints": [
+    "fs.FS は Open(name string) (fs.File, error) を要求",
+    "fs.File は Stat(), Read(), Close() を実装",
+    "fs.ReadDirFS を実装すると ReadDir が使える",
+    "fs.ReadFileFS を実装すると ReadFile が使える",
+    "testing/fstest.TestFS で FS 実装を検証",
+    "fs.WalkDir で再帰的なディレクトリ走査",
+    "embed.FS も fs.FS インターフェースを実装"
+  ],
+  "files": ["vfs.go.txt"]
+}

@@ -1,0 +1,79 @@
+package main
+
+import (
+	"context"
+	"io"
+	"log/slog"
+)
+
+// LevelFilterHandler は指定レベル未満のログをフィルタリングする slog.Handler です。
+type LevelFilterHandler struct {
+	// TODO: slog.Handler (内部ハンドラ)
+	// TODO: slog.Level (最小レベル)
+}
+
+// NewLevelFilterHandler は最小レベルを指定して LevelFilterHandler を作成します。
+func NewLevelFilterHandler(minLevel slog.Level, h slog.Handler) *LevelFilterHandler {
+	// TODO: 初期化して返す
+	return nil
+}
+
+// Enabled は指定レベルがフィルター条件を満たすか判定します。
+func (h *LevelFilterHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	// TODO: level >= minLevel の場合のみ true
+	return false
+}
+
+// Handle はログレコードを処理します。
+func (h *LevelFilterHandler) Handle(ctx context.Context, r slog.Record) error {
+	// TODO: 内部ハンドラの Handle を呼び出す
+	return nil
+}
+
+// WithAttrs は事前属性を持ったハンドラーを返します。
+func (h *LevelFilterHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// TODO: 内部ハンドラの WithAttrs をラップ
+	return nil
+}
+
+// WithGroup はグループ化されたハンドラーを返します。
+func (h *LevelFilterHandler) WithGroup(name string) slog.Handler {
+	// TODO: 内部ハンドラの WithGroup をラップ
+	return nil
+}
+
+// PrefixHandler は全メッセージにプレフィックスを追加する slog.Handler です。
+type PrefixHandler struct {
+	// TODO: 内部に slog.Handler を持つ
+	// TODO: プレフィックス文字列
+}
+
+// NewPrefixHandler はプレフィックスを指定して PrefixHandler を作成します。
+func NewPrefixHandler(prefix string, h slog.Handler) *PrefixHandler {
+	// TODO: 初期化
+	return nil
+}
+
+func (h *PrefixHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	// TODO: 内部ハンドラに委譲
+	return false
+}
+
+func (h *PrefixHandler) Handle(ctx context.Context, r slog.Record) error {
+	// TODO: メッセージにプレフィックスを追加して内部ハンドラで処理
+	// ヒント: slog.Record は Clone() 可能。新しいレコードを作り直すこともできる
+	return nil
+}
+
+func (h *PrefixHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// TODO: 内部ハンドラの WithAttrs をラップ
+	return nil
+}
+
+func (h *PrefixHandler) WithGroup(name string) slog.Handler {
+	// TODO: 内部ハンドラの WithGroup をラップ
+	return nil
+}
+
+var _ = context.Background
+var _ = io.Discard

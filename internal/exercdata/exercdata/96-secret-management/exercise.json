@@ -1,0 +1,17 @@
+{
+  "name": "96-secret-management",
+  "title": "シークレット管理 — 環境変数・暗号化・メモリセーフ",
+  "category": "security",
+  "difficulty": 3,
+  "description": "アプリケーションのシークレット（APIキー・パスワード・トークン）を安全に管理する方法を学びます。環境変数からの読み込み、AES-GCM による暗号化/復号、メモリ上の機密データのゼロ化、ファイルベースのシークレットストアを実装します。",
+  "hints": [
+    "os.Getenv(\"KEY\") で環境変数を読み込み",
+    "AES-GCM: cipher.NewGCM(block) で AEAD を作成",
+    "nonce（12バイト）は暗号化ごとに crypto/rand で生成",
+    "暗号文 = nonce + ciphertext + auth tag",
+    "メモリ上の秘密鍵は使用後にゼロ化（clear(b []byte) でループ）",
+    "encoding/base64 でバイナリデータをテキスト保存",
+    "ファイルベースのストアは暗号化 JSON として保存"
+  ],
+  "files": ["secret.go.txt"]
+}

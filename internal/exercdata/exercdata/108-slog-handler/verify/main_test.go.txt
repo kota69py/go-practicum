@@ -1,0 +1,73 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"log/slog"
+	"strings"
+	"testing"
+)
+
+func TestLevelFilterHandler(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewLevelFilterHandler(slog.LevelWarn, slog.NewJSONHandler(&buf, nil))
+	logger := slog.New(h)
+
+	logger.Info("should be filtered")
+	if buf.Len() > 0 {
+		t.Error("Info should be filtered by Warn filter")
+	}
+
+	logger.Warn("warning message")
+	var result map[string]interface{}
+	json.Unmarshal(buf.Bytes(), &result)
+	if result["msg"] != "warning message" {
+		t.Errorf("msg = %v, want %q", result["msg"], "warning message")
+	}
+}
+
+func TestLevelFilterHandlerEnabled(t *testing.T) {
+	h := NewLevelFilterHandler(slog.LevelInfo, slog.NewTextHandler(nil, nil))
+	if h.Enabled(context.Background(), slog.LevelDebug) {
+		t.Error("Debug should not be enabled for Info filter")
+	}
+	if !h.Enabled(context.Background(), slog.LevelInfo) {
+		t.Error("Info should be enabled for Info filter")
+	}
+	if !h.Enabled(context.Background(), slog.LevelError) {
+		t.Error("Error should be enabled for Info filter")
+	}
+}
+
+func TestPrefixHandler(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewPrefixHandler("[APP] ", slog.NewJSONHandler(&buf, nil))
+	logger := slog.New(h)
+
+	logger.Info("hello")
+
+	var result map[string]interface{}
+	json.Unmarshal(buf.Bytes(), &result)
+	if !strings.Contains(result["msg"].(string), "[APP] ") {
+		t.Errorf("msg should contain prefix, got %q", result["msg"])
+	}
+}
+
+func TestPrefixHandlerWithAttrs(t *testing.T) {
+	var buf bytes.Buffer
+	h := NewPrefixHandler("[SVC] ", slog.NewJSONHandler(&buf, nil))
+	h = h.WithAttrs([]slog.Attr{slog.String("env", "test")}).(*PrefixHandler)
+	logger := slog.New(h)
+
+	logger.Info("started")
+
+	var result map[string]interface{}
+	json.Unmarshal(buf.Bytes(), &result)
+	if result["env"] != "test" {
+		t.Errorf("env = %v, want %q", result["env"], "test")
+	}
+	if !strings.Contains(result["msg"].(string), "[SVC] ") {
+		t.Errorf("msg should contain prefix, got %q", result["msg"])
+	}
+}

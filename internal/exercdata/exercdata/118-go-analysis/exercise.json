@@ -1,0 +1,17 @@
+{
+  "name": "118-go-analysis",
+  "title": "go/analysis — カスタム静的解析ツール",
+  "category": "language",
+  "difficulty": 4,
+  "description": "Go の静的解析フレームワーク go/analysis を学びます。カスタム Analyzer を実装し、AST を走査してコードのバグやアンチパターンを検出する静的解析ツールを開発します。",
+  "hints": [
+    "go/analysis.Analyzer 構造体で解析器を定義",
+    "Run 関数で *ast.File を走査",
+    "pass.Reportf で診断を報告",
+    "analysistest.Run でテストを記述",
+    "ast.Inspect でノードを再帰的に走査",
+    "ssa 形式の解析には go/analysis/passes を参照",
+    "単一チェックよりマルチチェックの Analyzer 設計が実践的"
+  ],
+  "files": ["analyzer.go.txt", "analyzer_test.go.txt"]
+}

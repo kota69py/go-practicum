@@ -1,0 +1,16 @@
+{
+  "name": "101-k8s-basics",
+  "title": "Kubernetes 基礎 — Deployment・Service・ConfigMap",
+  "category": "net",
+  "difficulty": 3,
+  "description": "Kubernetes リソースの構造を Go の構造体と YAML 操作を通して学びます。Deployment、Service、ConfigMap の定義方法、セレクターとラベルの関係、ヘルスチェック設定、環境変数の注入方法を理解します。",
+  "hints": [
+    "K8s リソースは apiVersion, kind, metadata, spec で構成",
+    "Deployment: replicas, selector.matchLabels, template.metadata.labels",
+    "Service: selector, ports[].port/targetPort, type (ClusterIP/NodePort)",
+    "ConfigMap: data に key-value を格納",
+    "container の envFrom.configMapRef で ConfigMap を注入",
+    "livenessProbe/readinessProbe: httpGet.path, initialDelaySeconds"
+  ],
+  "files": ["k8s.go.txt"]
+}

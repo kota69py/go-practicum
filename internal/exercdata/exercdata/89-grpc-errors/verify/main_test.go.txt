@@ -1,0 +1,163 @@
+package main
+
+import (
+	"context"
+	"net"
+	"strings"
+	"testing"
+
+	pb "grpc-errors/proto/echo"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
+)
+
+func bufDialer(lis *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, url string) (net.Conn, error) {
+		return lis.Dial()
+	}
+}
+
+func setupErrorTest(t *testing.T) (pb.EchoServiceClient, *bufconn.Listener) {
+	t.Helper()
+	lis := bufconn.Listen(1024)
+	s := grpc.NewServer()
+	pb.RegisterEchoServiceServer(s, &errorServer{})
+	go s.Serve(lis)
+	t.Cleanup(func() { s.Stop() })
+
+	conn, err := grpc.DialContext(context.Background(), "bufnet",
+		grpc.WithContextDialer(bufDialer(lis)),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	return pb.NewEchoServiceClient(conn), lis
+}
+
+func TestEchoSuccess(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	result, err := EchoWithErrorHandling(client, "hello")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "ok: hello" {
+		t.Errorf("got %q, want %q", result, "ok: hello")
+	}
+}
+
+func TestEchoNotFound(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	_, err := EchoWithErrorHandling(client, "not_found")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("expected 'not found' in error, got: %v", err)
+	}
+}
+
+func TestEchoInvalidArgument(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	_, err := EchoWithErrorHandling(client, "invalid")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "bad request") {
+		t.Errorf("expected 'bad request' in error, got: %v", err)
+	}
+}
+
+func TestEchoConflict(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	_, err := EchoWithErrorHandling(client, "conflict")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "conflict") {
+		t.Errorf("expected 'conflict' in error, got: %v", err)
+	}
+}
+
+func TestEchoInternal(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	_, err := EchoWithErrorHandling(client, "internal")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "server error") {
+		t.Errorf("expected 'server error' in error, got: %v", err)
+	}
+}
+
+func TestEchoUnavailable(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	_, err := EchoWithErrorHandling(client, "unavailable")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "service unavailable") {
+		t.Errorf("expected 'service unavailable' in error, got: %v", err)
+	}
+}
+
+func TestClassifyError(t *testing.T) {
+	tests := []struct {
+		err    error
+		expect string
+	}{
+		{status.Error(codes.NotFound, "x"), "not found: x"},
+		{status.Error(codes.InvalidArgument, "x"), "bad request: x"},
+		{status.Error(codes.AlreadyExists, "x"), "conflict: x"},
+		{status.Error(codes.Internal, "x"), "server error: x"},
+		{status.Error(codes.Unavailable, "x"), "service unavailable: x"},
+		{status.Error(codes.OK, "x"), "unknown error"},
+	}
+	for _, tt := range tests {
+		got := ClassifyError(tt.err)
+		if got != tt.expect {
+			t.Errorf("ClassifyError(%v) = %q, want %q", tt.err, got, tt.expect)
+		}
+	}
+}
+
+func TestIsRetryable(t *testing.T) {
+	if !IsRetryable(status.Error(codes.Unavailable, "")) {
+		t.Error("Unavailable should be retryable")
+	}
+	if !IsRetryable(status.Error(codes.DeadlineExceeded, "")) {
+		t.Error("DeadlineExceeded should be retryable")
+	}
+	if IsRetryable(status.Error(codes.NotFound, "")) {
+		t.Error("NotFound should not be retryable")
+	}
+	if IsRetryable(status.Error(codes.Internal, "")) {
+		t.Error("Internal should not be retryable")
+	}
+}
+
+func TestRawServerErrorCodes(t *testing.T) {
+	client, _ := setupErrorTest(t)
+	tests := []struct {
+		msg  string
+		code codes.Code
+	}{
+		{"not_found", codes.NotFound},
+		{"invalid", codes.InvalidArgument},
+		{"conflict", codes.AlreadyExists},
+		{"internal", codes.Internal},
+		{"unavailable", codes.Unavailable},
+		{"ok", codes.OK},
+	}
+	for _, tt := range tests {
+		_, err := client.Echo(context.Background(), &pb.EchoRequest{Message: tt.msg})
+		got := status.Code(err)
+		if got != tt.code {
+			t.Errorf("Echo(%q) code = %v, want %v", tt.msg, got, tt.code)
+		}
+	}
+}

@@ -1,0 +1,110 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+
+	"golang.org/x/oauth2"
+)
+
+func MockOAuth2Provider() (config *oauth2.Config, providerURL string, cleanup func()) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/auth":
+			code := r.URL.Query().Get("code")
+			if code == "" {
+				code = "auth-code-123"
+			}
+			http.Redirect(w, r, "/callback?code="+code, http.StatusFound)
+		case "/token":
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token":  "access-token-abc",
+				"token_type":    "Bearer",
+				"refresh_token": "refresh-token-xyz",
+				"expires_in":    3600,
+			})
+		case "/userinfo":
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{
+				"id":    "user1",
+				"name":  "Alice",
+				"email": "alice@example.com",
+			})
+		}
+	}))
+
+	config = &oauth2.Config{
+		ClientID:     "test-client-id",
+		ClientSecret: "test-client-secret",
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  srv.URL + "/auth",
+			TokenURL: srv.URL + "/token",
+		},
+		RedirectURL: srv.URL + "/callback",
+		Scopes:      []string{"openid", "profile"},
+	}
+	return config, srv.URL, srv.Close
+}
+
+func Authorize(ctx context.Context, config *oauth2.Config, providerURL string) (*oauth2.Token, error) {
+	authURL := config.AuthCodeURL("state-123")
+
+	resp, err := http.Get(authURL)
+	if err != nil {
+		return nil, fmt.Errorf("auth request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	location := resp.Request.URL.String()
+	if location == "" {
+		location = string(body)
+	}
+
+	u, err := url.Parse(location)
+	if err != nil {
+		return nil, fmt.Errorf("parse redirect: %w", err)
+	}
+	code := u.Query().Get("code")
+	if code == "" {
+		return nil, fmt.Errorf("no code in redirect")
+	}
+
+	token, err := config.Exchange(ctx, code)
+	if err != nil {
+		return nil, fmt.Errorf("token exchange: %w", err)
+	}
+	return token, nil
+}
+
+func GetAuthenticatedClient(ctx context.Context, config *oauth2.Config, token *oauth2.Token) *http.Client {
+	return oauth2.NewClient(ctx, config.TokenSource(ctx, token))
+}
+
+func RefreshTokenIfNeeded(ctx context.Context, config *oauth2.Config, token *oauth2.Token) (*oauth2.Token, error) {
+	if token.Valid() {
+		return token, nil
+	}
+	ts := config.TokenSource(ctx, token)
+	newToken, err := ts.Token()
+	if err != nil {
+		return nil, fmt.Errorf("token refresh: %w", err)
+	}
+	return newToken, nil
+}
+
+func FetchUserInfo(ctx context.Context, client *http.Client, apiURL string) (string, error) {
+	resp, err := client.Get(apiURL + "/userinfo")
+	if err != nil {
+		return "", fmt.Errorf("userinfo: %w", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	return string(body), nil
+}

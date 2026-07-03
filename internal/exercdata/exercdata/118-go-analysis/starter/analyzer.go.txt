@@ -1,0 +1,53 @@
+package main
+
+import (
+	"go/ast"
+	"go/token"
+	"strings"
+
+	"golang.org/x/tools/go/analysis"
+)
+
+// TODO: MagicNumberAnalyzer と OSExitAnalyzer を定義する
+// ヒント: *analysis.Analyzer の Run フィールドに関数を設定
+
+var MagicNumberAnalyzer = &analysis.Analyzer{
+	Name: "magicnumber",
+	Doc:  "reports magic number literals",
+	// TODO: Run フィールドを設定
+}
+
+var OSExitAnalyzer = &analysis.Analyzer{
+	Name: "osexit",
+	Doc:  "reports os.Exit calls in main function",
+	// TODO: Run フィールドを設定
+}
+
+// TODO: runMagicNumber 関数を実装
+// 1. pass.Files を走査
+// 2. _test.go ファイルはスキップ
+// 3. ast.Inspect で BasicLit ノードを探す
+// 4. token.INT または token.FLOAT のリテラルをチェック
+// 5. IsMagicNumber でマジックナンバーか判定
+// 6. pass.Reportf で報告
+
+// TODO: runOSExit 関数を実装
+// 1. pass.Files を走査
+// 2. _test.go ファイルはスキップ
+// 3. ast.Inspect で FuncDecl ノードを探す
+// 4. name == "main" の関数のみ検査
+// 5. HasOSExit で os.Exit 呼び出しを検出
+// 6. pass.Reportf で報告
+
+func IsMagicNumber(lit *ast.BasicLit) bool {
+	// TODO: マジックナンバーか判定する
+	// 0, 1, 2 は許容、それ以外の整数リテラルと全浮動小数点リテラルはマジックナンバー
+	return false
+}
+
+func HasOSExit(block *ast.BlockStmt) bool {
+	// TODO: ブロック内に os.Exit 呼び出しがあるか再帰的に判定
+	// 1. ExprStmt 内の SelectorExpr (os.Exit) をチェック
+	// 2. IfStmt / ForStmt / RangeStmt / SwitchStmt の内部も再帰的にチェック
+	return false
+}

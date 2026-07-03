@@ -1,0 +1,3 @@
+module go-practicum-trace-context
+
+go 1.23

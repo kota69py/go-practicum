@@ -1,0 +1,17 @@
+{
+  "name": "110-worker-pool",
+  "title": "ワーカープール — Fan-out/Fan-in 並行処理",
+  "category": "concurrency",
+  "difficulty": 3,
+  "description": "ワーカープールパターンを実装します。固定数のワーカー goroutine でジョブを並行処理し、結果を収集する Fan-out/Fan-in パターン、セマフォによる並行制限、Graceful Shutdown を学びます。",
+  "hints": [
+    "ワーカープールはジョブチャネルと結果チャネルを持つ",
+    "sync.WaitGroup で全ワーカーの完了を待機",
+    "context.Context でキャンセル伝搬とタイムアウト",
+    "close(ch) でチャネルを閉じてワーカーに終了を通知",
+    "select で複数チャネルを同時待機（context と job）",
+    "errgroup.Group でエラー収集",
+    "semaphore パターン: chan struct{} で並行数を制限"
+  ],
+  "files": ["pool.go.txt"]
+}

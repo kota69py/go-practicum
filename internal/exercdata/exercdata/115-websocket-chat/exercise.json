@@ -1,0 +1,17 @@
+{
+  "name": "115-websocket-chat",
+  "title": "WebSocket — チャットサーバー実装",
+  "category": "net",
+  "difficulty": 3,
+  "description": "WebSocket を使ったリアルタイム通信を学びます。gorilla/websocket を使ってチャットサーバーとクライアントを実装し、アップグレードハンドシェイク、メッセージブロードキャスト、コネクション管理を理解します。",
+  "hints": [
+    "gorilla/websocket の upgrader.Upgrade(w, r, nil) で接続",
+    "conn.ReadMessage() / conn.WriteMessage() でメッセージ送受信",
+    "Hub パターン: register/unregister/broadcast チャネル",
+    "ReadPump / WritePump goroutine で読み書きを分離",
+    "conn.SetReadDeadline + SetPongHandler でハートビート",
+    "broadcast は全クライアントへのメッセージ配信",
+    "sync.Map でクライアント管理"
+  ],
+  "files": ["chat.go.txt"]
+}

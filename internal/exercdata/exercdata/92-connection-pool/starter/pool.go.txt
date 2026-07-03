@@ -1,0 +1,68 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"sync"
+	"time"
+
+	_ "modernc.org/sqlite"
+)
+
+// InitDB は SQLite データベースを開き、コネクションプールを設定してください。
+// maxOpen: 最大オープン接続数（0=無制限）
+// maxIdle: 最大アイドル接続数
+// maxLifetime: 接続の最大再利用期間（0=無制限）
+func InitDB(dsn string, maxOpen, maxIdle int, maxLifetime time.Duration) (*sql.DB, error) {
+	// TODO: sql.Open("sqlite", dsn) でDBを開く
+	// TODO: db.SetMaxOpenConns(maxOpen)
+	// TODO: db.SetMaxIdleConns(maxIdle)
+	// TODO: db.SetConnMaxLifetime(maxLifetime)
+	return nil, nil
+}
+
+// SeedData は workers 個のゴルーチンで users テーブルにデータを投入してください。
+// トランザクションを使って一括挿入し、コミット時にデータを確定します。
+func SeedData(db *sql.DB, count int) error {
+	// TODO: CREATE TABLE IF NOT EXISTS users
+	// TODO: count 件のデータを INSERT
+	// TODO: 100件ごとにトランザクションでバッチ挿入
+	return nil
+}
+
+// QueryAll は全ユーザーを SELECT するクエリです。
+// この関数はプール設定のベンチマーク対象となります。
+func QueryAll(db *sql.DB) ([]string, error) {
+	// TODO: rows, err := db.Query("SELECT name FROM users ORDER BY id")
+	// TODO: 結果を []string に詰めて返す
+	return nil, nil
+}
+
+// PoolStats は現在のプール統計情報を返します。
+type PoolStats struct {
+	OpenConnections int
+	InUse           int
+	Idle            int
+	WaitCount       int64
+	WaitDuration    time.Duration
+	MaxIdleClosed   int64
+	MaxLifetimeClosed int64
+}
+
+// GetPoolStats は db.Stats() から統計情報を取得して PoolStats に変換してください。
+func GetPoolStats(db *sql.DB) PoolStats {
+	// TODO: stats := db.Stats()
+	// TODO: PoolStats にフィールドをコピー
+	return PoolStats{}
+}
+
+// RunConcurrentQueries は同時に n 個のクエリを実行し、プールの動作を確認します。
+// 各クエリは time.Sleep で simulateWork 時間の処理遅延を入れます。
+func RunConcurrentQueries(db *sql.DB, n int, simulateWork time.Duration) error {
+	// TODO: sync.WaitGroup で n 個の goroutine を起動
+	// TODO: 各 goroutine で QueryAll を呼び出し、simulateWork 分待機
+	return nil
+}
+
+var _ = fmt.Sprintf
+var _ = sync.WaitGroup{}

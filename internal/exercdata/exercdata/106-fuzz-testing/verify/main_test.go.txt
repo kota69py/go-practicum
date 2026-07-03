@@ -1,0 +1,78 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestHexEncode(t *testing.T) {
+	if got := HexEncode([]byte("hello")); got != "68656c6c6f" {
+		t.Errorf("HexEncode(hello) = %q, want %q", got, "68656c6c6f")
+	}
+}
+
+func TestHexDecode(t *testing.T) {
+	dst, err := HexDecode("68656c6c6f")
+	if err != nil {
+		t.Fatalf("HexDecode error: %v", err)
+	}
+	if string(dst) != "hello" {
+		t.Errorf("HexDecode = %q, want %q", string(dst), "hello")
+	}
+}
+
+func TestHexDecodeEmpty(t *testing.T) {
+	dst, err := HexDecode("")
+	if err != nil {
+		t.Fatalf("HexDecode empty: %v", err)
+	}
+	if len(dst) != 0 {
+		t.Errorf("expected empty, got %v", dst)
+	}
+}
+
+func TestHexDecodeOddLength(t *testing.T) {
+	_, err := HexDecode("abc")
+	if err == nil {
+		t.Error("expected error for odd length")
+	}
+}
+
+func TestHexDecodeInvalidChar(t *testing.T) {
+	_, err := HexDecode("0x1234")
+	if err == nil {
+		t.Error("expected error for invalid char 'x'")
+	}
+}
+
+func TestHexEncodeDecodeRoundtrip(t *testing.T) {
+	inputs := [][]byte{
+		{},
+		{0},
+		{0, 1, 2, 255},
+		[]byte("Hello, 世界!"),
+		[]byte("go-practicum"),
+	}
+	for _, input := range inputs {
+		encoded := HexEncode(input)
+		decoded, err := HexDecode(encoded)
+		if err != nil {
+			t.Fatalf("HexDecode(%q): %v", encoded, err)
+		}
+		if string(decoded) != string(input) {
+			t.Errorf("roundtrip %v: got %v", input, decoded)
+		}
+	}
+}
+
+func TestHexDecodeUpperLower(t *testing.T) {
+	dst1, _ := HexDecode("ABCDEF")
+	dst2, _ := HexDecode("abcdef")
+	if string(dst1) != string(dst2) {
+		t.Error("upper and lower case should match")
+	}
+}
+
+func TestFuzzFunctionsExist(t *testing.T) {
+	_ = FuzzHexDecode
+	_ = FuzzReverse
+}

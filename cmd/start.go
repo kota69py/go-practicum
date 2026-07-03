@@ -14,73 +14,70 @@ import (
 
 var startForce bool
 
-var validName = regexp.MustCompile(`^\d{2}-[a-z0-9](?:-?[a-z0-9])*$`)
+var validName = regexp.MustCompile(`^\d{2,3}-[a-z0-9](?:-?[a-z0-9])*$`)
 
 func (r *Runner) newStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start <name>",
 		Short: "演習を開始（カレントディレクトリに展開）",
 		Args:  cobra.ExactArgs(1),
-		Run: func(c *cobra.Command, args []string) {
+		RunE: func(c *cobra.Command, args []string) error {
 			name := args[0]
 
 			if !validName.MatchString(name) {
-				fmt.Fprintf(os.Stderr, "エラー: 演習名 %q の形式が正しくありません (例: 01-interface-design)\n", name)
-				os.Exit(1)
+				return fmt.Errorf("演習名 %q の形式が正しくありません (例: 01-interface-design)", name)
 			}
 
 			if r.exercFS == nil {
-				fmt.Fprintln(os.Stderr, "エラー: 演習データが見つかりません")
-				os.Exit(1)
+				return fmt.Errorf("演習データが見つかりません")
 			}
 
 			ex, err := exercise.LoadFromFS(r.exercFS, name)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "エラー: 演習 %q が見つかりません\n", name)
-			os.Exit(1)
+			if hints := exercise.SuggestNames(r.exercFS, name, 3); len(hints) > 0 {
+				return fmt.Errorf("演習 %q が見つかりません\n  もしかして: %s", name, strings.Join(hints, ", "))
+			}
+			return fmt.Errorf("演習 %q が見つかりません", name)
 		}
 
 		prog, _ := progress.Load()
 		if prog.InProgress != "" && !startForce {
-			fmt.Fprintf(os.Stderr, "エラー: 演習 %q が進行中です（--force で上書き）\n", prog.InProgress)
-			os.Exit(1)
+			return fmt.Errorf("演習 %q が進行中です（--force で上書き）", prog.InProgress)
 		}
 
 		cwd, _ := os.Getwd()
 		target := cwd
 
 		if err := os.MkdirAll(target, 0755); err != nil {
-			fmt.Fprintf(os.Stderr, "エラー: ディレクトリ作成失敗: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("ディレクトリ作成失敗: %v", err)
 		}
 
 			if err := exercise.CopyFromFS(r.exercFS, name+"/starter", target); err != nil {
-			fmt.Fprintf(os.Stderr, "エラー: 展開失敗: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("展開失敗: %v", err)
 		}
 		// verify ディレクトリが存在する場合のみコピー
 			if _, err := fs.Stat(r.exercFS, name+"/verify"); err == nil {
 			if err := exercise.CopyFromFS(r.exercFS, name+"/verify", target); err != nil {
-				fmt.Fprintf(os.Stderr, "エラー: テスト展開失敗: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("テスト展開失敗: %v", err)
 			}
 		}
 
 		prog.InProgress = name
-		prog.Save()
+		progress.Save(prog)
 
-		fmt.Printf("✅ %s\n", colorGreen("演習「"+ex.Title+"」を開始しました"))
-		fmt.Println()
-		fmt.Printf("  カテゴリ: %s\n", ex.Category)
-		fmt.Printf("  難易度:   %s\n", stars(ex.Difficulty))
-		fmt.Println()
-		fmt.Println("  次のファイルを編集してください:")
+		c.Printf("✅ %s\n", colorGreen("演習「"+ex.Title+"」を開始しました"))
+		c.Println()
+		c.Printf("  カテゴリ: %s\n", ex.Category)
+		c.Printf("  難易度:   %s\n", stars(ex.Difficulty))
+		c.Println()
+		c.Println("  次のファイルを編集してください:")
 		for _, f := range ex.Files {
-			fmt.Printf("    - %s\n", strings.TrimSuffix(f, ".txt"))
+			c.Printf("    - %s\n", strings.TrimSuffix(f, ".txt"))
 		}
-		fmt.Println()
-		fmt.Printf("  編集後: %s\n", colorCyan("go-practicum verify"))
-		fmt.Printf("  ヒント:  %s\n", colorCyan("go-practicum hint"))
+		c.Println()
+		c.Printf("  編集後: %s\n", colorCyan("go-practicum verify"))
+		c.Printf("  ヒント:  %s\n", colorCyan("go-practicum hint"))
+		return nil
 	},
 	}
 	cmd.Flags().BoolVarP(&startForce, "force", "f", false, "進行中の演習を上書きして開始")

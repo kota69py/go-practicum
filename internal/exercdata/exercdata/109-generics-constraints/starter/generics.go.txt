@@ -1,0 +1,58 @@
+package main
+
+import (
+	"cmp"
+)
+
+// Number は整数と浮動小数点数をカバーする型制約インターフェースです。
+type Number interface {
+	// TODO: ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+	//       ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
+	//       ~float32 | ~float64
+}
+
+// Min は2つの値のうち小さい方を返します。Number 制約を使います。
+func Min[T Number](a, b T) T {
+	// TODO: cmp.Less または < 演算子で比較
+	return a
+}
+
+// Max は2つの値のうち大きい方を返します。Number 制約を使います。
+func Max[T Number](a, b T) T {
+	// TODO: 実装
+	return a
+}
+
+// Sum はスライスの合計値を返します。Number 制約を使います。
+func Sum[T Number](values []T) T {
+	// TODO: 合計を計算
+	var zero T
+	return zero
+}
+
+// Stringable は String() メソッドと ~string 型をカバーする制約です。
+type Stringable interface {
+	// TODO: ~string と String() string の組み合わせ制約
+}
+
+// Format は Stringable な値をフォーマットします。
+func Format[T Stringable](v T) string {
+	// TODO: v が string ならそのまま、String() メソッドがあれば呼び出し
+	return ""
+}
+
+// OrderedSlice は要素がソート可能なスライスを表します。
+type OrderedSlice[T cmp.Ordered] []T
+
+// Add はスライスに要素を追加します。
+func (s *OrderedSlice[T]) Add(v T) {
+	// TODO: 要素を追加
+}
+
+// Contains は OrderedSlice に特定の値が含まれているか二分探索で確認します。
+func (s OrderedSlice[T]) Contains(v T) bool {
+	// TODO: 二分探索で確認
+	return false
+}
+
+var _ = cmp.Compare[int]

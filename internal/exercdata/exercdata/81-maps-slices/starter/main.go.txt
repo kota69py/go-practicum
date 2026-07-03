@@ -1,0 +1,43 @@
+package main
+
+// 1. SortStrings: 文字列スライスを昇順にソートして返してください。
+//    slices.Sort を使います。
+func SortStrings(s []string) []string {
+	return nil
+}
+
+// 2. SortDesc: 整数スライスを降順にソートして返してください。
+//    slices.SortFunc と cmp.Compare を使います。
+func SortDesc(n []int) []int {
+	return nil
+}
+
+// 3. FindIndex: 値 v がスライス s 内で最初に現れるインデックスを返してください（なければ -1）。
+//    slices.Index を使います。
+func FindIndex[T comparable](s []T, v T) int {
+	return 0
+}
+
+// 4. CompactCopy: 連続した同一要素を除去した新しいスライスを返してください。
+//    slices.Clone と slices.Compact の両方を使います。
+func CompactCopy[T comparable](s []T) []T {
+	return nil
+}
+
+// 5. MergeUnique: 2 つの整数スライスの和集合（重複なし）を返してください。
+//    maps パッケージを活用します。
+func MergeUnique(a, b []int) []int {
+	return nil
+}
+
+// 6. MaxValueKey: マップの中で最大の値を持つキーを返してください（空なら ""）。
+//    maps.Keys と cmp.Compare を使います。
+func MaxValueKey(m map[string]int) string {
+	return ""
+}
+
+// 7. FirstNonZero: 可変長引数の中で最初の非ゼロ値を返してください（すべて 0 なら 0）。
+//    cmp.Or を使います。
+func FirstNonZero(vals ...int) int {
+	return 0
+}

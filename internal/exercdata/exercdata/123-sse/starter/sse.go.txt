@@ -1,0 +1,56 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+// Event は SSE の1つのイベントを表します。
+type Event struct {
+	// Data はイベントの本文です（data: フィールド）。
+	Data string
+	// Event はイベントタイプです（event: フィールド）。
+	Event string
+	// ID は Last-Event-ID による再開に使う識別子です（id: フィールド）。
+	ID string
+	// Retry はクライアントの再接続間隔（ミリ秒）です（retry: フィールド）。
+	Retry int
+}
+
+// FormatEvent は Event を SSE のテキスト形式に変換します。
+// 各フィールドは対応するプレフィックス（data:, event:, id:, retry:）で出力され、
+// 最後は空行（\n\n）で終端されます。
+func FormatEvent(ev Event) string {
+	// TODO: ev.Data の各行を "data: " プレフィックスで出力する
+	// TODO: ev.Event が空でなければ "event: " で出力する
+	// TODO: ev.ID が空でなければ "id: " で出力する
+	// TODO: ev.Retry > 0 なら "retry: " で出力する
+	// TODO: 最後に空行（\n\n）を付加する
+	return ""
+}
+
+// SendEvent は Event を書き込み先に送信します。
+func SendEvent(w io.Writer, ev Event) error {
+	// TODO: FormatEvent で整形して書き込む
+	return nil
+}
+
+// SSEHandler はサーバープッシュ配信を行う HTTP ハンドラです。
+// クライアントはクエリパラメータ ?last=<id> で最後に受け取ったイベント ID を指定できます。
+// ハンドラは 3 秒おきにカウントアップする数値イベントを送信し、
+// 合計 5 回送信したら終了します。
+func SSEHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: Content-Type に "text/event-stream" を設定する
+	// TODO: Cache-Control に "no-cache" を設定する
+	// TODO: Connection に "keep-alive" を設定する
+	// TODO: http.Flusher を取得する（なければ http.StatusNotImplemented を返す）
+	// TODO: クエリパラメータ "last" から Last-Event-ID を取得する
+	// TODO: 5回ループして SendEvent でイベントを送信する
+	//   各イベントは id に連番、data に現在時刻の文字列を含める
+	// TODO: 各送信後に Flush() を呼び出して即座にクライアントへ届ける
+	// TODO: 3秒間の待機（time.Sleep）を入れる
+	// TODO: r.Context().Done() でクライアント切断を検出する
+}

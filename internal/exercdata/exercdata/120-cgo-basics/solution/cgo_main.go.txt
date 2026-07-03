@@ -1,0 +1,67 @@
+package main
+
+/*
+#include <stdlib.h>
+#include <string.h>
+
+int add(int a, int b) {
+	return a + b;
+}
+
+double multiply(double a, double b) {
+	return a * b;
+}
+
+int string_length(const char* s) {
+	return (int)strlen(s);
+}
+
+char* concat(const char* a, const char* b) {
+	int len = (int)(strlen(a) + strlen(b) + 1);
+	char* result = (char*)malloc(len);
+	if (result == NULL) return NULL;
+	strcpy(result, a);
+	strcat(result, b);
+	return result;
+}
+*/
+import "C"
+import (
+	"fmt"
+	"unsafe"
+)
+
+func Add(a, b int) int {
+	return int(C.add(C.int(a), C.int(b)))
+}
+
+func Multiply(a, b float64) float64 {
+	return float64(C.multiply(C.double(a), C.double(b)))
+}
+
+func StringLength(s string) int {
+	cs := C.CString(s)
+	defer C.free(unsafe.Pointer(cs))
+	return int(C.string_length(cs))
+}
+
+func Concat(a, b string) string {
+	ca := C.CString(a)
+	cb := C.CString(b)
+	defer C.free(unsafe.Pointer(ca))
+	defer C.free(unsafe.Pointer(cb))
+	result := C.concat(ca, cb)
+	if result == nil {
+		return ""
+	}
+	defer C.free(unsafe.Pointer(result))
+	return C.GoString(result)
+}
+
+func main() {
+	fmt.Println("CGO Demo")
+	fmt.Printf("Add(3, 4) = %d\n", Add(3, 4))
+	fmt.Printf("Multiply(2.5, 3.0) = %.1f\n", Multiply(2.5, 3.0))
+	fmt.Printf("StringLength(\"hello\") = %d\n", StringLength("hello"))
+	fmt.Printf("Concat(\"Hello \", \"World!\") = %s\n", Concat("Hello ", "World!"))
+}

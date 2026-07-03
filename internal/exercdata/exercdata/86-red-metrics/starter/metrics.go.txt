@@ -1,0 +1,59 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"sync/atomic"
+	"time"
+)
+
+// REDMetrics は Rate / Errors / Duration を計測する構造体です。
+type REDMetrics struct {
+	requestCount  atomic.Int64
+	errorCount    atomic.Int64
+	totalLatency  atomic.Int64 // 累計レイテンシ（マイクロ秒）
+	maxLatency    atomic.Int64 // 最大レイテンシ（マイクロ秒）
+	latencyBuckets [6]atomic.Int64 // <5, <10, <50, <100, <500, >=500 ms
+}
+
+var bucketThresholds = []int64{5_000, 10_000, 50_000, 100_000, 500_000}
+
+// IncRequest はリクエスト数を 1 増やしてください。
+func (m *REDMetrics) IncRequest() {
+	// TODO: atomic.AddInt64(&m.requestCount, 1)
+	// または m.requestCount.Add(1) （atomic.Int64 の場合）
+}
+
+// IncError はエラー数を 1 増やしてください。
+func (m *REDMetrics) IncError() {
+	// TODO
+}
+
+// RecordLatency はレイテンシ（マイクロ秒）を記録してください。
+// 累計・最大値・ヒストグラムバケットを更新します。
+func (m *REDMetrics) RecordLatency(us int64) {
+	// TODO: totalLatency に us を加算
+	// TODO: maxLatency を最大値で更新（CAS ループ）
+	// TODO: latencyBuckets の該当バケットをインクリメント
+}
+
+// Instrument は http.Handler をラップし、リクエスト毎に metrics を記録するミドルウェアを返します。
+func (m *REDMetrics) Instrument(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: 開始時刻を記録
+		// TODO: IncRequest()
+		// TODO: next.ServeHTTP(w, r)
+		// TODO: RecordLatency(us)
+		// TODO: ステータスコードが 5xx なら IncError()
+	})
+}
+
+// MetricsHandler は /metrics エンドポイント用のハンドラです。
+// テキスト形式で現在のメトリクス値を返してください。
+func (m *REDMetrics) MetricsHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		// TODO: 各メトリクスを fmt.Fprintf で出力
+		fmt.Fprintf(w, "# RED Metrics\n")
+	})
+}

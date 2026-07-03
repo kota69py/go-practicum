@@ -1,0 +1,60 @@
+package main
+
+import (
+	"testing"
+	"unicode/utf8"
+)
+
+func FuzzHexDecode(f *testing.F) {
+	f.Add("48656c6c6f")
+	f.Add("deadbeef")
+	f.Add("")
+	f.Add("ff")
+	f.Add("00")
+	f.Add("ABCDEF1234567890")
+	f.Add("abcdef1234567890")
+
+	f.Fuzz(func(t *testing.T, s string) {
+		dst, err := HexDecode(s)
+		if err != nil {
+			if len(s)%2 != 0 {
+				return
+			}
+			// invalid hex char, OK
+			return
+		}
+		got := HexEncode(dst)
+		if got != s {
+			t.Errorf("roundtrip: HexDecode(%q) = %v, HexEncode = %q, want %q", s, dst, got, s)
+		}
+		_ = utf8.Valid(dst)
+	})
+}
+
+func FuzzReverse(f *testing.F) {
+	f.Add("hello")
+	f.Add("世界")
+	f.Add("")
+	f.Add("a")
+	f.Fuzz(func(t *testing.T, s string) {
+		if !utf8.ValidString(s) {
+			return
+		}
+		rev := reverse(s)
+		rev2 := reverse(rev)
+		if rev2 != s {
+			t.Errorf("double reverse: %q -> %q -> %q", s, rev, rev2)
+		}
+		if utf8.RuneCountInString(s) != utf8.RuneCountInString(rev) {
+			t.Errorf("rune count mismatch: %d vs %d", utf8.RuneCountInString(s), utf8.RuneCountInString(rev))
+		}
+	})
+}
+
+func reverse(s string) string {
+	r := []rune(s)
+	for i, j := 0, len(r)-1; i < j; i, j = i+1, j-1 {
+		r[i], r[j] = r[j], r[i]
+	}
+	return string(r)
+}

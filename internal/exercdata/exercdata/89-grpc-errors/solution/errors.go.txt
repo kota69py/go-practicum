@@ -1,0 +1,42 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	pb "grpc-errors/proto/echo"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+func ClassifyError(err error) string {
+	st := status.Convert(err)
+	switch st.Code() {
+	case codes.NotFound:
+		return fmt.Sprintf("not found: %s", st.Message())
+	case codes.InvalidArgument:
+		return fmt.Sprintf("bad request: %s", st.Message())
+	case codes.AlreadyExists:
+		return fmt.Sprintf("conflict: %s", st.Message())
+	case codes.Internal:
+		return fmt.Sprintf("server error: %s", st.Message())
+	case codes.Unavailable:
+		return fmt.Sprintf("service unavailable: %s", st.Message())
+	default:
+		return fmt.Sprintf("unknown error: %s", st.Message())
+	}
+}
+
+func IsRetryable(err error) bool {
+	code := status.Code(err)
+	return code == codes.Unavailable || code == codes.DeadlineExceeded
+}
+
+func EchoWithErrorHandling(client pb.EchoServiceClient, message string) (string, error) {
+	resp, err := client.Echo(context.Background(), &pb.EchoRequest{Message: message})
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", ClassifyError(err), err)
+	}
+	return resp.Message, nil
+}

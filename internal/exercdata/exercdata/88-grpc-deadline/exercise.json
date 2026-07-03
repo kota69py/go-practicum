@@ -1,0 +1,17 @@
+{
+  "name": "88-grpc-deadline",
+  "title": "gRPC デッドライン — コンテキスト経由の期限伝搬",
+  "category": "net",
+  "difficulty": 4,
+  "description": "gRPC におけるデッドライン（タイムアウト）の設定と伝搬を学びます。クライアント側で context.WithTimeout を設定し、サーバー側で期限切れを検出して適切に処理する実装を行います。下流サービスへのデッドライン伝搬も実装します。",
+  "hints": [
+    "context.WithTimeout(ctx, duration) でクライアント側の期限を設定",
+    "context.WithDeadline(ctx, deadline) でも設定可能",
+    "サーバー側は ctx.Done() チャネル or ctx.Err() で期限切れを検出",
+    "grpc.WaitForReady(true) で接続確立を待つ",
+    "サーバーは time.Sleep やチャネルで長時間処理をシミュレート",
+    "下流サービスへの呼び出しも同じ ctx を伝搬する",
+    "deadline exceeded は codes.DeadlineExceeded に対応"
+  ],
+  "files": ["client.go.txt"]
+}

@@ -1,0 +1,37 @@
+package main
+
+import "fmt"
+
+// HexEncode はバイト列を16進数文字列にエンコードします。
+func HexEncode(src []byte) string {
+	return fmt.Sprintf("%x", src)
+}
+
+// HexDecode は16進数文字列をバイト列にデコードします。
+// 現状の実装: 不正な文字が含まれている場合でもエラーを返しません。
+// 課題: fuzz testing でバグを見つけて修正してください。
+func HexDecode(src string) ([]byte, error) {
+	if len(src)%2 != 0 {
+		return nil, fmt.Errorf("odd length: %d", len(src))
+	}
+	dst := make([]byte, len(src)/2)
+	for i := 0; i < len(src); i += 2 {
+		dst[i/2] = hexChar(src[i])<<4 | hexChar(src[i+1])
+	}
+	return dst, nil
+}
+
+func hexChar(c byte) byte {
+	switch {
+	case '0' <= c && c <= '9':
+		return c - '0'
+	case 'a' <= c && c <= 'f':
+		return c - 'a' + 10
+	case 'A' <= c && c <= 'F':
+		return c - 'A' + 10
+	default:
+		return 0
+	}
+}
+
+var _ = fmt.Sprintf

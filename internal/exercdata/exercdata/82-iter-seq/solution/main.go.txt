@@ -1,0 +1,81 @@
+package main
+
+import "iter"
+
+type Node struct {
+	Value int
+	Left  *Node
+	Right *Node
+}
+
+func (n *Node) Inorder() iter.Seq[int] {
+	if n == nil {
+		return func(yield func(int) bool) bool { return true }
+	}
+	return func(yield func(int) bool) bool {
+		return inorder(n, yield)
+	}
+}
+
+func inorder(n *Node, yield func(int) bool) bool {
+	if n == nil {
+		return true
+	}
+	if !inorder(n.Left, yield) {
+		return false
+	}
+	if !yield(n.Value) {
+		return false
+	}
+	return inorder(n.Right, yield)
+}
+
+func (n *Node) BFS() iter.Seq[int] {
+	return func(yield func(int) bool) bool {
+		if n == nil {
+			return true
+		}
+		queue := []*Node{n}
+		for len(queue) > 0 {
+			cur := queue[0]
+			queue = queue[1:]
+			if !yield(cur.Value) {
+				return false
+			}
+			if cur.Left != nil {
+				queue = append(queue, cur.Left)
+			}
+			if cur.Right != nil {
+				queue = append(queue, cur.Right)
+			}
+		}
+		return true
+	}
+}
+
+func (n *Node) Paths() iter.Seq[[]int] {
+	return func(yield func([]int) bool) bool {
+		if n == nil {
+			return true
+		}
+		var dfs func(*Node, []int) bool
+		dfs = func(cur *Node, path []int) bool {
+			path = append(path, cur.Value)
+			if cur.Left == nil && cur.Right == nil {
+				return yield(path)
+			}
+			if cur.Left != nil {
+				if !dfs(cur.Left, path) {
+					return false
+				}
+			}
+			if cur.Right != nil {
+				if !dfs(cur.Right, path) {
+					return false
+				}
+			}
+			return true
+		}
+		return dfs(n, nil)
+	}
+}

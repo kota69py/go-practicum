@@ -1,0 +1,84 @@
+package main
+
+import (
+	"context"
+	"os"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestConnString(t *testing.T) {
+	cfg := PostgresConfig{
+		Host:     "localhost",
+		Port:     5432,
+		User:     "test",
+		Password: "pass",
+		DBName:   "testdb",
+	}
+	connStr := cfg.ConnString()
+	if !strings.Contains(connStr, "host=localhost") {
+		t.Errorf("expected host=localhost in %q", connStr)
+	}
+	if !strings.Contains(connStr, "port=5432") {
+		t.Errorf("expected port=5432 in %q", connStr)
+	}
+}
+
+func TestCreateSchemaSQL(t *testing.T) {
+	if !strings.Contains(SchemaSQL, "CREATE TABLE") {
+		t.Error("expected CREATE TABLE in schema")
+	}
+}
+
+func TestLoadDefaultConfigFromEnv(t *testing.T) {
+	os.Setenv("DB_HOST", "testhost")
+	os.Setenv("DB_PORT", "9999")
+	os.Setenv("DB_USER", "testuser")
+	os.Setenv("DB_PASSWORD", "testpass")
+	os.Setenv("DB_NAME", "testdb")
+	defer os.Unsetenv("DB_HOST")
+	defer os.Unsetenv("DB_PORT")
+	defer os.Unsetenv("DB_USER")
+	defer os.Unsetenv("DB_PASSWORD")
+	defer os.Unsetenv("DB_NAME")
+
+	cfg := LoadDefaultConfigFromEnv()
+	if cfg.Host != "testhost" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "testhost")
+	}
+	if cfg.Port != 9999 {
+		t.Errorf("Port = %d, want 9999", cfg.Port)
+	}
+}
+
+func TestLoadDefaultConfigFromEnvDefaults(t *testing.T) {
+	cfg := LoadDefaultConfigFromEnv()
+	if cfg.Host != "localhost" {
+		t.Errorf("Host default = %q, want %q", cfg.Host, "localhost")
+	}
+	if cfg.Port != 5432 {
+		t.Errorf("Port default = %d, want 5432", cfg.Port)
+	}
+}
+
+func TestInsertUserSignature(t *testing.T) {
+	_ = InsertUser
+}
+
+func TestGetUserCountSignature(t *testing.T) {
+	_ = GetUserCount
+}
+
+func TestStartPostgresContainerSignature(t *testing.T) {
+	_ = StartPostgresContainer
+}
+
+func TestSchemaConstants(t *testing.T) {
+	if SchemaSQL == "" {
+		t.Error("SchemaSQL should not be empty")
+	}
+}
+
+var _ = context.Background
+var _ = time.Second

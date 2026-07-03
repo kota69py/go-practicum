@@ -1,0 +1,13 @@
+package main
+
+import (
+	"testing"
+)
+
+func BenchmarkFibonacci(b *testing.B) {
+	// TODO: Fibonacci(20) のベンチマークを実装
+}
+
+func BenchmarkCompute(b *testing.B) {
+	// TODO: Compute(10) のベンチマークを実装
+}

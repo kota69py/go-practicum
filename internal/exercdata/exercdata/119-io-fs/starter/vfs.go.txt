@@ -1,0 +1,36 @@
+package vfs
+
+import (
+	"io/fs"
+	"time"
+)
+
+// TODO: File 型を定義する
+// fs.File インターフェースを実装すること
+// 必要なメソッド: Stat(), Read(), Close()
+
+// TODO: FS 型を定義する
+// fs.FS インターフェースを実装すること
+// 必要なメソッド: Open()
+// オプションで ReadDirFS, ReadFileFS も実装
+
+func NewFS() *FS {
+	// TODO: 新しい FS インスタンスを作成して返す
+	return nil
+}
+
+func (f *FS) Add(name, content string) {
+	// TODO: ファイルを追加する
+}
+
+func (f *FS) Open(name string) (fs.File, error) {
+	// TODO: ファイルを開く
+	// 存在しない場合は fs.ErrNotExist を返す
+	return nil, fs.ErrNotExist
+}
+
+func (f *FS) ReadFile(name string) ([]byte, error) {
+	// TODO: ファイルの内容を読み込む
+	// fs.ReadFileFS インターフェースの一部
+	return nil, fs.ErrNotExist
+}

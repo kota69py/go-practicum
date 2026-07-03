@@ -1,0 +1,17 @@
+{
+  "name": "113-hexagonal-arch",
+  "title": "Hexagonal Architecture — Ports & Adapters",
+  "category": "architecture",
+  "difficulty": 3,
+  "description": "Hexagonal Architecture（Ports and Adapters）パターンを実装します。ビジネスロジックを外部依存から隔離し、ポート（インターフェース）とアダプター（実装）を分離することで、テスタブルで柔軟なアーキテクチャを構築します。",
+  "hints": [
+    "Core / Port / Adapter の3層に分ける",
+    "Port: interface で定義（利用する側が定義 = DIP）",
+    "Adapter: 外部ライブラリやインフラの具体実装",
+    "InMemory adapter でテスト容易性を確保",
+    "File adapter で永続化、HTTP adapter で外部公開",
+    "adapter の差し替えは New 関数の引数で制御",
+    "core は adapter の存在を知らない"
+  ],
+  "files": ["hex.go.txt"]
+}

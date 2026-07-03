@@ -1,0 +1,155 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// === K8s リソースの構造体定義 ===
+
+type ObjectMeta struct {
+	Name      string `yaml:"name" json:"name"`
+	Namespace string `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	Labels    map[string]string `yaml:"labels,omitempty" json:"labels,omitempty"`
+}
+
+type Container struct {
+	Name            string            `yaml:"name" json:"name"`
+	Image           string            `yaml:"image" json:"image"`
+	Ports           []ContainerPort   `yaml:"ports,omitempty" json:"ports,omitempty"`
+	EnvFrom         []EnvFromSource   `yaml:"envFrom,omitempty" json:"envFrom,omitempty"`
+	LivenessProbe   *Probe            `yaml:"livenessProbe,omitempty" json:"livenessProbe,omitempty"`
+	ReadinessProbe  *Probe            `yaml:"readinessProbe,omitempty" json:"readinessProbe,omitempty"`
+}
+
+type ContainerPort struct {
+	ContainerPort int    `yaml:"containerPort" json:"containerPort"`
+	Protocol      string `yaml:"protocol,omitempty" json:"protocol,omitempty"`
+}
+
+type EnvFromSource struct {
+	ConfigMapRef *ConfigMapKeyRef `yaml:"configMapRef,omitempty" json:"configMapRef,omitempty"`
+}
+
+type ConfigMapKeyRef struct {
+	Name string `yaml:"name" json:"name"`
+}
+
+type Probe struct {
+	HTTPGet             *HTTPGetAction `yaml:"httpGet,omitempty" json:"httpGet,omitempty"`
+	InitialDelaySeconds int            `yaml:"initialDelaySeconds,omitempty" json:"initialDelaySeconds,omitempty"`
+	PeriodSeconds       int            `yaml:"periodSeconds,omitempty" json:"periodSeconds,omitempty"`
+}
+
+type HTTPGetAction struct {
+	Path string `yaml:"path" json:"path"`
+	Port int    `yaml:"port" json:"port"`
+}
+
+// === Deployment リソース ===
+
+type Deployment struct {
+	APIVersion string            `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string            `yaml:"kind" json:"kind"`
+	Metadata   ObjectMeta        `yaml:"metadata" json:"metadata"`
+	Spec       DeploymentSpec    `yaml:"spec" json:"spec"`
+}
+
+type DeploymentSpec struct {
+	Replicas int                `yaml:"replicas" json:"replicas"`
+	Selector *LabelSelector     `yaml:"selector" json:"selector"`
+	Template PodTemplateSpec    `yaml:"template" json:"template"`
+}
+
+type LabelSelector struct {
+	MatchLabels map[string]string `yaml:"matchLabels" json:"matchLabels"`
+}
+
+type PodTemplateSpec struct {
+	Metadata ObjectMeta `yaml:"metadata" json:"metadata"`
+	Spec     PodSpec    `yaml:"spec" json:"spec"`
+}
+
+type PodSpec struct {
+	Containers []Container `yaml:"containers" json:"containers"`
+}
+
+// === Service リソース ===
+
+type Service struct {
+	APIVersion string       `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string       `yaml:"kind" json:"kind"`
+	Metadata   ObjectMeta   `yaml:"metadata" json:"metadata"`
+	Spec       ServiceSpec  `yaml:"spec" json:"spec"`
+}
+
+type ServiceSpec struct {
+	Type     string        `yaml:"type,omitempty" json:"type,omitempty"`
+	Selector map[string]string `yaml:"selector" json:"selector"`
+	Ports    []ServicePort `yaml:"ports" json:"ports"`
+}
+
+type ServicePort struct {
+	Port       int    `yaml:"port" json:"port"`
+	TargetPort int    `yaml:"targetPort,omitempty" json:"targetPort,omitempty"`
+	Protocol   string `yaml:"protocol,omitempty" json:"protocol,omitempty"`
+}
+
+// === ConfigMap リソース ===
+
+type ConfigMap struct {
+	APIVersion string            `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string            `yaml:"kind" json:"kind"`
+	Metadata   ObjectMeta        `yaml:"metadata" json:"metadata"`
+	Data       map[string]string `yaml:"data" json:"data"`
+}
+
+// === 課題関数 ===
+
+// NewWebDeployment は Web アプリケーションの Deployment を作成します。
+// 条件:
+//   - 名前: "web-app", レプリカ: 3
+//   - ラベル: app=web-app
+//   - コンテナ: nginx:latest, ポート 80
+//   - livenessProbe: GET /healthz, initialDelay 5s, period 10s
+//   - readinessProbe: GET /readyz, initialDelay 3s, period 5s
+//   - ConfigMap "app-config" から envFrom で環境変数を注入
+func NewWebDeployment() Deployment {
+	// TODO: Deployment 構造体を組み立てて返す
+	return Deployment{}
+}
+
+// NewWebService は Deployment "web-app" に対応する Service を作成します。
+// 条件:
+//   - 名前: "web-service"
+//   - タイプ: ClusterIP
+//   - セレクター: app=web-app
+//   - ポート: 80 → targetPort 80
+func NewWebService() Service {
+	// TODO: Service 構造体を組み立てて返す
+	return Service{}
+}
+
+// NewAppConfigMap はアプリケーション設定の ConfigMap を作成します。
+// 条件:
+//   - 名前: "app-config"
+//   - データ: APP_ENV=production, LOG_LEVEL=info, CACHE_TTL=300
+func NewAppConfigMap() ConfigMap {
+	// TODO: ConfigMap 構造体を組み立てて返す
+	return ConfigMap{}
+}
+
+// ValidateDeployment は Deployment の設定が正しいか検証します。
+// チェック項目:
+//   - apiVersion が "apps/v1"
+//   - kind が "Deployment"
+//   - replicas が 1 以上
+//   - selector.matchLabels と template.metadata.labels が一致
+//   - 少なくとも 1 つのコンテナがある
+func ValidateDeployment(d Deployment) error {
+	// TODO: 各項目を検証し、問題があればエラーを返す
+	return nil
+}
+
+var _ = json.Marshal
+var _ = fmt.Sprintf

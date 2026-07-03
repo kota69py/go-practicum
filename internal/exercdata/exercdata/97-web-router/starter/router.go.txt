@@ -1,0 +1,33 @@
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// User はユーザー情報を表します。
+type User struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// NewRouter はアプリケーションのルーターを作成します。
+// 以下のエンドポイントを実装してください：
+//   GET    /api/users          — 全ユーザー一覧を返す
+//   GET    /api/users/{id}     — 指定IDのユーザーを返す（存在しなければ404）
+//   POST   /api/users          — ユーザーを作成し、201 + 作成されたユーザーを返す
+//   DELETE /api/users/{id}     — 指定IDのユーザーを削除し、204 を返す
+//   GET    /api/health         — {"status":"ok"} を返す
+func NewRouter() http.Handler {
+	mux := http.NewServeMux()
+	// TODO: エンドポイントを登録
+	return mux
+}
+
+func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+var _ = json.Marshal

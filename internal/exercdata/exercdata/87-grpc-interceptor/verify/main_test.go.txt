@@ -1,0 +1,116 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"testing"
+
+	pb "grpc-interceptor/proto/echo"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
+)
+
+func bufDialer(lis *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, url string) (net.Conn, error) {
+		return lis.Dial()
+	}
+}
+
+func setupInterceptorTest(t *testing.T, opts ...grpc.ServerOption) (pb.EchoServiceClient, *bufconn.Listener) {
+	t.Helper()
+	lis := bufconn.Listen(1024)
+	s := grpc.NewServer(opts...)
+	pb.RegisterEchoServiceServer(s, &echoServer{})
+	go s.Serve(lis)
+	t.Cleanup(func() { s.Stop() })
+
+	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithContextDialer(bufDialer(lis)), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	return pb.NewEchoServiceClient(conn), lis
+}
+
+func TestLoggingInterceptor(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(LoggingInterceptor))
+	_, err := client.Echo(context.Background(), &pb.EchoRequest{Message: "hello"})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestRecoveryInterceptor(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(RecoveryInterceptor, func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		panic("test panic")
+	}))
+	_, err := client.Echo(context.Background(), &pb.EchoRequest{Message: "panic"})
+	if err == nil {
+		t.Fatal("expected error from panic recovery")
+	}
+	if status.Code(err) != codes.Internal {
+		t.Errorf("got code %v, want Internal", status.Code(err))
+	}
+}
+
+func TestAuthInterceptorValid(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(AuthInterceptor))
+	md := metadata.Pairs("authorization", "valid-token")
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	_, err := client.Echo(ctx, &pb.EchoRequest{Message: "auth test"})
+	if err != nil {
+		t.Errorf("unexpected auth error: %v", err)
+	}
+}
+
+func TestAuthInterceptorInvalid(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(AuthInterceptor))
+	md := metadata.Pairs("authorization", "bad-token")
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	_, err := client.Echo(ctx, &pb.EchoRequest{Message: "bad auth"})
+	if err == nil {
+		t.Fatal("expected auth error")
+	}
+	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("got code %v, want Unauthenticated", status.Code(err))
+	}
+}
+
+func TestAuthInterceptorMissing(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(AuthInterceptor))
+	_, err := client.Echo(context.Background(), &pb.EchoRequest{Message: "no auth"})
+	if err == nil {
+		t.Fatal("expected auth error")
+	}
+}
+
+func TestRateLimitInterceptor(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(RateLimitInterceptor))
+	_, err := client.Echo(context.Background(), &pb.EchoRequest{Message: "rate test"})
+	if err != nil {
+		t.Errorf("first request should succeed: %v", err)
+	}
+	_, err = client.Echo(context.Background(), &pb.EchoRequest{Message: "rate test 2"})
+	if status.Code(err) != codes.ResourceExhausted {
+		t.Errorf("got code %v, want ResourceExhausted", status.Code(err))
+	}
+}
+
+func TestInterceptorChain(t *testing.T) {
+	client, _ := setupInterceptorTest(t, grpc.ChainUnaryInterceptor(
+		LoggingInterceptor,
+		RecoveryInterceptor,
+		AuthInterceptor,
+	))
+	md := metadata.Pairs("authorization", "valid-token")
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	_, err := client.Echo(ctx, &pb.EchoRequest{Message: "chain test"})
+	if err != nil {
+		t.Errorf("chain should succeed: %v", err)
+	}
+}

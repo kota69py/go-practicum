@@ -1,0 +1,95 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Event は SSE の1つのイベントを表します。
+type Event struct {
+	Data  string
+	Event string
+	ID    string
+	Retry int
+}
+
+// FormatEvent は Event を SSE のテキスト形式に変換します。
+func FormatEvent(ev Event) string {
+	var b strings.Builder
+	for _, line := range strings.Split(ev.Data, "\n") {
+		b.WriteString("data: ")
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+	if ev.Event != "" {
+		b.WriteString("event: ")
+		b.WriteString(ev.Event)
+		b.WriteString("\n")
+	}
+	if ev.ID != "" {
+		b.WriteString("id: ")
+		b.WriteString(ev.ID)
+		b.WriteString("\n")
+	}
+	if ev.Retry > 0 {
+		b.WriteString("retry: ")
+		b.WriteString(strconv.Itoa(ev.Retry))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
+	return b.String()
+}
+
+// SendEvent は Event を書き込み先に送信します。
+func SendEvent(w io.Writer, ev Event) error {
+	_, err := io.WriteString(w, FormatEvent(ev))
+	return err
+}
+
+// SSEHandler はサーバープッシュ配信を行う HTTP ハンドラです。
+func SSEHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusNotImplemented)
+		return
+	}
+
+	lastID := r.URL.Query().Get("last")
+	if lastID != "" {
+		SendEvent(w, Event{Event: "reset", Data: "restart from " + lastID})
+		flusher.Flush()
+	}
+
+	for i := 1; i <= 5; i++ {
+		select {
+		case <-r.Context().Done():
+			return
+		default:
+		}
+
+		ev := Event{
+			ID:   strconv.Itoa(i),
+			Data: fmt.Sprintf("count: %d / time: %s", i, time.Now().Format(time.RFC3339)),
+		}
+		if i == 1 {
+			ev.Event = "start"
+		}
+		if i == 5 {
+			ev.Event = "end"
+		}
+
+		if err := SendEvent(w, ev); err != nil {
+			return
+		}
+		flusher.Flush()
+		time.Sleep(3 * time.Second)
+	}
+}

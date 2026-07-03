@@ -1,0 +1,113 @@
+package main
+
+import (
+	"context"
+	"net"
+	"testing"
+	"time"
+
+	pb "grpc-deadline/proto/echo"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
+)
+
+func bufDialer(lis *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, url string) (net.Conn, error) {
+		return lis.Dial()
+	}
+}
+
+func setupDeadlineTest(t *testing.T, latency time.Duration) (pb.EchoServiceClient, *bufconn.Listener) {
+	t.Helper()
+	lis := bufconn.Listen(1024)
+	s := grpc.NewServer()
+	pb.RegisterEchoServiceServer(s, &slowServer{simulateLatency: latency})
+	go s.Serve(lis)
+	t.Cleanup(func() { s.Stop() })
+
+	conn, err := grpc.DialContext(context.Background(), "bufnet",
+		grpc.WithContextDialer(bufDialer(lis)),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	return pb.NewEchoServiceClient(conn), lis
+}
+
+func TestCallWithDeadlineSuccess(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 10*time.Millisecond)
+	result, err := CallWithDeadline(client, "hello", 5*time.Second)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "hello: hello" {
+		t.Errorf("got %q, want %q", result, "hello: hello")
+	}
+}
+
+func TestCallWithDeadlineExceeded(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 200*time.Millisecond)
+	_, err := CallWithDeadline(client, "slow", 50*time.Millisecond)
+	if err == nil {
+		t.Fatal("expected deadline exceeded error")
+	}
+}
+
+func TestCallWithDeadlineNoTimeout(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 10*time.Millisecond)
+	result, err := CallWithDeadline(client, "no-timeout", 0)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "hello: no-timeout" {
+		t.Errorf("got %q, want %q", result, "hello: no-timeout")
+	}
+}
+
+func TestCallWithRetrySucceeds(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 10*time.Millisecond)
+	result, err := CallWithRetry(client, "retry-me", 5*time.Second, 2)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "hello: retry-me" {
+		t.Errorf("got %q, want %q", result, "hello: retry-me")
+	}
+}
+
+func TestCallWithRetryFails(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 200*time.Millisecond)
+	_, err := CallWithRetry(client, "too-slow", 50*time.Millisecond, 1)
+	if err == nil {
+		t.Fatal("expected error after retries exhausted")
+	}
+}
+
+func TestServerDetectsDeadline(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 200*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+	defer cancel()
+	_, err := client.Echo(ctx, &pb.EchoRequest{Message: "deadline"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if status.Code(err) != codes.DeadlineExceeded {
+		t.Errorf("got code %v, want DeadlineExceeded", status.Code(err))
+	}
+}
+
+func TestFastRequestSucceeds(t *testing.T) {
+	client, _ := setupDeadlineTest(t, 0)
+	result, err := CallWithDeadline(client, "fast", 100*time.Millisecond)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "hello: fast" {
+		t.Errorf("got %q, want %q", result, "hello: fast")
+	}
+}
