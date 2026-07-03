@@ -2,4 +2,7 @@ module go-practicum-docker-sdk
 
 go 1.23
 
-require github.com/docker/docker v28.0.0+incompatible
+require (
+	github.com/docker/docker v28.0.0+incompatible
+	github.com/docker/go-connections v0.5.1-0.20250530091347-b071e0431866
+)

@@ -1,0 +1,3 @@
+module go-practicum-http-security
+
+go 1.23

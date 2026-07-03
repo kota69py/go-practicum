@@ -139,14 +139,14 @@ func TestVerifyPass(t *testing.T) {
 import "testing"
 func TestPass(t *testing.T) {}`), 0644)
 
- 	result, err := Verify(context.Background(), dir)
- 	if err != nil {
- 		t.Fatalf("Verify error: %v", err)
- 	}
- 	if !result.Passed {
- 		t.Errorf("Passed = false, want true. Output: %s", result.Output)
- 	}
- }
+	result, err := Verify(t.Context(), dir)
+	if err != nil {
+		t.Fatalf("Verify error: %v", err)
+	}
+	if !result.Passed {
+		t.Errorf("Passed = false, want true. Output: %s", result.Output)
+	}
+}
 
 func TestVerifyFail(t *testing.T) {
 	dir := t.TempDir()
@@ -155,7 +155,7 @@ func TestVerifyFail(t *testing.T) {
 import "testing"
 func TestFail(t *testing.T) { t.Error("boom") }`), 0644)
 
-	result, err := Verify(context.Background(), dir)
+	result, err := Verify(t.Context(), dir)
 	if err != nil {
 		t.Fatalf("Verify error: %v", err)
 	}
@@ -172,7 +172,7 @@ func TestVerifyTimeout(t *testing.T) {
 import "testing"
 func TestSlow(t *testing.T) { select {} }`), 0644)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
 	defer cancel()
 
 	result, err := Verify(ctx, dir)

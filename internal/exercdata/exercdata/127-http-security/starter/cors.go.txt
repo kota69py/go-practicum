@@ -1,0 +1,21 @@
+package main
+
+import (
+	"net/http"
+)
+
+// TODO: CORSMiddleware は指定されたオリジンのみ許可する CORS ミドルウェアです。
+// 許可するメソッド: GET, POST, PUT, DELETE, OPTIONS
+// 許可するヘッダー: Content-Type, Authorization, X-CSRF-Token
+// プリフライトリクエスト (OPTIONS) の場合は 204 No Content を返します。
+func CORSMiddleware(next http.Handler, allowedOrigins []string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: 実装してください
+	})
+}
+
+// TODO: isAllowedOrigin はリクエストの Origin が allowedOrigins に含まれるか判定します。
+func isAllowedOrigin(origin string, allowedOrigins []string) bool {
+	// TODO: 実装してください
+	return false
+}

@@ -63,7 +63,7 @@ func copyDirFromFS(fsys fs.FS, src, dst string) error {
 		dstName := strings.TrimSuffix(e.Name(), ".txt")
 		dstPath := filepath.Join(dst, dstName)
 		if e.IsDir() {
-			os.MkdirAll(dstPath, 0755)
+			_ = os.MkdirAll(dstPath, 0755)
 			if err := copyDirFromFS(fsys, srcPath, dstPath); err != nil {
 				return err
 			}
@@ -72,7 +72,7 @@ func copyDirFromFS(fsys fs.FS, src, dst string) error {
 			if err != nil {
 				return err
 			}
-			if err := os.WriteFile(dstPath, data, 0644); err != nil {
+			if err := os.WriteFile(dstPath, data, 0644); err != nil { //nolint:gosec
 				return err
 			}
 		}

@@ -1,0 +1,17 @@
+{
+  "name": "127-http-security",
+  "title": "HTTP セキュリティヘッダー — CSRF / CORS / CSP",
+  "category": "security",
+  "difficulty": 3,
+  "description": "Web アプリケーションのセキュリティ対策として、CSRF トークン検証ミドルウェア、CORS ヘッダー設定、CSP (Content-Security-Policy) ヘッダー設定を実装します。標準ライブラリ net/http のみを使って、実戦的なセキュリティミドルウェアを構築します。",
+  "hints": [
+    "CSRF トークンは crypto/rand で生成した32バイトの乱数を hex エンコード",
+    "double submit cookie パターン:  Cookie とヘッダー/RORM 両方にトークンをセット",
+    "CORS の Access-Control-Allow-Origin は * ではなく特定のオリジンを指定",
+    "プリフライトリクエスト (OPTIONS) には 204 No Content を返す",
+    "CSP ヘッダーは script-src 'self' などホワイトリスト形式で指定",
+    "ミドルウェアパターン: func(next http.Handler) http.Handler",
+    "httptest.NewServer / httptest.NewRequest でモックリクエストをテスト"
+  ],
+  "files": ["csrf.go.txt", "cors.go.txt", "csp.go.txt"]
+}

@@ -81,7 +81,7 @@ func exportHTML(all []exercise.Exercise, prog *progress.Data, outPath string) {
 		home, _ := os.UserHomeDir()
 		out = filepath.Join(home, "go-practicum-progress.html")
 	}
-	if err := os.WriteFile(out, []byte(sb.String()), 0644); err != nil {
+	if err := os.WriteFile(out, []byte(sb.String()), 0644); err != nil { //nolint:gosec
 		fmt.Fprintf(os.Stderr, "エラー: 書き込み失敗: %v\n", err)
 		os.Exit(1)
 	}

@@ -10,9 +10,7 @@ import (
 func testHomeDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	old := os.Getenv("USERPROFILE")
-	os.Setenv("USERPROFILE", dir)
-	t.Cleanup(func() { os.Setenv("USERPROFILE", old) })
+	t.Setenv("USERPROFILE", dir)
 	return dir
 }
 

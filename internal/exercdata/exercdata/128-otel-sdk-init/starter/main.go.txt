@@ -1,0 +1,19 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+)
+
+func main() {
+	ctx := context.Background()
+
+	tp, err := InitTracerProvider(ctx, "my-service", "1.0.0", 0.1)
+	if err != nil {
+		log.Fatalf("failed to init tracer provider: %v", err)
+	}
+	defer tp.Shutdown(ctx)
+
+	fmt.Println("OpenTelemetry SDK initialized successfully")
+}

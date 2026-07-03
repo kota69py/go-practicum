@@ -1,0 +1,13 @@
+package main
+
+import (
+	"net/http"
+)
+
+// TODO: CSPMiddleware は Content-Security-Policy ヘッダーを設定するミドルウェアです。
+// policy 引数でポリシー文字列を受け取り、レスポンスヘッダーに設定します。
+func CSPMiddleware(next http.Handler, policy string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: 実装してください
+	})
+}

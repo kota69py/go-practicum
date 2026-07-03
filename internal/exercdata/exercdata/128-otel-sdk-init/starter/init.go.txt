@@ -1,0 +1,23 @@
+package main
+
+import (
+	"context"
+
+	"go.opentelemetry.io/otel/sdk/trace"
+)
+
+// TODO: InitTracerProvider は OpenTelemetry TracerProvider を初期化します。
+//
+// 以下の設定を行ってください:
+// 1. OTLP gRPC エクスポーターを作成 (デフォルトエンドポイント localhost:4317)
+// 2. バッチスパンプロセッサを設定 (バッチ間隔 5秒、最大キューサイズ 2048)
+// 3. TraceIDRatioBased サンプラーを設定 (samplingRate: 0.0〜1.0)
+// 4. リソースに service.name=serviceName, service.version=serviceVersion を設定
+// 5. TracerProvider を作成して返す
+//
+// ヒント: OTEL_SDK_DISABLED 環境変数が "true" の場合は、
+// trace.NewNoopTracerProvider() を返してトレーシングを無効化してください。
+func InitTracerProvider(ctx context.Context, serviceName, serviceVersion string, samplingRate float64) (*trace.TracerProvider, error) {
+	// TODO: 実装してください
+	return nil, nil
+}

@@ -78,7 +78,7 @@ func writeOutput(data string, path string) {
 		fmt.Println(data)
 		return
 	}
-	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil { //nolint:gosec
 		fmt.Fprintf(os.Stderr, "エラー: 書き込み失敗: %v\n", err)
 		os.Exit(1)
 	}

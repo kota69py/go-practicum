@@ -1,2 +1,5 @@
 go-practicum.exe
 *.exe
+dist/
+coverage.out
+coverage.html

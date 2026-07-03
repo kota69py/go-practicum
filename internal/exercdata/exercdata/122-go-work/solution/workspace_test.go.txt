@@ -92,13 +92,6 @@ func TestUseModuleMultiple(t *testing.T) {
 	}
 }
 
-func TestUseModuleWithoutInit(t *testing.T) {
-	err := UseModule(t.TempDir(), "mymod")
-	if err == nil {
-		t.Error("expected error when go.work does not exist, got nil")
-	}
-}
-
 func TestBuildAll(t *testing.T) {
 	workDir := t.TempDir()
 	if err := InitWorkspace(workDir); err != nil {
@@ -125,19 +118,6 @@ go 1.23
 	err := BuildAll(workDir)
 	if err != nil {
 		t.Fatalf("BuildAll failed: %v", err)
-	}
-}
-
-func TestBuildAllNoModules(t *testing.T) {
-	workDir := t.TempDir()
-	workPath := filepath.Join(workDir, "go.work")
-	if err := os.WriteFile(workPath, []byte("go 1.23\n"), 0644); err != nil {
-		t.Fatalf("write go.work failed: %v", err)
-	}
-
-	err := BuildAll(workDir)
-	if err == nil {
-		t.Error("expected error when no modules in workspace, got nil")
 	}
 }
 

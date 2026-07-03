@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 質問・相談
+    url: https://github.com/kota69py/go-practicum/discussions
+    about: 質問や議論はGitHub Discussionsをご利用ください

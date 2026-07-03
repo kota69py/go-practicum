@@ -1,0 +1,25 @@
+package main
+
+import (
+	"net/http"
+)
+
+// TODO: GenerateCSRFToken は32バイトの乱数を生成し、16進数文字列で返してください。
+// crypto/rand パッケージを使用してください。
+
+// TODO: CSRFMiddleware は double submit cookie パターンで CSRF 対策を行うミドルウェアです。
+// GET リクエストは常に通します（トークンを Cookie にセット）。
+// それ以外のメソッドはリクエストヘッダー X-CSRF-Token と Cookie の csrf_token が一致するか検証します。
+// 不一致の場合は http.StatusForbidden を返します。
+func CSRFMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: 実装してください
+	})
+}
+
+// TODO: ValidateCSRFToken は Cookie の値とリクエストヘッダーの値が一致するか検証します。
+// 戻り値: 有効なトークンの場合 true、それ以外 false
+func ValidateCSRFToken(r *http.Request) bool {
+	// TODO: 実装してください
+	return false
+}

@@ -31,12 +31,11 @@ func SafeCall(fn func() error) (err error) {
 	return fn()
 }
 
-func DeferOrder() string {
-	var result string
-	defer func() { result = "1" + result }()
-	defer func() { result = "2" + result }()
-	defer func() { result = "3" + result }()
-	return result
+func DeferOrder() (result string) {
+	defer func() { result += "-1" }()
+	defer func() { result += "-2" }()
+	defer func() { result = "3" }()
+	return
 }
 
 func NamedReturnWithDefer(x int) (result int) {

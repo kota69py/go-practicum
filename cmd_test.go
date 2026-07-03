@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kota69py/go-practicum/internal/exercise"
 	"github.com/kota69py/go-practicum/internal/exercdata"
+	"github.com/kota69py/go-practicum/internal/exercise"
 )
 
 func buildTestBinary(t *testing.T) string {

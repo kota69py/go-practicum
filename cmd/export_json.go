@@ -53,6 +53,6 @@ func exportJSON(all []exercise.Exercise, prog *progress.Data, outPath string) {
 	var buf strings.Builder
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	enc.Encode(data)
+	_ = enc.Encode(data)
 	writeOutput(buf.String(), outPath)
 }

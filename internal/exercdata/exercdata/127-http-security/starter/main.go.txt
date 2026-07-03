@@ -1,0 +1,22 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello, secure world!")
+	})
+
+	var h http.Handler = mux
+	h = CSRFMiddleware(h)
+	h = CORSMiddleware(h, []string{"https://example.com"})
+	h = CSPMiddleware(h, "default-src 'self'")
+
+	log.Println("listening on :8080")
+	http.ListenAndServe(":8080", h)
+}

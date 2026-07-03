@@ -1,0 +1,17 @@
+{
+  "name": "128-otel-sdk-init",
+  "title": "OpenTelemetry SDK 初期化 — バッチ処理・サンプリング・OTLP 出力",
+  "category": "observability",
+  "difficulty": 4,
+  "description": "OpenTelemetry SDK の本番運用に必要な初期化処理を実装します。バッチスパンプロセッサ、確率ベースのサンプリング、OTLP エクスポーター、リソース属性の設定を学びます。トレーシングの ON/OFF 制御やグレースフルシャットダウンも含めます。",
+  "hints": [
+    "sdktrace.NewTracerProvider に SpanProcessor と Sampler と Resource を指定",
+    "sdktrace.WithBatcher でバッチスパンプロセッサを設定（バッチ間隔・最大サイズを指定可能）",
+    "sdktrace.WithSampler(sdktrace.TraceIDRatioBased(rate)) で確率サンプリング",
+    "OTLP エクスポーターは otlptracegrpc.New または otlptracehttp.New で作成",
+    "resource.New で service.name / service.version などのリソース属性を設定",
+    "OTEL_SDK_DISABLED 環境変数でトレーシング全体を無効化できる",
+    "tp.Shutdown(ctx) でグレースフルシャットダウン（未送信スパンをフラッシュ）"
+  ],
+  "files": ["init.go.txt"]
+}

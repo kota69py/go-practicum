@@ -53,7 +53,7 @@ func (r *Runner) newVerifyCmd() *cobra.Command {
 				cmd.Println("✅ " + colorGreen("全テスト通過！"))
 				prog.Complete(prog.InProgress)
 				prog.InProgress = ""
-				progress.Save(prog)
+				_ = progress.Save(prog)
 			} else {
 				cmd.Println("❌ " + colorRed("テスト失敗"))
 			}

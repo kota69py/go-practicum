@@ -50,7 +50,7 @@ func (s *FileStore) Load() (*Data, error) {
 		return nil, fmt.Errorf("home dir: %w", err)
 	}
 	dir := filepath.Join(home, ".go-practicum")
-	os.MkdirAll(dir, 0755)
+	_ = os.MkdirAll(dir, 0755)
 	path := filepath.Join(dir, "progress.json")
 
 	data, err := os.ReadFile(path)
@@ -78,9 +78,9 @@ func (s *FileStore) Save(d *Data) error {
 		return err
 	}
 	dir := filepath.Join(home, ".go-practicum")
-	os.MkdirAll(dir, 0755)
+	_ = os.MkdirAll(dir, 0755)
 	path := filepath.Join(dir, "progress.json")
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0600)
 }
 
 var defaultStore Store = NewFileStore()

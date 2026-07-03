@@ -11,6 +11,11 @@ Go エンジニアとしての実戦スキルを鍛える CLI 演習ツール。
 - 各行にヒントと解答例付き（段階的に参照可能）
 - 進捗は自動保存。途中で止めても再開可能
 
+[![CI](https://github.com/kota69py/go-practicum/actions/workflows/ci.yml/badge.svg)](https://github.com/kota69py/go-practicum/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/kota69py/go-practicum/branch/main/graph/badge.svg)](https://codecov.io/gh/kota69py/go-practicum)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kota69py/go-practicum)](https://goreportcard.com/report/github.com/kota69py/go-practicum)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## Quick Start
 
 ```bash
@@ -51,7 +56,45 @@ go-practicum solution
 | `doctor` | 全演習データ（JSON・ファイル構成）を検証 |
 | `completion [bash\|zsh\|fish\|powershell]` | シェルの補完スクリプトを生成 |
 
-## 演習一覧（全126演習）
+## 学習ロードマップ
+
+128演習を効果的に進めるための推奨ルートです。
+
+### Phase 1: 基礎固め（1–20）
+
+| ステップ | 演習 | テーマ |
+|----------|------|--------|
+| ① | 01–04 | インターフェース設計、テーブル駆動テスト、HTTP ハンドラ、エラーハンドリング |
+| ② | 05–10 | 並行処理、SQL トランザクション、コンテキスト、JSON、ファイル I/O、テストダブル |
+| ③ | 11–20 | 構造化ログ、HTTP クライアント、ジェネリクス、グレースフルシャットダウン、ミドルウェア、rate limit、設定、テストヘルパー、fan-in/fan-out、Mutex |
+
+### Phase 2: 実戦パターン（21–60）
+
+| ステップ | 演習 | テーマ |
+|----------|------|--------|
+| ④ | 21–30 | Worker pool、reflection、benchmark、functional options、embed、io.Reader/Writer、sorting、fuzzing、CLI flag、time |
+| ⑤ | 31–40 | strings、sync.Map、io.MultiReader/PipeReader、template、atomic、os/exec、gzip、XML、retry、Pub/Sub |
+| ⑥ | 41–60 | ファイルサーバ、バリデーション、ファイル監視、Command パターン、context values、AES、enum、semaphore、gRPC、singleflight、GC、sync.Pool、lock-free、circuit breaker、unsafe、constant-time、benchmark 応用、build tags、secure memory、hook |
+
+### Phase 3: 本番運用（61–100）
+
+| ステップ | 演習 | テーマ |
+|----------|------|--------|
+| ⑦ | 61–70 | GMP スケジューラ、escape analysis、connection pool、latency、trace、構造化ログ、OTel、Prometheus、graceful shutdown、health check |
+| ⑧ | 71–86 | Fuzzing 応用、rate limiter 実装、workflow、SQL migration、Wire DI、gRPC streaming、feature flag、pagination、mockgen、codegen、maps/slices、iter.Seq、ServeMux routing、trace context、context propagation、RED metrics |
+| ⑨ | 87–100 | gRPC interceptor/deadline/errors、Redis、DB migration、connection pool、JWT、TLS/mTLS、OAuth2、secret management、web router/middleware/testing、Docker multiarch、K8s basics/probe |
+
+### Phase 4: アーキテクチャ・応用（101–128）
+
+| ステップ | 演習 | テーマ |
+|----------|------|--------|
+| ⑩ | 101–110 | K8s、clean arch、CQRS、event-driven、fuzz testing、slog、generics constraints、worker pool、retry、circuit breaker |
+| ⑪ | 111–120 | 再試行・回断器、hexagonal arch、go:generate、WebSocket、testcontainers、PGO、go/analysis、io/fs、cgo |
+| ⑫ | 121–128 | advanced testing、go work、SSE、panic/recover、Docker SDK、slogtest、HTTP セキュリティ、OTel SDK 初期化 |
+
+---
+
+## 演習一覧（全128演習）
 
 ### architecture（4演習）
 
@@ -203,7 +246,7 @@ go-practicum solution
 | 65 | trace-profiling | ★★★★★ |
 | 117 | pgo | ★★★ |
 
-### security（6演習）
+### security（7演習）
 
 | # | 演習 | 難易度 |
 |---|------|--------|
@@ -213,6 +256,7 @@ go-practicum solution
 | 94 | tls-mtls | ★★★★ |
 | 95 | oauth2 | ★★★ |
 | 96 | secret-management | ★★★ |
+| 127 | http-security | ★★★ |
 
 ### design（8演習）
 
@@ -264,13 +308,14 @@ go-practicum solution
 |---|------|--------|
 | 46 | crypto-aes | ★★★ |
 
-### observability（3演習）
+### observability（4演習）
 
 | # | 演習 | 難易度 |
 |---|------|--------|
 | 84 | trace-context | ★★★ |
 | 85 | context-propagation | ★★★★ |
 | 86 | red-metrics | ★★★ |
+| 128 | otel-sdk-init | ★★★★ |
 
 ### web（2演習）
 

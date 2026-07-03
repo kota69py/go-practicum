@@ -46,7 +46,7 @@ func (r *Runner) newCheckCmd() *cobra.Command {
 			fmtCmd.Dir = cwd
 			fmtCmd.Stdout = &fmtOut
 			fmtCmd.Stderr = &fmtOut
-			fmtCmd.Run()
+			_ = fmtCmd.Run()
 			if strings.TrimSpace(fmtOut.String()) != "" {
 				cmd.Printf("  ❌ フォーマットが必要なファイル:\n")
 				for _, f := range strings.Split(strings.TrimSpace(fmtOut.String()), "\n") {

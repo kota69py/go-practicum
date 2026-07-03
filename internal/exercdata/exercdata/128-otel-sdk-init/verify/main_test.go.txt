@@ -1,0 +1,79 @@
+package main
+
+import (
+	"context"
+	"os"
+	"testing"
+	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
+)
+
+func TestInitTracerProvider(t *testing.T) {
+	ctx := context.Background()
+	tp, err := InitTracerProvider(ctx, "test-service", "0.1.0", 1.0)
+	if err != nil {
+		t.Fatalf("InitTracerProvider failed: %v", err)
+	}
+	defer tp.Shutdown(ctx)
+
+	if tp == nil {
+		t.Fatal("TracerProvider should not be nil")
+	}
+}
+
+func TestTracerProviderCanCreateSpans(t *testing.T) {
+	ctx := context.Background()
+	tp, err := InitTracerProvider(ctx, "test-service", "0.1.0", 1.0)
+	if err != nil {
+		t.Fatalf("InitTracerProvider failed: %v", err)
+	}
+	defer tp.Shutdown(ctx)
+
+	tr := tp.Tracer("test")
+	_, span := tr.Start(ctx, "test-span")
+	span.End()
+}
+
+func TestInitTracerProviderWithSampling(t *testing.T) {
+	ctx := context.Background()
+	tp, err := InitTracerProvider(ctx, "test-service", "0.1.0", 0.0)
+	if err != nil {
+		t.Fatalf("InitTracerProvider failed: %v", err)
+	}
+	defer tp.Shutdown(ctx)
+
+	_ = tp.Tracer("test")
+}
+
+func TestOTELSDKDisabled(t *testing.T) {
+	os.Setenv("OTEL_SDK_DISABLED", "true")
+	defer os.Unsetenv("OTEL_SDK_DISABLED")
+
+	ctx := context.Background()
+	tp, err := InitTracerProvider(ctx, "test-service", "0.1.0", 1.0)
+	if err != nil {
+		t.Fatalf("InitTracerProvider should not error when disabled: %v", err)
+	}
+	defer tp.Shutdown(ctx)
+
+	if _, ok := otel.GetTracerProvider().(*trace.TracerProvider); ok {
+		t.Log("TracerProvider is noop when SDK is disabled")
+	}
+}
+
+func TestShutdownGraceful(t *testing.T) {
+	ctx := context.Background()
+	tp, err := InitTracerProvider(ctx, "test-service", "0.1.0", 1.0)
+	if err != nil {
+		t.Fatalf("InitTracerProvider failed: %v", err)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	if err := tp.Shutdown(shutdownCtx); err != nil {
+		t.Errorf("Shutdown should not error: %v", err)
+	}
+}

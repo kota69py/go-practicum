@@ -8,11 +8,16 @@ import (
 	"sync"
 )
 
-type MapHandler struct {
-	mu     sync.Mutex
-	buf    *bytes.Buffer
-	attrs  []slog.Attr
+type attrEntry struct {
+	attr   slog.Attr
 	groups []string
+}
+
+type MapHandler struct {
+	mu      sync.Mutex
+	buf     *bytes.Buffer
+	entries []attrEntry
+	groups  []string
 }
 
 func NewMapHandler(buf *bytes.Buffer) *MapHandler {
@@ -28,11 +33,16 @@ func (h *MapHandler) Handle(ctx context.Context, r slog.Record) error {
 	defer h.mu.Unlock()
 
 	m := make(map[string]any)
-	for _, a := range h.attrs {
-		h.addAttr(m, a, h.groups)
+	if !r.Time.IsZero() {
+		m[slog.TimeKey] = r.Time
+	}
+	m[slog.LevelKey] = r.Level
+	m[slog.MessageKey] = r.Message
+	for _, e := range h.entries {
+		addAttr(m, e.attr, e.groups)
 	}
 	r.Attrs(func(a slog.Attr) bool {
-		h.addAttr(m, a, h.groups)
+		addAttr(m, a, h.groups)
 		return true
 	})
 
@@ -47,7 +57,13 @@ func (h *MapHandler) Handle(ctx context.Context, r slog.Record) error {
 
 func (h *MapHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	c := h.clone()
-	c.attrs = append(c.attrs, attrs...)
+	for _, a := range attrs {
+		entry := attrEntry{
+			attr:   a,
+			groups: append([]string(nil), c.groups...),
+		}
+		c.entries = append(c.entries, entry)
+	}
 	return c
 }
 
@@ -59,23 +75,42 @@ func (h *MapHandler) WithGroup(name string) slog.Handler {
 
 func (h *MapHandler) clone() *MapHandler {
 	return &MapHandler{
-		buf:    h.buf,
-		attrs:  append([]slog.Attr(nil), h.attrs...),
-		groups: append([]string(nil), h.groups...),
+		buf:     h.buf,
+		entries: append([]attrEntry(nil), h.entries...),
+		groups:  append([]string(nil), h.groups...),
 	}
 }
 
-func (h *MapHandler) addAttr(m map[string]any, a slog.Attr, groups []string) {
+func addAttr(m map[string]any, a slog.Attr, groups []string) {
 	v := a.Value.Resolve()
+
+	target := m
+	for _, g := range groups {
+		nested, ok := target[g].(map[string]any)
+		if !ok {
+			nested = make(map[string]any)
+			target[g] = nested
+		}
+		target = nested
+	}
+
 	if v.Kind() == slog.KindGroup {
-		for _, attr := range v.Group() {
-			h.addAttr(m, attr, append(groups, a.Key))
+		if a.Key != "" {
+			nested := make(map[string]any)
+			target[a.Key] = nested
+			for _, attr := range v.Group() {
+				addAttr(nested, attr, nil)
+			}
+		} else {
+			for _, attr := range v.Group() {
+				addAttr(target, attr, nil)
+			}
 		}
 		return
 	}
-	key := a.Key
-	for _, g := range groups {
-		key = g + "." + key
+
+	if a.Key == "" {
+		return
 	}
-	m[key] = v.Any()
+	target[a.Key] = v.Any()
 }

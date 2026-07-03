@@ -12,14 +12,33 @@ import (
 //   - f.Fuzz(func(t *testing.T, s string) { ... })
 //   - HexDecode の結果を HexEncode で元に戻して一致確認
 //   - 復元結果が有効な UTF-8 であることを確認
+//   - 空文字列、偶数長の文字列、大文字・小文字など様々な入力を追加
 func FuzzHexDecode(f *testing.F) {
-	// TODO: シードコーパスを追加
-	// TODO: ファジングロジックを実装
+	// TODO: 以下のようなシードコーパスを追加してください
+	// f.Add("48656c6c6f") // "Hello"
+	// f.Add("deadbeef")
+	// f.Add("")
+	// f.Add("ff")
+	// f.Add("ABCDEF1234567890")
+	// f.Add("abcdef1234567890")
+	f.Fuzz(func(t *testing.T, s string) {
+		// TODO: HexDecode を実行し、エラーがない場合は
+		// HexEncode で元に戻して元の値と一致するか確認
+	})
+}
+
+// reverse は文字列を反転する補助関数です（大文字でないのは学生自身が実装するため）。
+func reverse(s string) string {
+	// TODO: 文字列をルーン単位で反転してください
+	return s
 }
 
 func FuzzReverse(f *testing.F) {
-	// おまけ: 文字列反転関数の fuzz test
-	// TODO: 実装
+	// TODO: FuzzHexDecode と同様に、reverse 関数の fuzz test を実装
+	// ヒント:
+	//   - f.Add("hello") でシードコーパスを追加
+	//   - reverse(reverse(s)) == s を確認（不変条件）
+	//   - 有効な UTF-8 入力に対して出力も UTF-8 有効であることを確認
 }
 
 var _ = utf8.ValidString

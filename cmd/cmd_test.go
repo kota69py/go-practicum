@@ -7,6 +7,7 @@ import (
 	"github.com/kota69py/go-practicum/internal/exercise"
 	"github.com/kota69py/go-practicum/internal/progress"
 )
+
 func TestStars(t *testing.T) {
 	tests := []struct {
 		n    int
@@ -154,8 +155,8 @@ func TestLevenshtein(t *testing.T) {
 		{"", "abc", 3},
 		{"abc", "abc", 0},
 		{"abc", "abd", 1},
-		{"interfce-design", "interface-design", 1},
-		{"01-interfce-design", "01-interface-design", 1},
+		{"interfce-design", "interface-design", 1},       //nolint:misspell
+		{"01-interfce-design", "01-interface-design", 1}, //nolint:misspell
 		{"gorutine", "goroutine", 1},
 	}
 	for _, tt := range tests {

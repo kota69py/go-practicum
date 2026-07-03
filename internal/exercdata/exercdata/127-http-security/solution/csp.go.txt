@@ -1,0 +1,12 @@
+package main
+
+import (
+	"net/http"
+)
+
+func CSPMiddleware(next http.Handler, policy string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", policy)
+		next.ServeHTTP(w, r)
+	})
+}

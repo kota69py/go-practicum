@@ -9,13 +9,25 @@ linters:
     - unused
     - gofmt
     - misspell
+    - gosec
+    - gocritic
+    - thelper
+    - usetesting
+    - nakedret
+    - goconst
 
 linters-settings:
   gofmt:
     simplify: true
+  goconst:
+    min-occurrences: 5
+  gosec:
+    excludes:
+      - G115
 
 issues:
   exclude-rules:
     - path: _test\.go
       linters:
         - errcheck
+        - gosec

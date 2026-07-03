@@ -7,12 +7,18 @@ import (
 	"sync"
 )
 
+// attrEntry は属性と、それが追加された時点のグループ情報を保持します。
+type attrEntry struct {
+	attr   slog.Attr
+	groups []string
+}
+
 // MapHandler は slog.Handler インターフェースを実装し、属性を JSON でバッファに書き込みます。
 type MapHandler struct {
-	mu     sync.Mutex
-	buf    *bytes.Buffer
-	attrs  []slog.Attr
-	groups []string
+	mu      sync.Mutex
+	buf     *bytes.Buffer
+	entries []attrEntry
+	groups  []string
 }
 
 // NewMapHandler は MapHandler を作成します。
@@ -32,14 +38,15 @@ func (h *MapHandler) Enabled(ctx context.Context, level slog.Level) bool {
 func (h *MapHandler) Handle(ctx context.Context, r slog.Record) error {
 	// TODO:
 	// 1. ミューテックスをロック
-	// 2. 事前属性 + レコード属性を map に集める
-	// 3. JSON エンコードしてバッファに書き込み
+	// 2. time, level, msg をマップに追加
+	// 3. 事前属性 + レコード属性を map に集める（グループで入れ子にする）
+	// 4. JSON エンコードしてバッファに書き込み
 	return nil
 }
 
 // WithAttrs は事前属性を持った新しいハンドラーを返します。
 func (h *MapHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	// TODO: 現在の状態をコピーし、新しい属性を追加して返す
+	// TODO: 現在の状態をコピーし、新しい属性を（現在のグループと一緒に）追加して返す
 	return nil
 }
 
@@ -51,16 +58,18 @@ func (h *MapHandler) WithGroup(name string) slog.Handler {
 
 // clone は MapHandler のコピーを作成します（ディープコピー）。
 func (h *MapHandler) clone() *MapHandler {
-	// TODO: 属性とグループをコピーした新しい MapHandler を返す
+	// TODO: entries と groups をコピーした新しい MapHandler を返す
 	return nil
 }
 
-// addAttr は属性を map に再帰的に追加します。グループがある場合はキーに "." で連結します。
+// addAttr は属性を map に再帰的に追加します。groups に応じて入れ子の map を作成します。
 func (h *MapHandler) addAttr(m map[string]any, a slog.Attr, groups []string) {
 	// TODO:
 	// 1. a.Value.Resolve() で解決
-	// 2. KindGroup の場合は再帰的に処理
-	// 3. それ以外は map に追加（キーは groups + a.Key を "." で連結）
+	// 2. groups に従って入れ子の map を辿る
+	// 3. KindGroup の場合は再帰的に処理（空キーのグループはインライン展開）
+	// 4. 空キーの属性は無視
+	// 5. それ以外は map に追加
 }
 
 var _ = bytes.NewBuffer

@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestFormatEvent_dataOnly(t *testing.T) {
@@ -139,17 +138,29 @@ func TestSSEHandler_flusherRequired(t *testing.T) {
 	// A ResponseWriter that does NOT implement http.Flusher
 	handler := http.HandlerFunc(SSEHandler)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := &nonFlushResponseWriter{ResponseRecorder: httptest.NewRecorder()}
+	rec := &nonFlushResponseWriter{rec: httptest.NewRecorder()}
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusNotImplemented {
-		t.Errorf("status = %d, want %d", rec.Code, http.StatusNotImplemented)
+	if rec.rec.Code != http.StatusNotImplemented {
+		t.Errorf("status = %d, want %d", rec.rec.Code, http.StatusNotImplemented)
 	}
 }
 
 // nonFlushResponseWriter wraps httptest.ResponseRecorder without Flush.
 type nonFlushResponseWriter struct {
-	*httptest.ResponseRecorder
+	rec *httptest.ResponseRecorder
+}
+
+func (w *nonFlushResponseWriter) Header() http.Header {
+	return w.rec.Header()
+}
+
+func (w *nonFlushResponseWriter) Write(b []byte) (int, error) {
+	return w.rec.Write(b)
+}
+
+func (w *nonFlushResponseWriter) WriteHeader(code int) {
+	w.rec.WriteHeader(code)
 }
 
 func TestSendEventWriteError(t *testing.T) {
